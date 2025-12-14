@@ -1,7 +1,7 @@
 {
     "name": "dbland-monorepo",
     "version": "0.2.0",
-    "description": "DBLand - Database Agnostic GUI Client for NoSQL databases",
+    "description": "DBLand - NoSQL Database Agnostic GUI/WEB Client",
     "author": "Fozilbek Samiyev <fozilbek.samiyev@gmail.com>",
     "private": true,
     "license": "MIT",

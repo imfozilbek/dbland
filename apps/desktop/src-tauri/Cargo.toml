@@ -1,7 +1,7 @@
 [package]
 name = "dbland"
 version = "0.2.0"
-description = "DBLand - Database Agnostic GUI Client"
+description = "DBLand - NoSQL Database Agnostic GUI/WEB Client"
 authors = ["Fozilbek Samiyev"]
 license = "MIT"
 repository = ""

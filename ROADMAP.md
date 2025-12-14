@@ -199,9 +199,17 @@
 
 ## Future (Post v1.0)
 
-- PostgreSQL adapter
-- MySQL adapter
-- SQLite adapter
+### More NoSQL Adapters
+- Elasticsearch adapter
+- Cassandra adapter
+- CouchDB adapter
+- DynamoDB adapter
+- Neo4j adapter
+- InfluxDB adapter
+- ScyllaDB adapter
+- ArangoDB adapter
+
+### Platform Features
 - Cloud sync (optional)
 - Team features
 - Plugin system

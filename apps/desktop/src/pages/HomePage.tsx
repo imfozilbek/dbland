@@ -10,7 +10,7 @@ export function HomePage() {
                     <Database className="mx-auto h-16 w-16 text-primary" />
                     <h1 className="text-3xl font-bold">Welcome to DBLand</h1>
                     <p className="text-muted-foreground">
-                        The open-source database GUI for MongoDB and Redis
+                        The open-source NoSQL database GUI/WEB client for MongoDB and Redis
                     </p>
                 </div>
 
