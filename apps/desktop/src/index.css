@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme {
+    --color-background: #ffffff;
+    --color-foreground: #0a0a0a;
+    --color-card: #ffffff;
+    --color-card-foreground: #0a0a0a;
+    --color-popover: #ffffff;
+    --color-popover-foreground: #0a0a0a;
+    --color-primary: #18181b;
+    --color-primary-foreground: #fafafa;
+    --color-secondary: #f4f4f5;
+    --color-secondary-foreground: #18181b;
+    --color-muted: #f4f4f5;
+    --color-muted-foreground: #71717a;
+    --color-accent: #f4f4f5;
+    --color-accent-foreground: #18181b;
+    --color-destructive: #ef4444;
+    --color-destructive-foreground: #fafafa;
+    --color-border: #e4e4e7;
+    --color-input: #e4e4e7;
+    --color-ring: #18181b;
+    --radius: 0.5rem;
+
+    /* MongoDB green */
+    --color-mongodb: #00ed64;
+    /* Redis red */
+    --color-redis: #dc382d;
+}
+
+@media (prefers-color-scheme: dark) {
+    @theme {
+        --color-background: #0a0a0a;
+        --color-foreground: #fafafa;
+        --color-card: #0a0a0a;
+        --color-card-foreground: #fafafa;
+        --color-popover: #0a0a0a;
+        --color-popover-foreground: #fafafa;
+        --color-primary: #fafafa;
+        --color-primary-foreground: #18181b;
+        --color-secondary: #27272a;
+        --color-secondary-foreground: #fafafa;
+        --color-muted: #27272a;
+        --color-muted-foreground: #a1a1aa;
+        --color-accent: #27272a;
+        --color-accent-foreground: #fafafa;
+        --color-destructive: #7f1d1d;
+        --color-destructive-foreground: #fafafa;
+        --color-border: #27272a;
+        --color-input: #27272a;
+        --color-ring: #d4d4d8;
+    }
+}
+
+* {
+    border-color: var(--color-border);
+}
+
+body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family:
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+}
+
+/* Prevent text selection on drag */
+.no-select {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted-foreground);
+}
