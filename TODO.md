@@ -6,16 +6,18 @@ Technical debt and pending improvements.
 
 ## Current Sprint: v0.3.0 - Basic UI
 
+### Completed
+
+- [x] Create Connection Manager UI (dialog/form)
+- [x] Add connection form validation
+- [x] Implement test connection button in UI
+
 ### In Progress
 
-- [ ] Create Connection Manager UI (dialog/form)
-- [ ] Add connection form validation
-- [ ] Implement test connection button in UI
+- [ ] Schema browser (tree view)
 
 ### Backlog
 
-- [ ] App layout (sidebar, editor, results)
-- [ ] Schema browser (tree view)
 - [ ] Query editor (Monaco)
 - [ ] Basic results viewer
 

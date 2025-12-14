@@ -48,11 +48,11 @@
 
 ## v0.3.0 - Basic UI
 
-**Статус:** 📋 Planned
+**Статус:** 🚧 In Progress
 
 **Цели:**
-- [ ] App layout (sidebar, editor, results)
-- [ ] Connection manager UI
+- [x] App layout (sidebar, editor, results)
+- [x] Connection manager UI
 - [ ] Schema browser (tree)
 - [ ] Query editor (Monaco)
 - [ ] Basic results viewer

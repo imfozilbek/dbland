@@ -11,11 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- N/A
+- **Connection Manager UI**
+  - ConnectionManagerDialog component with form for MongoDB/Redis
+  - Connection form validation (name, host, port)
+  - Test Connection button with latency display
+  - Save/Cancel/Test buttons in dialog footer
+  - Integrated with Sidebar (+) button and HomePage
+
+- **Tauri App Icons**
+  - Placeholder icons for macOS, Windows, Linux
+
+### Fixed
+
+- Redis adapter ServerError formatting
+- Tauri main.rs crate name resolution
 
 ### Changed
 
-- N/A
+- Updated project description across all files
 
 ---
 
