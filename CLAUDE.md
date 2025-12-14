@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-**DBLand** is a NoSQL database agnostic GUI/WEB client — the open-source alternative to Studio 3T.
+**DBLand** is a NoSQL database agnostic GUI/WEB client for MongoDB, Redis and other NoSQL databases.
 
 **Platform-first approach**: Core library handles database abstraction, Desktop and Web apps provide the UI.
 

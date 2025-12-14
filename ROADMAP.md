@@ -2,7 +2,7 @@
 
 ## Vision
 
-Стать #1 open-source альтернативой Studio 3T для NoSQL баз данных.
+Стать #1 GUI/WEB клиентом для NoSQL баз данных.
 
 ---
 

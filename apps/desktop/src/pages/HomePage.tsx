@@ -16,7 +16,7 @@ export function HomePage(): JSX.Element {
                     <Database className="mx-auto h-16 w-16 text-primary" />
                     <h1 className="text-3xl font-bold">Welcome to DBLand</h1>
                     <p className="text-muted-foreground">
-                        The open-source NoSQL database GUI/WEB client for MongoDB and Redis
+                        NoSQL database GUI/WEB client for MongoDB and Redis
                     </p>
                 </div>
 
@@ -48,7 +48,7 @@ export function HomePage(): JSX.Element {
                                 <Upload className="h-5 w-5" />
                                 Import Connections
                             </CardTitle>
-                            <CardDescription>Import from Studio 3T or other tools</CardDescription>
+                            <CardDescription>Import from other tools</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Button variant="outline" className="w-full">
