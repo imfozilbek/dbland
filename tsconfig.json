@@ -1,0 +1,14 @@
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "outDir": "./dist",
+        "baseUrl": "./"
+    },
+    "references": [
+        { "path": "./libs/core" },
+        { "path": "./packages/ui" },
+        { "path": "./apps/desktop" },
+        { "path": "./apps/web" }
+    ],
+    "files": []
+}
