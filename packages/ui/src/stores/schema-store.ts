@@ -1,18 +1,7 @@
 import { create } from "zustand"
-import { invoke } from "@tauri-apps/api/core"
+import type { CollectionInfo, DatabaseInfo, PlatformAPI } from "../contexts/PlatformContext"
 
-export interface DatabaseInfo {
-    name: string
-    sizeBytes?: number
-    collectionCount?: number
-}
-
-export interface CollectionInfo {
-    name: string
-    databaseName: string
-    documentCount?: number
-    sizeBytes?: number
-}
+export type { DatabaseInfo, CollectionInfo }
 
 interface SchemaState {
     // State
@@ -21,7 +10,11 @@ interface SchemaState {
     isLoading: boolean
     error: string | null
 
+    // Internal
+    _api: PlatformAPI | null
+
     // Actions
+    setApi: (api: PlatformAPI) => void
     loadDatabases: (connectionId: string) => Promise<DatabaseInfo[]>
     loadCollections: (connectionId: string, databaseName: string) => Promise<CollectionInfo[]>
     clearSchema: (connectionId: string) => void
@@ -34,12 +27,23 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
     collections: new Map(),
     isLoading: false,
     error: null,
+    _api: null,
+
+    // Set platform API
+    setApi: (api: PlatformAPI): void => {
+        set({ _api: api })
+    },
 
     // Load databases for a connection
     loadDatabases: async (connectionId: string): Promise<DatabaseInfo[]> => {
+        const { _api } = get()
+        if (!_api) {
+            throw new Error("Platform API not initialized")
+        }
+
         set({ isLoading: true, error: null })
         try {
-            const databases = await invoke<DatabaseInfo[]>("get_databases", { connectionId })
+            const databases = await _api.getDatabases(connectionId)
 
             const { databases: currentDbs } = get()
             const updated = new Map(currentDbs)
@@ -58,12 +62,14 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
         connectionId: string,
         databaseName: string,
     ): Promise<CollectionInfo[]> => {
+        const { _api } = get()
+        if (!_api) {
+            throw new Error("Platform API not initialized")
+        }
+
         set({ isLoading: true, error: null })
         try {
-            const collections = await invoke<CollectionInfo[]>("get_collections", {
-                connectionId,
-                databaseName,
-            })
+            const collections = await _api.getCollections(connectionId, databaseName)
 
             const key = `${connectionId}:${databaseName}`
             const { collections: currentColls } = get()

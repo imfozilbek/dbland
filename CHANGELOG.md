@@ -9,26 +9,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.3.0] - 2025-12-14
+
 ### Added
 
+- **Schema Browser (Tree View)**
+  - Tree components (`Tree`, `TreeGroup`, `TreeItem`, `TreeEmpty`)
+  - `ConnectionTree` component with database/collection hierarchy
+  - Auto-connect on expand
+  - Lazy loading of databases and collections
+  - Click collection → navigate to workspace
+
+- **Shared Component Architecture**
+  - Platform abstraction (`PlatformContext`) for Tauri/Web
+  - Shared Zustand stores in `@dbland/ui`
+  - App components: `AppLayout`, `Sidebar`, `Toolbar`, `StatusBar`
+  - Desktop and Web now share 100% React code
+  - `tauriPlatformAPI` for desktop
+  - `webPlatformAPI` stub for future web implementation
+
 - **Connection Manager UI**
-  - ConnectionManagerDialog component with form for MongoDB/Redis
+  - `ConnectionManagerDialog` component with form for MongoDB/Redis
   - Connection form validation (name, host, port)
   - Test Connection button with latency display
-  - Save/Cancel/Test buttons in dialog footer
   - Integrated with Sidebar (+) button and HomePage
 
-- **Tauri App Icons**
-  - Placeholder icons for macOS, Windows, Linux
-
-### Fixed
-
-- Redis adapter ServerError formatting
-- Tauri main.rs crate name resolution
+- **Modern UI Styling**
+  - Updated color palette (neutral tones)
+  - Collapsible animations
+  - Refined typography (13px, font-medium)
+  - Smooth transitions (150ms)
 
 ### Changed
 
-- Updated project description across all files
+- Moved layout components from apps to `packages/ui`
+- Moved Zustand stores from apps to `packages/ui`
+- Both desktop and web apps now use shared components
+- Updated Sidebar with TreeView for connections
+
+### Removed
+
+- Duplicate layout components in desktop/web apps
+- Duplicate stores in desktop/web apps
 
 ---
 

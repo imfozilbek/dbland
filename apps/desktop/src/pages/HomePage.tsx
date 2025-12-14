@@ -1,8 +1,15 @@
 import { useState } from "react"
 import { Database, Plus, Upload } from "lucide-react"
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@dbland/ui"
-import { ConnectionManagerDialog } from "../components/connection/ConnectionManagerDialog"
-import { useConnectionStore } from "../stores"
+import {
+    Button,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+    ConnectionManagerDialog,
+    useConnectionStore,
+} from "@dbland/ui"
 
 export function HomePage(): JSX.Element {
     const [dialogOpen, setDialogOpen] = useState(false)

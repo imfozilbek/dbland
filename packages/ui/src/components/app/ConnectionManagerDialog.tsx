@@ -1,27 +1,19 @@
 import { useEffect, useState } from "react"
 import { X } from "lucide-react"
-import {
-    Alert,
-    AlertDescription,
-    AlertTitle,
-    Button,
-    Input,
-    Label,
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-    Switch,
-} from "@dbland/ui"
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert"
+import { Button } from "../ui/button"
+import { Input } from "../ui/input"
+import { Label } from "../ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { Switch } from "../ui/switch"
 import {
     type Connection,
     type ConnectionConfig,
     type TestConnectionResult,
     useConnectionStore,
-} from "../../stores"
+} from "../../stores/connection-store"
 
-interface ConnectionManagerDialogProps {
+export interface ConnectionManagerDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     connection?: Connection
@@ -165,57 +157,33 @@ export function ConnectionManagerDialog({
 
     return (
         <div
-            style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: "rgba(0, 0, 0, 0.8)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 9999,
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+            onClick={() => {
+                onOpenChange(false)
             }}
-            onClick={() => onOpenChange(false)}
         >
             <div
-                style={{
-                    backgroundColor: "var(--color-background)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "8px",
-                    padding: "24px",
-                    width: "100%",
-                    maxWidth: "500px",
-                    maxHeight: "90vh",
-                    overflowY: "auto",
-                    position: "relative",
+                className="relative max-h-[90vh] w-full max-w-[500px] overflow-y-auto rounded-lg border bg-background p-6"
+                onClick={(e) => {
+                    e.stopPropagation()
                 }}
-                onClick={(e) => e.stopPropagation()}
             >
                 {/* Close button */}
                 <button
-                    onClick={() => onOpenChange(false)}
-                    style={{
-                        position: "absolute",
-                        top: "16px",
-                        right: "16px",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "4px",
-                        opacity: 0.7,
+                    onClick={() => {
+                        onOpenChange(false)
                     }}
+                    className="absolute right-4 top-4 p-1 opacity-70 hover:opacity-100"
                 >
                     <X className="h-4 w-4" />
                 </button>
 
                 {/* Header */}
-                <div style={{ marginBottom: "16px" }}>
-                    <h2 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "4px" }}>
+                <div className="mb-4">
+                    <h2 className="text-lg font-semibold">
                         {isEditMode ? "Edit Connection" : "New Connection"}
                     </h2>
-                    <p style={{ fontSize: "14px", color: "var(--color-muted-foreground)" }}>
+                    <p className="text-sm text-muted-foreground">
                         {isEditMode
                             ? "Update your database connection settings."
                             : "Configure a new database connection."}
@@ -226,7 +194,7 @@ export function ConnectionManagerDialog({
                 <div className="grid gap-4 py-4">
                     {/* Connection Type */}
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="type" className="text-right">
+                        <Label htmlFor="type" className="text-right text-[13px]">
                             Type
                         </Label>
                         <div className="col-span-3">
@@ -249,7 +217,7 @@ export function ConnectionManagerDialog({
 
                     {/* Connection Name */}
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="name" className="text-right">
+                        <Label htmlFor="name" className="text-right text-[13px]">
                             Name
                         </Label>
                         <div className="col-span-3">
@@ -262,14 +230,14 @@ export function ConnectionManagerDialog({
                                 placeholder="My Connection"
                             />
                             {errors.name && (
-                                <span className="text-sm text-destructive">{errors.name}</span>
+                                <span className="text-xs text-destructive">{errors.name}</span>
                             )}
                         </div>
                     </div>
 
                     {/* Host */}
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="host" className="text-right">
+                        <Label htmlFor="host" className="text-right text-[13px]">
                             Host
                         </Label>
                         <div className="col-span-3">
@@ -282,14 +250,14 @@ export function ConnectionManagerDialog({
                                 placeholder="localhost"
                             />
                             {errors.host && (
-                                <span className="text-sm text-destructive">{errors.host}</span>
+                                <span className="text-xs text-destructive">{errors.host}</span>
                             )}
                         </div>
                     </div>
 
                     {/* Port */}
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="port" className="text-right">
+                        <Label htmlFor="port" className="text-right text-[13px]">
                             Port
                         </Label>
                         <div className="col-span-3">
@@ -307,14 +275,14 @@ export function ConnectionManagerDialog({
                                 )}
                             />
                             {errors.port && (
-                                <span className="text-sm text-destructive">{errors.port}</span>
+                                <span className="text-xs text-destructive">{errors.port}</span>
                             )}
                         </div>
                     </div>
 
                     {/* Username */}
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="username" className="text-right">
+                        <Label htmlFor="username" className="text-right text-[13px]">
                             Username
                         </Label>
                         <div className="col-span-3">
@@ -331,7 +299,7 @@ export function ConnectionManagerDialog({
 
                     {/* Password */}
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="password" className="text-right">
+                        <Label htmlFor="password" className="text-right text-[13px]">
                             Password
                         </Label>
                         <div className="col-span-3">
@@ -352,7 +320,7 @@ export function ConnectionManagerDialog({
                     {/* MongoDB: Auth Database */}
                     {formData.type === "mongodb" && (
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="authDatabase" className="text-right">
+                            <Label htmlFor="authDatabase" className="text-right text-[13px]">
                                 Auth DB
                             </Label>
                             <div className="col-span-3">
@@ -371,7 +339,7 @@ export function ConnectionManagerDialog({
                     {/* Redis: Database Index */}
                     {formData.type === "redis" && (
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="database" className="text-right">
+                            <Label htmlFor="database" className="text-right text-[13px]">
                                 Database
                             </Label>
                             <div className="col-span-3">
@@ -392,7 +360,7 @@ export function ConnectionManagerDialog({
 
                     {/* TLS */}
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="tls" className="text-right">
+                        <Label htmlFor="tls" className="text-right text-[13px]">
                             TLS/SSL
                         </Label>
                         <div className="col-span-3 flex items-center">
@@ -430,14 +398,7 @@ export function ConnectionManagerDialog({
                 </div>
 
                 {/* Footer */}
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        gap: "8px",
-                        marginTop: "16px",
-                    }}
-                >
+                <div className="mt-4 flex justify-end gap-2">
                     <Button
                         variant="outline"
                         onClick={() => {

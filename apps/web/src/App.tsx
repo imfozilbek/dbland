@@ -1,21 +1,88 @@
-import React from "react"
-import { BrowserRouter, Route, Routes } from "react-router-dom"
-import { AppLayout } from "./components/layout/AppLayout"
+import { BrowserRouter, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom"
+import { useState } from "react"
+import {
+    ConnectionManagerDialog,
+    PlatformProvider,
+    Sidebar,
+    StatusBar,
+    Toolbar,
+    useConnectionStore,
+    usePlatformInit,
+} from "@dbland/ui"
+import { webPlatformAPI } from "./lib/web-platform"
 import { HomePage } from "./pages/HomePage"
 import { WorkspacePage } from "./pages/WorkspacePage"
 import { SettingsPage } from "./pages/SettingsPage"
 
-function App(): React.ReactElement {
+function AppLayout(): JSX.Element {
+    const navigate = useNavigate()
+    const location = useLocation()
+    const [dialogOpen, setDialogOpen] = useState(false)
+    const { loadConnections } = useConnectionStore()
+
+    // Initialize stores with platform API
+    usePlatformInit()
+
     return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<AppLayout />}>
-                    <Route index element={<HomePage />} />
-                    <Route path="workspace/:connectionId" element={<WorkspacePage />} />
-                    <Route path="settings" element={<SettingsPage />} />
-                </Route>
-            </Routes>
-        </BrowserRouter>
+        <div className="flex h-screen flex-col overflow-hidden">
+            {/* Toolbar */}
+            <Toolbar />
+
+            {/* Main content */}
+            <div className="flex flex-1 overflow-hidden">
+                {/* Sidebar */}
+                <Sidebar
+                    activePath={location.pathname}
+                    onSettingsClick={() => {
+                        navigate("/settings")
+                    }}
+                    onAddConnectionClick={() => {
+                        setDialogOpen(true)
+                    }}
+                    onConnectionSelect={(connectionId) => {
+                        navigate(`/workspace/${connectionId}`)
+                    }}
+                    onCollectionSelect={(connectionId, database, collection) => {
+                        navigate(
+                            `/workspace/${connectionId}?db=${database}&collection=${collection}`,
+                        )
+                    }}
+                />
+
+                {/* Content area */}
+                <main className="flex-1 overflow-hidden">
+                    <Outlet />
+                </main>
+            </div>
+
+            {/* Status bar */}
+            <StatusBar />
+
+            {/* Connection Manager Dialog */}
+            <ConnectionManagerDialog
+                open={dialogOpen}
+                onOpenChange={setDialogOpen}
+                onSaved={() => {
+                    void loadConnections()
+                }}
+            />
+        </div>
+    )
+}
+
+function App(): JSX.Element {
+    return (
+        <PlatformProvider api={webPlatformAPI}>
+            <BrowserRouter>
+                <Routes>
+                    <Route path="/" element={<AppLayout />}>
+                        <Route index element={<HomePage />} />
+                        <Route path="workspace/:connectionId" element={<WorkspacePage />} />
+                        <Route path="settings" element={<SettingsPage />} />
+                    </Route>
+                </Routes>
+            </BrowserRouter>
+        </PlatformProvider>
     )
 }
 

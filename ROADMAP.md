@@ -53,13 +53,15 @@
 **Цели:**
 - [x] App layout (sidebar, editor, results)
 - [x] Connection manager UI
-- [ ] Schema browser (tree)
+- [x] Schema browser (tree)
+- [x] Shared component architecture (desktop/web)
 - [ ] Query editor (Monaco)
 - [ ] Basic results viewer
 
 **Deliverables:**
 - Полноценный UI shell
-- Просмотр схемы БД
+- Просмотр схемы БД (Tree view)
+- Общие компоненты для desktop и web
 - Выполнение запросов
 
 ---
