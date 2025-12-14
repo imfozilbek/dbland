@@ -1,0 +1,30 @@
+{
+    "name": "@dbland/core",
+    "version": "0.1.0",
+    "description": "DBLand Core - Database abstraction and adapters",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "author": "Fozilbek Samiyev <fozilbek.samiyev@gmail.com>",
+    "license": "MIT",
+    "private": true,
+    "engines": {
+        "node": ">=22.0.0"
+    },
+    "scripts": {
+        "build": "tsc",
+        "watch": "tsc --watch",
+        "clean": "rm -rf dist",
+        "test": "vitest",
+        "test:ui": "vitest --ui",
+        "test:watch": "vitest --watch",
+        "test:coverage": "vitest run --coverage",
+        "test:run": "vitest run"
+    },
+    "devDependencies": {
+        "@types/node": "^22.10.7",
+        "@vitest/coverage-v8": "^2.1.8",
+        "@vitest/ui": "^2.1.8",
+        "typescript": "^5.7.3",
+        "vitest": "^2.1.8"
+    }
+}
