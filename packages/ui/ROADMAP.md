@@ -4,7 +4,7 @@
 
 **Статус:** ✅ Completed
 
-- [x] Copy from openpayment (24 components)
+- [x] Base UI components (24 components)
 - [x] Adapt for DBLand theming
 - [x] Setup Tailwind config
 
