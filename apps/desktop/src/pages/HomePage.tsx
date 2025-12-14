@@ -1,7 +1,13 @@
+import { useState } from "react"
 import { Database, Plus, Upload } from "lucide-react"
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@dbland/ui"
+import { ConnectionManagerDialog } from "../components/connection/ConnectionManagerDialog"
+import { useConnectionStore } from "../stores"
 
-export function HomePage() {
+export function HomePage(): JSX.Element {
+    const [dialogOpen, setDialogOpen] = useState(false)
+    const { loadConnections } = useConnectionStore()
+
     return (
         <div className="flex h-full items-center justify-center p-8">
             <div className="max-w-2xl space-y-8 text-center">
@@ -25,7 +31,14 @@ export function HomePage() {
                             <CardDescription>Connect to MongoDB or Redis database</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Button className="w-full">Create Connection</Button>
+                            <Button
+                                className="w-full"
+                                onClick={() => {
+                                    setDialogOpen(true)
+                                }}
+                            >
+                                Create Connection
+                            </Button>
                         </CardContent>
                     </Card>
 
@@ -53,6 +66,14 @@ export function HomePage() {
                     </p>
                 </div>
             </div>
+
+            <ConnectionManagerDialog
+                open={dialogOpen}
+                onOpenChange={setDialogOpen}
+                onSaved={() => {
+                    void loadConnections()
+                }}
+            />
         </div>
     )
 }

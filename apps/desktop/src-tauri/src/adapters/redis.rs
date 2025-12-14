@@ -328,6 +328,6 @@ fn redis_value_to_json(value: redis::Value) -> serde_json::Value {
         redis::Value::Push { kind: _, data } => {
             serde_json::Value::Array(data.into_iter().map(redis_value_to_json).collect())
         }
-        redis::Value::ServerError(e) => serde_json::json!({ "error": e.to_string() }),
+        redis::Value::ServerError(e) => serde_json::json!({ "error": format!("{:?}", e) }),
     }
 }
