@@ -19,6 +19,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] - 2025-12-14
+
+### Added
+
+- **Tauri Backend - Database Adapters**
+  - MongoDB adapter with full connectivity (connect, disconnect, test)
+  - Redis adapter with full connectivity
+  - DatabaseAdapter trait for extensibility
+  - Connection pool for managing multiple active connections
+
+- **Tauri Backend - Storage & Security**
+  - SQLite storage for persisting connections
+  - AES-256-GCM encryption for credentials
+  - Automatic encryption key generation and storage
+
+- **Tauri Backend - Commands**
+  - `test_connection` - test connectivity with latency measurement
+  - `connect` / `disconnect` - manage active connections
+  - `save_connection` / `delete_connection` - persist connections
+  - `get_connections` - list all saved connections
+  - `get_databases` / `get_collections` - schema browsing
+  - `execute_query` - run queries on connected databases
+
+- **Frontend - State Management**
+  - Zustand store for connection management
+  - Zustand store for schema (databases, collections)
+  - Real-time connection status tracking
+  - Sidebar integration with live connection data
+
+### Changed
+
+- Refactored Tauri backend structure into modular architecture
+- Updated Sidebar to use real data instead of mocks
+
+---
+
 ## [0.1.0] - 2024-12-14
 
 ### Added

@@ -13,39 +13,39 @@
 
 ## v0.2.0 - MongoDB Commands
 
-**Статус:** 📋 Planned
+**Статус:** ✅ Completed
 
-- [ ] connect_mongodb
-- [ ] disconnect
-- [ ] execute_query
-- [ ] get_databases
-- [ ] get_collections
-- [ ] get_documents
+- [x] connect_mongodb
+- [x] disconnect
+- [x] execute_query
+- [x] get_databases
+- [x] get_collections
+- [x] get_documents
 
 ---
 
 ## v0.3.0 - Redis Commands
 
-**Статус:** 📋 Planned
+**Статус:** ✅ Completed
 
-- [ ] connect_redis
-- [ ] get_keys
-- [ ] get_value
-- [ ] set_value
-- [ ] delete_key
-- [ ] get_ttl
+- [x] connect_redis
+- [x] get_keys
+- [x] get_value
+- [x] set_value
+- [x] delete_key
+- [x] get_ttl
 
 ---
 
 ## v0.4.0 - Connection Storage
 
-**Статус:** 📋 Planned
+**Статус:** ✅ Completed
 
-- [ ] SQLite setup
-- [ ] save_connection
-- [ ] get_connections
-- [ ] delete_connection
-- [ ] Encryption (AES-256)
+- [x] SQLite setup
+- [x] save_connection
+- [x] get_connections
+- [x] delete_connection
+- [x] Encryption (AES-256)
 
 ---
 

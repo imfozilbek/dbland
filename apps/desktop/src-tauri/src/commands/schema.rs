@@ -1,65 +1,79 @@
+use crate::adapters::{CollectionInfo, DatabaseInfo};
+use crate::AppState;
 use serde::{Deserialize, Serialize};
-use tauri::command;
+use std::sync::Arc;
+use tauri::{command, State};
 
+/// Database info for frontend
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Database {
+pub struct DatabaseDto {
     pub name: String,
+    #[serde(rename = "sizeBytes")]
     pub size_bytes: Option<u64>,
+    #[serde(rename = "collectionCount")]
     pub collection_count: Option<u64>,
 }
 
+impl From<DatabaseInfo> for DatabaseDto {
+    fn from(info: DatabaseInfo) -> Self {
+        Self {
+            name: info.name,
+            size_bytes: info.size_bytes,
+            collection_count: info.collection_count,
+        }
+    }
+}
+
+/// Collection info for frontend
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Collection {
+pub struct CollectionDto {
     pub name: String,
+    #[serde(rename = "databaseName")]
     pub database_name: String,
+    #[serde(rename = "documentCount")]
     pub document_count: Option<u64>,
+    #[serde(rename = "sizeBytes")]
     pub size_bytes: Option<u64>,
 }
 
-/// Get list of databases
+impl From<CollectionInfo> for CollectionDto {
+    fn from(info: CollectionInfo) -> Self {
+        Self {
+            name: info.name,
+            database_name: info.database_name,
+            document_count: info.document_count,
+            size_bytes: info.size_bytes,
+        }
+    }
+}
+
+/// Get list of databases for a connection
 #[command]
-pub async fn get_databases(connection_id: String) -> Result<Vec<Database>, String> {
-    // TODO: Get from active connection
-    // For now, return mock data
-    Ok(vec![
-        Database {
-            name: "admin".to_string(),
-            size_bytes: Some(32768),
-            collection_count: Some(1),
-        },
-        Database {
-            name: "local".to_string(),
-            size_bytes: Some(65536),
-            collection_count: Some(2),
-        },
-        Database {
-            name: "test".to_string(),
-            size_bytes: Some(0),
-            collection_count: Some(0),
-        },
-    ])
+pub async fn get_databases(
+    state: State<'_, Arc<AppState>>,
+    connection_id: String,
+) -> Result<Vec<DatabaseDto>, String> {
+    let databases = state
+        .pool
+        .get_databases(&connection_id)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(databases.into_iter().map(DatabaseDto::from).collect())
 }
 
 /// Get list of collections in a database
 #[command]
 pub async fn get_collections(
+    state: State<'_, Arc<AppState>>,
     connection_id: String,
     database_name: String,
-) -> Result<Vec<Collection>, String> {
-    // TODO: Get from active connection
-    // For now, return mock data
-    Ok(vec![
-        Collection {
-            name: "users".to_string(),
-            database_name: database_name.clone(),
-            document_count: Some(100),
-            size_bytes: Some(16384),
-        },
-        Collection {
-            name: "orders".to_string(),
-            database_name,
-            document_count: Some(500),
-            size_bytes: Some(81920),
-        },
-    ])
+) -> Result<Vec<CollectionDto>, String> {
+    let collections = state
+        .pool
+        .get_collections(&connection_id, &database_name)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(collections.into_iter().map(CollectionDto::from).collect())
 }

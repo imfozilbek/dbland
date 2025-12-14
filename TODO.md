@@ -4,19 +4,32 @@ Technical debt and pending improvements.
 
 ---
 
-## Current Sprint: v0.2.0 - Core Connectivity
+## Current Sprint: v0.3.0 - Basic UI
 
 ### In Progress
 
-- [ ] Implement SQLite storage for connections
-- [ ] Add encrypted credentials storage
-- [ ] Create Connection Manager UI
+- [ ] Create Connection Manager UI (dialog/form)
+- [ ] Add connection form validation
+- [ ] Implement test connection button in UI
 
 ### Backlog
 
-- [ ] Implement connection state management (Zustand)
-- [ ] Add test connection functionality to UI
-- [ ] Create connection form validation
+- [ ] App layout (sidebar, editor, results)
+- [ ] Schema browser (tree view)
+- [ ] Query editor (Monaco)
+- [ ] Basic results viewer
+
+---
+
+## Completed: v0.2.0 - Core Connectivity
+
+- [x] Implement SQLite storage for connections
+- [x] Add encrypted credentials storage (AES-256-GCM)
+- [x] Implement connection state management (Zustand)
+- [x] Create MongoDB adapter (Rust)
+- [x] Create Redis adapter (Rust)
+- [x] Create connection pool state management
+- [x] Update Tauri commands to use new adapters
 
 ---
 

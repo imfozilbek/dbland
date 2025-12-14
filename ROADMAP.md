@@ -29,18 +29,20 @@
 
 ## v0.2.0 - Core Connectivity
 
-**Статус:** 📋 Planned
+**Статус:** ✅ Completed
 
 **Цели:**
-- [ ] MongoDB adapter (Rust)
-- [ ] Redis adapter (Rust)
-- [ ] Connection management
-- [ ] Encrypted credentials storage
+- [x] MongoDB adapter (Rust)
+- [x] Redis adapter (Rust)
+- [x] Connection management
+- [x] Encrypted credentials storage
 
 **Deliverables:**
 - Подключение к MongoDB/Redis
 - Сохранение подключений (SQLite)
 - Test connection функция
+- AES-256 шифрование credentials
+- Zustand state management
 
 ---
 

@@ -1,50 +1,46 @@
+use crate::AppState;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tauri::command;
+use std::sync::Arc;
+use tauri::{command, State};
 
+/// Query execution result for frontend
 #[derive(Debug, Serialize, Deserialize)]
-pub struct QueryResult {
+pub struct QueryResultDto {
     pub success: bool,
     pub documents: Vec<Value>,
+    #[serde(rename = "executionTimeMs")]
     pub execution_time_ms: u64,
-    pub documents_returned: u64,
+    #[serde(rename = "documentsAffected")]
+    pub documents_affected: u64,
     pub error: Option<String>,
 }
 
-/// Execute a query
+/// Execute a query on a connection
 #[command]
 pub async fn execute_query(
+    state: State<'_, Arc<AppState>>,
     connection_id: String,
     database_name: String,
     collection_name: Option<String>,
     query: String,
-) -> Result<QueryResult, String> {
-    let start = std::time::Instant::now();
+) -> Result<QueryResultDto, String> {
+    let result = state
+        .pool
+        .execute_query(
+            &connection_id,
+            &database_name,
+            collection_name.as_deref(),
+            &query,
+        )
+        .await
+        .map_err(|e| e.to_string())?;
 
-    // TODO: Execute query on active connection
-    // For now, return mock result
-
-    // Parse query to determine type
-    // This is a placeholder - real implementation will parse MongoDB shell syntax
-
-    Ok(QueryResult {
-        success: true,
-        documents: vec![
-            serde_json::json!({
-                "_id": "507f1f77bcf86cd799439011",
-                "name": "John Doe",
-                "email": "john@example.com",
-                "active": true
-            }),
-            serde_json::json!({
-                "_id": "507f1f77bcf86cd799439012",
-                "name": "Jane Smith",
-                "email": "jane@example.com",
-                "active": true
-            }),
-        ],
-        execution_time_ms: start.elapsed().as_millis() as u64,
-        documents_returned: 2,
-        error: None,
+    Ok(QueryResultDto {
+        success: result.success,
+        documents: result.documents,
+        execution_time_ms: result.execution_time_ms,
+        documents_affected: result.documents_affected,
+        error: result.error,
     })
 }

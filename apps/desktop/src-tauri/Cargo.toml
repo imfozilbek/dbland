@@ -28,6 +28,10 @@ aes-gcm = "0.10"
 uuid = { version = "1", features = ["v4"] }
 # Async runtime
 async-trait = "0.1"
+# Stream processing
+futures = "0.3"
+# URL encoding
+urlencoding = "2"
 # Error handling
 thiserror = "2"
 # Date/time
