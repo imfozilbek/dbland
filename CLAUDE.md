@@ -345,13 +345,38 @@ stages: install → lint → typecheck → test → build → security → deplo
 
 ## Release Pipeline
 
-```bash
-# 1. Atomic commits (one per entity/test/doc)
-# 2. Quality gates
-pnpm format && pnpm build && pnpm lint && pnpm test
+**⛔ Commit Order (dependencies first):**
+```
+1. @dbland/core    (domain, adapters)
+2. @dbland/ui      (shared components)
+3. @dbland/desktop (uses core + ui)
+4. @dbland/web     (uses core + ui)
+```
 
-# 3. Update CHANGELOG.md, ROADMAP.md
-# 4. Version & tag
+**Atomic Commits (one per module):**
+| Order | Scope | Example |
+|-------|-------|---------|
+| 1 | types | `feat(core): add Connection type` |
+| 2 | adapter | `feat(core): add MongoDB adapter` |
+| 3 | component | `feat(ui): add QueryEditor` |
+| 4 | feature | `feat(desktop): add connection dialog` |
+| 5 | tests | `test(core): add adapter tests` |
+
+**⛔ RULES:**
+- One module = one commit
+- Each commit must pass all quality gates
+- Never commit unfinished dependencies
+- Commit order: types → adapters → UI → apps
+
+**Quality Gates (before EACH commit):**
+```bash
+pnpm format && pnpm lint && pnpm typecheck && pnpm test
+```
+
+**Release Steps:**
+```bash
+# 1. Update CHANGELOG.md, ROADMAP.md
+# 2. Version & tag
 npm version minor
 git tag <package>-v<version>
 git push origin main --tags
