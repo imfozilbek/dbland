@@ -476,6 +476,37 @@ git push origin main --tags
 5. Update UI components if needed
 6. Write tests
 
+## SLC Rules (MANDATORY)
+
+| Rule | Requirement |
+|------|-------------|
+| **v1.0 Feature** | MongoDB + Redis support ONLY |
+| **Quality** | Must be PERFECT, not "good enough" |
+| **No scope creep** | Elasticsearch, Cassandra — NOT in v1.0 |
+| **UX** | Connect in 3 clicks, query in 1 |
+| **Speed** | Query results < 100ms |
+
+## Testing Checklist
+
+- [ ] Connect to MongoDB (local)
+- [ ] Connect to MongoDB (remote with auth)
+- [ ] Connect to Redis (local)
+- [ ] Execute simple query
+- [ ] Execute complex aggregation
+- [ ] Handle large result sets (1000+ docs)
+- [ ] Handle connection errors gracefully
+- [ ] Handle query syntax errors
+
+## Release Checklist
+
+- [ ] All `console.log` removed
+- [ ] `pnpm lint` passes (0 errors, 0 warnings)
+- [ ] `pnpm typecheck` passes
+- [ ] All tests pass
+- [ ] CHANGELOG.md updated
+- [ ] ROADMAP.md updated
+- [ ] Version bumped in package.json
+
 ---
 
 ## Quick Reference
