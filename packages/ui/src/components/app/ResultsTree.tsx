@@ -1,0 +1,160 @@
+import { ChevronDown, ChevronRight } from "lucide-react"
+import { useState } from "react"
+import { ScrollArea } from "../ui/scroll-area"
+import type { ResultDocument } from "../../contexts/PlatformContext"
+
+export interface ResultsTreeProps {
+    documents: ResultDocument[]
+}
+
+/**
+ * Tree view for query results.
+ * Displays documents in a collapsible tree structure.
+ */
+export function ResultsTree({ documents }: ResultsTreeProps): JSX.Element {
+    if (documents.length === 0) {
+        return (
+            <div className="h-full flex items-center justify-center text-muted-foreground">
+                No documents found
+            </div>
+        )
+    }
+
+    return (
+        <ScrollArea className="h-full">
+            <div className="p-2">
+                {documents.map((doc, index) => (
+                    <TreeNode key={index} label={`Document ${index + 1}`} value={doc} />
+                ))}
+            </div>
+        </ScrollArea>
+    )
+}
+
+interface TreeNodeProps {
+    label: string
+    value: unknown
+    level?: number
+}
+
+function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
+    const [isExpanded, setIsExpanded] = useState(level < 2) // Auto-expand first 2 levels
+
+    const paddingLeft = `${level * 20}px`
+
+    // Null/undefined
+    if (value === null || value === undefined) {
+        return (
+            <div style={{ paddingLeft }} className="py-1 text-sm font-mono">
+                <span className="text-blue-400">{label}</span>
+                <span className="text-muted-foreground">: </span>
+                <span className="text-muted-foreground italic">
+                    {value === null ? "null" : "undefined"}
+                </span>
+            </div>
+        )
+    }
+
+    // Boolean
+    if (typeof value === "boolean") {
+        return (
+            <div style={{ paddingLeft }} className="py-1 text-sm font-mono">
+                <span className="text-blue-400">{label}</span>
+                <span className="text-muted-foreground">: </span>
+                <span className="text-purple-400">{String(value)}</span>
+            </div>
+        )
+    }
+
+    // Number
+    if (typeof value === "number") {
+        return (
+            <div style={{ paddingLeft }} className="py-1 text-sm font-mono">
+                <span className="text-blue-400">{label}</span>
+                <span className="text-muted-foreground">: </span>
+                <span className="text-orange-400">{value}</span>
+            </div>
+        )
+    }
+
+    // String
+    if (typeof value === "string") {
+        return (
+            <div style={{ paddingLeft }} className="py-1 text-sm font-mono">
+                <span className="text-blue-400">{label}</span>
+                <span className="text-muted-foreground">: </span>
+                <span className="text-green-400">&quot;{value}&quot;</span>
+            </div>
+        )
+    }
+
+    // Array
+    if (Array.isArray(value)) {
+        return (
+            <div>
+                <div
+                    style={{ paddingLeft }}
+                    className="py-1 text-sm font-mono cursor-pointer hover:bg-muted/50 flex items-center gap-1"
+                    onClick={() => {
+                        setIsExpanded(!isExpanded)
+                    }}
+                >
+                    {isExpanded ? (
+                        <ChevronDown className="h-4 w-4" />
+                    ) : (
+                        <ChevronRight className="h-4 w-4" />
+                    )}
+                    <span className="text-blue-400">{label}</span>
+                    <span className="text-muted-foreground">: [</span>
+                    <span className="text-muted-foreground text-xs">{value.length} items</span>
+                    <span className="text-muted-foreground">]</span>
+                </div>
+                {isExpanded &&
+                    value.map((item, index) => (
+                        <TreeNode key={index} label={`[${index}]`} value={item} level={level + 1} />
+                    ))}
+            </div>
+        )
+    }
+
+    // Object
+    if (typeof value === "object") {
+        const entries = Object.entries(value as Record<string, unknown>)
+        return (
+            <div>
+                <div
+                    style={{ paddingLeft }}
+                    className="py-1 text-sm font-mono cursor-pointer hover:bg-muted/50 flex items-center gap-1"
+                    onClick={() => {
+                        setIsExpanded(!isExpanded)
+                    }}
+                >
+                    {isExpanded ? (
+                        <ChevronDown className="h-4 w-4" />
+                    ) : (
+                        <ChevronRight className="h-4 w-4" />
+                    )}
+                    <span className="text-blue-400">{label}</span>
+                    <span className="text-muted-foreground">: {"{"}</span>
+                    <span className="text-muted-foreground text-xs">
+                        {entries.length} properties
+                    </span>
+                    <span className="text-muted-foreground">{"}"}</span>
+                </div>
+                {isExpanded &&
+                    entries.map(([key, val]) => (
+                        <TreeNode key={key} label={key} value={val} level={level + 1} />
+                    ))}
+            </div>
+        )
+    }
+
+    // Fallback
+    return (
+        <div style={{ paddingLeft }} className="py-1 text-sm font-mono">
+            <span className="text-blue-400">{label}</span>
+            <span className="text-muted-foreground">: </span>
+            <span>{String(value)}</span>
+        </div>
+    )
+}

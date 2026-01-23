@@ -7,3 +7,8 @@ export {
     ConnectionManagerDialog,
     type ConnectionManagerDialogProps,
 } from "./ConnectionManagerDialog"
+export { QueryEditor, type QueryEditorProps } from "./QueryEditor"
+export { ResultsViewer, type ResultsViewerProps } from "./ResultsViewer"
+export { ResultsTable, type ResultsTableProps } from "./ResultsTable"
+export { ResultsJson, type ResultsJsonProps } from "./ResultsJson"
+export { ResultsTree, type ResultsTreeProps } from "./ResultsTree"
