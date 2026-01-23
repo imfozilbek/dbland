@@ -1,6 +1,6 @@
 import * as React from "react"
 import { useState } from "react"
-import { usePlatform, type ResultDocument } from "../../contexts/PlatformContext"
+import { type ResultDocument, usePlatform } from "../../contexts/PlatformContext"
 import { Button } from "../ui/button"
 import {
     Dialog,
@@ -70,7 +70,7 @@ export function DocumentEditorDialog({
         try {
             const parsed = JSON.parse(jsonContent)
             handleSave(parsed)
-        } catch (err) {
+        } catch (_err) {
             setError("Invalid JSON")
         }
     }
@@ -170,7 +170,12 @@ export function DocumentEditorDialog({
                             ) : (
                                 <Input
                                     id={key}
-                                    value={String(value)}
+                                    value={
+                                        typeof value === "object" && value !== null
+                                            ? JSON.stringify(value)
+                                            : // eslint-disable-next-line @typescript-eslint/no-base-to-string
+                                              String(value)
+                                    }
                                     onChange={(e) => {
                                         setDocument({ ...document, [key]: e.target.value })
                                     }}

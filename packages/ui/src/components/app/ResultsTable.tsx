@@ -8,7 +8,7 @@ import {
     ContextMenuItem,
     ContextMenuTrigger,
 } from "../ui/context-menu"
-import { Edit, Copy, Trash2 } from "lucide-react"
+import { Copy, Edit, Trash2 } from "lucide-react"
 
 export interface ResultsTableProps {
     documents: ResultDocument[]
@@ -105,6 +105,7 @@ export function ResultsTable({
                                 className="flex hover:bg-muted/50"
                             >
                                 <div className="w-12 px-2 py-2 text-xs text-muted-foreground border-r border-b">
+                                    {/* eslint-disable-next-line @typescript-eslint/restrict-plus-operands */}
                                     {virtualRow.index + 1}
                                 </div>
                                 {columns.map((column) => (
