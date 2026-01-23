@@ -1,9 +1,14 @@
 import { invoke } from "@tauri-apps/api/core"
+import { open, save } from "@tauri-apps/plugin-dialog"
 import type {
     CollectionInfo,
     Connection,
     ConnectionConfig,
     DatabaseInfo,
+    ExportOptions,
+    ExportResult,
+    ImportOptions,
+    ImportResult,
     NewSavedQuery,
     PlatformAPI,
     QueryHistoryEntry,
@@ -378,5 +383,84 @@ export const tauriPlatformAPI: PlatformAPI = {
             collectionName,
             documentId,
         })
+    },
+
+    importData: async (connectionId: string, options: ImportOptions): Promise<ImportResult> => {
+        const result = await invoke<{
+            success: boolean
+            imported: number
+            failed: number
+            errors: string[]
+        }>("import_data", {
+            connectionId,
+            options: {
+                file_path: options.filePath,
+                format: options.format,
+                database_name: options.databaseName,
+                collection_name: options.collectionName,
+            },
+        })
+
+        return {
+            success: result.success,
+            imported: result.imported,
+            failed: result.failed,
+            errors: result.errors,
+        }
+    },
+
+    exportData: async (connectionId: string, options: ExportOptions): Promise<ExportResult> => {
+        const result = await invoke<{
+            success: boolean
+            exported: number
+            error?: string
+        }>("export_data", {
+            connectionId,
+            options: {
+                file_path: options.filePath,
+                format: options.format,
+                database_name: options.databaseName,
+                collection_name: options.collectionName,
+                query: options.query,
+            },
+        })
+
+        return {
+            success: result.success,
+            exported: result.exported,
+            error: result.error,
+        }
+    },
+
+    openFileDialog: async (filters?: string[]): Promise<string | null> => {
+        const selected = await open({
+            multiple: false,
+            filters: filters
+                ? [
+                      {
+                          name: "Data files",
+                          extensions: filters,
+                      },
+                  ]
+                : undefined,
+        })
+
+        return selected as string | null
+    },
+
+    saveFileDialog: async (defaultName?: string, filters?: string[]): Promise<string | null> => {
+        const selected = await save({
+            defaultPath: defaultName,
+            filters: filters
+                ? [
+                      {
+                          name: "Data files",
+                          extensions: filters,
+                      },
+                  ]
+                : undefined,
+        })
+
+        return selected as string | null
     },
 }
