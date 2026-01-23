@@ -105,6 +105,8 @@ pub fn run() {
             commands::document::clone_document,
             commands::import_export::import_data,
             commands::import_export::export_data,
+            commands::aggregation::execute_aggregation_pipeline,
+            commands::aggregation::preview_pipeline_stage,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,3 +1,4 @@
+pub mod aggregation;
 pub mod connection;
 pub mod document;
 pub mod import_export;
