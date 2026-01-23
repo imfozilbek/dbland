@@ -5,6 +5,7 @@ import type {
     ConnectionConfig,
     DatabaseInfo,
     PlatformAPI,
+    QueryHistoryEntry,
     QueryResult,
     TestConnectionResult,
 } from "@dbland/ui"
@@ -80,5 +81,83 @@ export const tauriPlatformAPI: PlatformAPI = {
             },
             error: result.error,
         }
+    },
+
+    getQueryHistory: async (connectionId: string, limit?: number): Promise<QueryHistoryEntry[]> => {
+        const entries = await invoke<
+            {
+                id: number
+                connection_id: string
+                query: string
+                language: string
+                database_name?: string
+                collection_name?: string
+                executed_at: string
+                execution_time_ms: number
+                success: boolean
+                result_count: number
+                error?: string
+            }[]
+        >("get_query_history", { connectionId, limit: limit ?? 100 })
+
+        // Map snake_case to camelCase
+        return entries.map((entry) => ({
+            id: entry.id,
+            connectionId: entry.connection_id,
+            query: entry.query,
+            language: entry.language,
+            databaseName: entry.database_name,
+            collectionName: entry.collection_name,
+            executedAt: entry.executed_at,
+            executionTimeMs: entry.execution_time_ms,
+            success: entry.success,
+            resultCount: entry.result_count,
+            error: entry.error,
+        }))
+    },
+
+    deleteQueryHistory: async (id: number): Promise<void> => {
+        await invoke("delete_query_history", { id })
+    },
+
+    clearQueryHistory: async (connectionId: string): Promise<void> => {
+        await invoke("clear_query_history", { connectionId })
+    },
+
+    searchQueryHistory: async (
+        connectionId: string,
+        searchQuery: string,
+        limit?: number,
+    ): Promise<QueryHistoryEntry[]> => {
+        const entries = await invoke<
+            {
+                id: number
+                connection_id: string
+                query: string
+                language: string
+                database_name?: string
+                collection_name?: string
+                executed_at: string
+                execution_time_ms: number
+                success: boolean
+                result_count: number
+                error?: string
+            }[]
+        >("search_query_history", { connectionId, searchQuery, limit: limit ?? 100 })
+
+        // Map snake_case to camelCase
+        return entries.map((entry) => ({
+            id: entry.id,
+            connectionId: entry.connection_id,
+            query: entry.query,
+            language: entry.language,
+            databaseName: entry.database_name,
+            collectionName: entry.collection_name,
+            executedAt: entry.executed_at,
+            executionTimeMs: entry.execution_time_ms,
+            success: entry.success,
+            resultCount: entry.result_count,
+            error: entry.error,
+        }))
     },
 }

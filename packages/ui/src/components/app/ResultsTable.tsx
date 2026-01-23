@@ -111,6 +111,8 @@ function formatCellValue(value: unknown): string {
             return "[Object]"
         }
     }
+    // Safe to convert primitives to string
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return String(value)
 }
 
@@ -137,5 +139,7 @@ function renderCellValue(value: unknown): JSX.Element {
             return <span className="text-purple-500">[Object]</span>
         }
     }
+    // Safe to convert primitives to string
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return <span>{String(value)}</span>
 }

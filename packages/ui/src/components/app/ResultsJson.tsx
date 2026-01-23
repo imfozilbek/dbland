@@ -20,7 +20,7 @@ export function ResultsJson({ documents }: ResultsJsonProps): JSX.Element {
             .then(() => {
                 // Success
             })
-            .catch((err) => {
+            .catch((err: unknown) => {
                 console.error("Failed to copy JSON:", err)
             })
     }

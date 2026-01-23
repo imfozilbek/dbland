@@ -149,11 +149,12 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
         )
     }
 
-    // Fallback
+    // Fallback - safe to convert to string here as all other types are handled above
     return (
         <div style={{ paddingLeft }} className="py-1 text-sm font-mono">
             <span className="text-blue-400">{label}</span>
             <span className="text-muted-foreground">: </span>
+            {/* eslint-disable-next-line @typescript-eslint/no-base-to-string */}
             <span>{String(value)}</span>
         </div>
     )

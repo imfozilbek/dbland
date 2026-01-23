@@ -23,6 +23,7 @@ export * from "./components/ui/context-menu"
 export * from "./components/ui/avatar"
 export * from "./components/ui/collapsible"
 export * from "./components/ui/tree"
+export * from "./components/ui/resizable"
 
 // App Components
 export * from "./components/app"

@@ -79,6 +79,20 @@ export interface QueryResult {
     }
 }
 
+export interface QueryHistoryEntry {
+    id: number
+    connectionId: string
+    query: string
+    language: string
+    databaseName?: string
+    collectionName?: string
+    executedAt: string
+    executionTimeMs: number
+    success: boolean
+    resultCount: number
+    error?: string
+}
+
 /* -----------------------------------------------------------------------------
  * Platform API Interface
  * -------------------------------------------------------------------------- */
@@ -103,6 +117,16 @@ export interface PlatformAPI {
         databaseName?: string,
         collectionName?: string,
     ) => Promise<QueryResult>
+
+    // Query History
+    getQueryHistory: (connectionId: string, limit?: number) => Promise<QueryHistoryEntry[]>
+    deleteQueryHistory: (id: number) => Promise<void>
+    clearQueryHistory: (connectionId: string) => Promise<void>
+    searchQueryHistory: (
+        connectionId: string,
+        searchQuery: string,
+        limit?: number,
+    ) => Promise<QueryHistoryEntry[]>
 }
 
 /* -----------------------------------------------------------------------------
@@ -152,4 +176,12 @@ export const stubPlatformAPI: PlatformAPI = {
     executeQuery: async () => {
         throw new Error("Not implemented")
     },
+    getQueryHistory: async () => [],
+    deleteQueryHistory: async () => {
+        throw new Error("Not implemented")
+    },
+    clearQueryHistory: async () => {
+        throw new Error("Not implemented")
+    },
+    searchQueryHistory: async () => [],
 }

@@ -1,8 +1,12 @@
 import { useParams } from "react-router-dom"
-import { FileCode, Play, Save, Code2 } from "lucide-react"
+import { Code2, FileCode, History, Play, Save } from "lucide-react"
 import {
     Button,
     QueryEditor,
+    QueryHistory,
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
     ResultsViewer,
     selectActiveQuery,
     selectCurrentResult,
@@ -15,9 +19,11 @@ import {
     TabsTrigger,
     useQueryStore,
 } from "@dbland/ui"
+import { useState } from "react"
 
 export function WorkspacePage(): JSX.Element {
     const { connectionId } = useParams()
+    const [showHistory, setShowHistory] = useState(false)
 
     // Query store
     const activeQuery = useQueryStore(selectActiveQuery)
@@ -40,6 +46,10 @@ export function WorkspacePage(): JSX.Element {
         executeQuery(connectionId).catch((err: unknown) => {
             console.error("Failed to execute query:", err)
         })
+    }
+
+    const handleLoadQuery = (query: string): void => {
+        setQuery(query)
     }
 
     return (
@@ -79,32 +89,59 @@ export function WorkspacePage(): JSX.Element {
                                 <Save className="h-4 w-4" />
                                 Save
                             </Button>
+                            <Button
+                                size="sm"
+                                variant={showHistory ? "default" : "outline"}
+                                className="gap-2"
+                                onClick={() => {
+                                    setShowHistory(!showHistory)
+                                }}
+                            >
+                                <History className="h-4 w-4" />
+                                History
+                            </Button>
                         </div>
                     </div>
 
                     <TabsContent value="query1" className="mt-0 flex-1">
-                        <div className="flex h-full flex-col">
-                            {/* Query editor */}
-                            <div className="flex-1 border-b p-4">
-                                <QueryEditor
-                                    value={activeQuery}
-                                    onChange={setQuery}
-                                    onExecute={handleExecuteQuery}
-                                    language={queryLanguage}
-                                    readOnly={isExecuting}
-                                    height="100%"
-                                />
-                            </div>
+                        <ResizablePanelGroup direction="horizontal" className="h-full">
+                            <ResizablePanel defaultSize={showHistory ? 70 : 100} minSize={30}>
+                                <div className="flex h-full flex-col">
+                                    {/* Query editor */}
+                                    <div className="flex-1 border-b p-4">
+                                        <QueryEditor
+                                            value={activeQuery}
+                                            onChange={setQuery}
+                                            onExecute={handleExecuteQuery}
+                                            language={queryLanguage}
+                                            readOnly={isExecuting}
+                                            height="100%"
+                                        />
+                                    </div>
 
-                            {/* Results area */}
-                            <div className="h-1/2 p-4">
-                                <ResultsViewer
-                                    result={currentResult}
-                                    viewMode={resultsViewMode}
-                                    onViewModeChange={setResultsViewMode}
-                                />
-                            </div>
-                        </div>
+                                    {/* Results area */}
+                                    <div className="h-1/2 p-4">
+                                        <ResultsViewer
+                                            result={currentResult}
+                                            viewMode={resultsViewMode}
+                                            onViewModeChange={setResultsViewMode}
+                                        />
+                                    </div>
+                                </div>
+                            </ResizablePanel>
+
+                            {showHistory && (
+                                <>
+                                    <ResizableHandle withHandle />
+                                    <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
+                                        <QueryHistory
+                                            connectionId={connectionId ?? null}
+                                            onLoadQuery={handleLoadQuery}
+                                        />
+                                    </ResizablePanel>
+                                </>
+                            )}
+                        </ResizablePanelGroup>
                     </TabsContent>
                 </Tabs>
             </div>
