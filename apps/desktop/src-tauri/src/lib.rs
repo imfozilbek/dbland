@@ -107,6 +107,10 @@ pub fn run() {
             commands::import_export::export_data,
             commands::aggregation::execute_aggregation_pipeline,
             commands::aggregation::preview_pipeline_stage,
+            commands::indexes::get_indexes,
+            commands::indexes::create_index,
+            commands::indexes::drop_index,
+            commands::indexes::get_index_stats,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
