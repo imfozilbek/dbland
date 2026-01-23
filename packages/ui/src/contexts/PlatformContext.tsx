@@ -128,6 +128,34 @@ export interface UpdateSavedQuery {
     tags?: string
 }
 
+export interface ImportOptions {
+    filePath: string
+    format: string
+    databaseName: string
+    collectionName: string
+}
+
+export interface ExportOptions {
+    filePath: string
+    format: string
+    databaseName: string
+    collectionName: string
+    query?: string
+}
+
+export interface ImportResult {
+    success: boolean
+    imported: number
+    failed: number
+    errors: string[]
+}
+
+export interface ExportResult {
+    success: boolean
+    exported: number
+    error?: string
+}
+
 /* -----------------------------------------------------------------------------
  * Platform API Interface
  * -------------------------------------------------------------------------- */
@@ -197,6 +225,12 @@ export interface PlatformAPI {
         collectionName: string,
         documentId: string,
     ) => Promise<string>
+
+    // Import/Export
+    importData: (connectionId: string, options: ImportOptions) => Promise<ImportResult>
+    exportData: (connectionId: string, options: ExportOptions) => Promise<ExportResult>
+    openFileDialog: (filters?: string[]) => Promise<string | null>
+    saveFileDialog: (defaultName?: string, filters?: string[]) => Promise<string | null>
 }
 
 /* -----------------------------------------------------------------------------
@@ -278,4 +312,12 @@ export const stubPlatformAPI: PlatformAPI = {
     cloneDocument: async () => {
         throw new Error("Not implemented")
     },
+    importData: async () => {
+        throw new Error("Not implemented")
+    },
+    exportData: async () => {
+        throw new Error("Not implemented")
+    },
+    openFileDialog: async () => null,
+    saveFileDialog: async () => null,
 }
