@@ -1,8 +1,10 @@
 import { useParams } from "react-router-dom"
-import { BookMarked, Code2, FileCode, History, Play, Save } from "lucide-react"
+import { BookMarked, Code2, FileCode, FileDown, FileUp, History, Play, Save } from "lucide-react"
 import {
     Button,
     DocumentEditorDialog,
+    ExportDialog,
+    ImportDialog,
     QueryEditor,
     QueryHistory,
     ResizableHandle,
@@ -32,6 +34,8 @@ export function WorkspacePage(): JSX.Element {
     const [showHistory, setShowHistory] = useState(false)
     const [showSavedQueries, setShowSavedQueries] = useState(false)
     const [showSaveDialog, setShowSaveDialog] = useState(false)
+    const [showImportDialog, setShowImportDialog] = useState(false)
+    const [showExportDialog, setShowExportDialog] = useState(false)
     const [editingDocumentId, setEditingDocumentId] = useState<string | null>(null)
 
     // Query store
@@ -187,6 +191,28 @@ export function WorkspacePage(): JSX.Element {
                                 <BookMarked className="h-4 w-4" />
                                 Saved
                             </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-2"
+                                onClick={() => {
+                                    setShowImportDialog(true)
+                                }}
+                            >
+                                <FileUp className="h-4 w-4" />
+                                Import
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-2"
+                                onClick={() => {
+                                    setShowExportDialog(true)
+                                }}
+                            >
+                                <FileDown className="h-4 w-4" />
+                                Export
+                            </Button>
                         </div>
                     </div>
 
@@ -289,6 +315,30 @@ export function WorkspacePage(): JSX.Element {
                     }}
                 />
             )}
+
+            {/* Import Dialog */}
+            <ImportDialog
+                open={showImportDialog}
+                onOpenChange={setShowImportDialog}
+                connectionId={connectionId ?? ""}
+                onImported={() => {
+                    // Re-execute query to show imported data
+                    if (connectionId) {
+                        executeQuery(connectionId).catch((err: unknown) => {
+                            console.error("Failed to refresh results:", err)
+                        })
+                    }
+                }}
+            />
+
+            {/* Export Dialog */}
+            <ExportDialog
+                open={showExportDialog}
+                onOpenChange={setShowExportDialog}
+                connectionId={connectionId ?? ""}
+                databaseName="test"
+                collectionName="test"
+            />
         </div>
     )
 }
