@@ -55,6 +55,30 @@ export interface CollectionInfo {
     sizeBytes?: number
 }
 
+export interface ResultDocument {
+    _id?: string
+    [key: string]: unknown
+}
+
+export interface QueryStats {
+    executionTimeMs: number
+    documentsExamined?: number
+    documentsReturned: number
+    indexUsed?: string
+    bytesRead?: number
+}
+
+export interface QueryResult {
+    success: boolean
+    documents: ResultDocument[]
+    stats: QueryStats
+    error?: string
+    cursor?: {
+        hasMore: boolean
+        nextCursor?: string
+    }
+}
+
 /* -----------------------------------------------------------------------------
  * Platform API Interface
  * -------------------------------------------------------------------------- */
@@ -72,8 +96,13 @@ export interface PlatformAPI {
     getDatabases: (connectionId: string) => Promise<DatabaseInfo[]>
     getCollections: (connectionId: string, databaseName: string) => Promise<CollectionInfo[]>
 
-    // Query (future)
-    // executeQuery: (connectionId: string, query: string) => Promise<QueryResult>
+    // Query
+    executeQuery: (
+        connectionId: string,
+        query: string,
+        databaseName?: string,
+        collectionName?: string,
+    ) => Promise<QueryResult>
 }
 
 /* -----------------------------------------------------------------------------
@@ -120,4 +149,7 @@ export const stubPlatformAPI: PlatformAPI = {
     },
     getDatabases: async () => [],
     getCollections: async () => [],
+    executeQuery: async () => {
+        throw new Error("Not implemented")
+    },
 }

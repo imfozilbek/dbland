@@ -5,6 +5,7 @@ import type {
     ConnectionConfig,
     DatabaseInfo,
     PlatformAPI,
+    QueryResult,
     TestConnectionResult,
 } from "@dbland/ui"
 
@@ -46,5 +47,19 @@ export const tauriPlatformAPI: PlatformAPI = {
         databaseName: string,
     ): Promise<CollectionInfo[]> => {
         return invoke<CollectionInfo[]>("get_collections", { connectionId, databaseName })
+    },
+
+    executeQuery: async (
+        connectionId: string,
+        query: string,
+        databaseName?: string,
+        collectionName?: string,
+    ): Promise<QueryResult> => {
+        return invoke<QueryResult>("execute_query", {
+            connectionId,
+            query,
+            databaseName,
+            collectionName,
+        })
     },
 }

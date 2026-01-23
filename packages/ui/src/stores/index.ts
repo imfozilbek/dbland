@@ -15,3 +15,16 @@ export type {
 export { useSchemaStore, selectDatabases, selectCollections } from "./schema-store"
 
 export type { DatabaseInfo, CollectionInfo } from "./schema-store"
+
+export {
+    useQueryStore,
+    selectActiveQuery,
+    selectQueryLanguage,
+    selectIsExecuting,
+    selectCurrentResult,
+    selectError,
+    selectResultsViewMode,
+    selectRecentFields,
+} from "./query-store"
+
+export type { QueryLanguage, ResultsViewMode } from "./query-store"
