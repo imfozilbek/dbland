@@ -28,3 +28,7 @@ export {
 } from "./query-store"
 
 export type { QueryLanguage, ResultsViewMode } from "./query-store"
+
+export { useSettingsStore } from "./settings-store"
+
+export type { AppSettings, EditorSettings } from "./settings-store"
