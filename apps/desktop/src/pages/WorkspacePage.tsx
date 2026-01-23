@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom"
-import { FileCode, Play, Save } from "lucide-react"
+import { FileCode, Play, Save, Code2 } from "lucide-react"
 import {
     Button,
     QueryEditor,
@@ -29,6 +29,7 @@ export function WorkspacePage(): JSX.Element {
     const setQuery = useQueryStore((state) => state.setQuery)
     const executeQuery = useQueryStore((state) => state.executeQuery)
     const setResultsViewMode = useQueryStore((state) => state.setResultsViewMode)
+    const formatQueryAction = useQueryStore((state) => state.formatQuery)
 
     const handleExecuteQuery = (): void => {
         if (!connectionId) {
@@ -63,6 +64,16 @@ export function WorkspacePage(): JSX.Element {
                             >
                                 <Play className="h-4 w-4" />
                                 {isExecuting ? "Running..." : "Run"}
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-2"
+                                onClick={formatQueryAction}
+                                disabled={isExecuting || !activeQuery.trim()}
+                            >
+                                <Code2 className="h-4 w-4" />
+                                Format
                             </Button>
                             <Button size="sm" variant="outline" className="gap-2">
                                 <Save className="h-4 w-4" />

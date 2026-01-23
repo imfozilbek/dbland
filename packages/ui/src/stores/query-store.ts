@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import type { PlatformAPI, QueryResult, ResultDocument } from "../contexts/PlatformContext"
+import { formatQuery } from "../lib/query-formatter"
 
 /**
  * Query language type
@@ -38,6 +39,7 @@ interface QueryState {
     setQuery: (query: string) => void
     setLanguage: (language: QueryLanguage) => void
     setResultsViewMode: (mode: ResultsViewMode) => void
+    formatQuery: () => void
     executeQuery: (
         connectionId: string,
         databaseName?: string,
@@ -79,6 +81,13 @@ export const useQueryStore = create<QueryState>((set, get) => ({
     // Set results view mode
     setResultsViewMode: (mode: ResultsViewMode): void => {
         set({ resultsViewMode: mode })
+    },
+
+    // Format query
+    formatQuery: (): void => {
+        const { activeQuery, queryLanguage } = get()
+        const formatted = formatQuery(activeQuery, queryLanguage)
+        set({ activeQuery: formatted })
     },
 
     // Execute query
