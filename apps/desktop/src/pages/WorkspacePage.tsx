@@ -1,9 +1,45 @@
 import { useParams } from "react-router-dom"
-import { Braces, FileCode, Play, Save, Table2 } from "lucide-react"
-import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@dbland/ui"
+import { FileCode, Play, Save } from "lucide-react"
+import {
+    Button,
+    QueryEditor,
+    ResultsViewer,
+    selectActiveQuery,
+    selectCurrentResult,
+    selectIsExecuting,
+    selectQueryLanguage,
+    selectResultsViewMode,
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+    useQueryStore,
+} from "@dbland/ui"
 
-export function WorkspacePage() {
-    const { connectionId: _connectionId } = useParams()
+export function WorkspacePage(): JSX.Element {
+    const { connectionId } = useParams()
+
+    // Query store
+    const activeQuery = useQueryStore(selectActiveQuery)
+    const queryLanguage = useQueryStore(selectQueryLanguage)
+    const isExecuting = useQueryStore(selectIsExecuting)
+    const currentResult = useQueryStore(selectCurrentResult)
+    const resultsViewMode = useQueryStore(selectResultsViewMode)
+
+    const setQuery = useQueryStore((state) => state.setQuery)
+    const executeQuery = useQueryStore((state) => state.executeQuery)
+    const setResultsViewMode = useQueryStore((state) => state.setResultsViewMode)
+
+    const handleExecuteQuery = (): void => {
+        if (!connectionId) {
+            return
+        }
+        // Execute query without database/collection for now
+        // TODO: Get database and collection from context/state
+        executeQuery(connectionId).catch((err: unknown) => {
+            console.error("Failed to execute query:", err)
+        })
+    }
 
     return (
         <div className="flex h-full flex-col">
@@ -16,16 +52,17 @@ export function WorkspacePage() {
                                 <FileCode className="h-4 w-4" />
                                 Query 1
                             </TabsTrigger>
-                            <TabsTrigger value="query2" className="gap-2">
-                                <FileCode className="h-4 w-4" />
-                                Query 2
-                            </TabsTrigger>
                         </TabsList>
 
                         <div className="flex items-center gap-2">
-                            <Button size="sm" className="gap-2">
+                            <Button
+                                size="sm"
+                                className="gap-2"
+                                onClick={handleExecuteQuery}
+                                disabled={isExecuting || !activeQuery.trim()}
+                            >
                                 <Play className="h-4 w-4" />
-                                Run
+                                {isExecuting ? "Running..." : "Run"}
                             </Button>
                             <Button size="sm" variant="outline" className="gap-2">
                                 <Save className="h-4 w-4" />
@@ -36,50 +73,27 @@ export function WorkspacePage() {
 
                     <TabsContent value="query1" className="mt-0 flex-1">
                         <div className="flex h-full flex-col">
-                            {/* Query editor placeholder */}
-                            <div className="flex-1 border-b bg-muted/20 p-4">
-                                <div className="h-full rounded border bg-background p-4 font-mono text-sm">
-                                    <span className="text-muted-foreground">
-                                        // Query editor will be here (Monaco)
-                                    </span>
-                                    <br />
-                                    <span className="text-green-600">db</span>
-                                    <span>.</span>
-                                    <span className="text-blue-600">users</span>
-                                    <span>.</span>
-                                    <span className="text-yellow-600">find</span>
-                                    <span>({"{"}</span>
-                                    <span className="text-purple-600">"active"</span>
-                                    <span>: </span>
-                                    <span className="text-orange-600">true</span>
-                                    <span>{"}"})</span>
-                                </div>
+                            {/* Query editor */}
+                            <div className="flex-1 border-b p-4">
+                                <QueryEditor
+                                    value={activeQuery}
+                                    onChange={setQuery}
+                                    onExecute={handleExecuteQuery}
+                                    language={queryLanguage}
+                                    readOnly={isExecuting}
+                                    height="100%"
+                                />
                             </div>
 
                             {/* Results area */}
                             <div className="h-1/2 p-4">
-                                <div className="mb-2 flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground">
-                                        Results: 0 documents (0ms)
-                                    </span>
-                                    <div className="flex gap-1">
-                                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                                            <Table2 className="h-4 w-4" />
-                                        </Button>
-                                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                                            <Braces className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </div>
-                                <div className="h-full rounded border bg-muted/20 p-4 text-center text-sm text-muted-foreground">
-                                    Run a query to see results
-                                </div>
+                                <ResultsViewer
+                                    result={currentResult}
+                                    viewMode={resultsViewMode}
+                                    onViewModeChange={setResultsViewMode}
+                                />
                             </div>
                         </div>
-                    </TabsContent>
-
-                    <TabsContent value="query2" className="mt-0">
-                        <div className="p-4 text-center text-muted-foreground">Query 2 content</div>
                     </TabsContent>
                 </Tabs>
             </div>

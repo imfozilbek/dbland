@@ -55,11 +55,30 @@ export const tauriPlatformAPI: PlatformAPI = {
         databaseName?: string,
         collectionName?: string,
     ): Promise<QueryResult> => {
-        return invoke<QueryResult>("execute_query", {
+        // Backend requires database_name, default to "test" if not provided
+        const result = await invoke<{
+            success: boolean
+            documents: Record<string, unknown>[]
+            executionTimeMs: number
+            documentsAffected: number
+            error?: string
+        }>("execute_query", {
             connectionId,
+            databaseName: databaseName ?? "test",
+            collectionName: collectionName ?? null,
             query,
-            databaseName,
-            collectionName,
         })
+
+        // Map backend DTO to frontend QueryResult
+        return {
+            success: result.success,
+            documents: result.documents,
+            stats: {
+                executionTimeMs: result.executionTimeMs,
+                documentsReturned: result.documents.length,
+                documentsExamined: result.documentsAffected,
+            },
+            error: result.error,
+        }
     },
 }
