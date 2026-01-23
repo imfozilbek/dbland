@@ -1,18 +1,45 @@
-import { useVirtualizer } from "@tanstack/react-virtual"
+import { useVirtualizer } from "@tantml:react-virtual"
 import { useRef } from "react"
 import type { ResultDocument } from "../../contexts/PlatformContext"
 import { ScrollArea } from "../ui/scroll-area"
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuTrigger,
+} from "../ui/context-menu"
+import { Edit, Copy, Trash2 } from "lucide-react"
 
 export interface ResultsTableProps {
     documents: ResultDocument[]
+    onEditDocument?: (documentId: string) => void
+    onCloneDocument?: (documentId: string) => void
+    onDeleteDocument?: (documentId: string) => void
 }
 
 /**
  * Virtualized table view for query results.
  * Efficiently renders large datasets using react-virtual.
  */
-export function ResultsTable({ documents }: ResultsTableProps): JSX.Element {
+export function ResultsTable({
+    documents,
+    onEditDocument,
+    onCloneDocument,
+    onDeleteDocument,
+}: ResultsTableProps): JSX.Element {
     const parentRef = useRef<HTMLDivElement>(null)
+
+    const getDocumentId = (doc: ResultDocument): string | null => {
+        if (doc._id) {
+            if (typeof doc._id === "string") {
+                return doc._id
+            }
+            if (typeof doc._id === "object" && doc._id !== null && "$oid" in doc._id) {
+                return String(doc._id.$oid)
+            }
+        }
+        return null
+    }
 
     if (documents.length === 0) {
         return (
@@ -63,7 +90,8 @@ export function ResultsTable({ documents }: ResultsTableProps): JSX.Element {
                 >
                     {rowVirtualizer.getVirtualItems().map((virtualRow) => {
                         const doc = documents[virtualRow.index]
-                        return (
+                        const docId = getDocumentId(doc)
+                        const rowContent = (
                             <div
                                 key={virtualRow.key}
                                 style={{
@@ -90,6 +118,49 @@ export function ResultsTable({ documents }: ResultsTableProps): JSX.Element {
                                 ))}
                             </div>
                         )
+
+                        if (docId && (onEditDocument || onCloneDocument || onDeleteDocument)) {
+                            return (
+                                <ContextMenu key={virtualRow.key}>
+                                    <ContextMenuTrigger asChild>{rowContent}</ContextMenuTrigger>
+                                    <ContextMenuContent>
+                                        {onEditDocument && (
+                                            <ContextMenuItem
+                                                onClick={() => {
+                                                    onEditDocument(docId)
+                                                }}
+                                            >
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Edit
+                                            </ContextMenuItem>
+                                        )}
+                                        {onCloneDocument && (
+                                            <ContextMenuItem
+                                                onClick={() => {
+                                                    onCloneDocument(docId)
+                                                }}
+                                            >
+                                                <Copy className="mr-2 h-4 w-4" />
+                                                Clone
+                                            </ContextMenuItem>
+                                        )}
+                                        {onDeleteDocument && (
+                                            <ContextMenuItem
+                                                onClick={() => {
+                                                    onDeleteDocument(docId)
+                                                }}
+                                                className="text-red-600"
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete
+                                            </ContextMenuItem>
+                                        )}
+                                    </ContextMenuContent>
+                                </ContextMenu>
+                            )
+                        }
+
+                        return rowContent
                     })}
                 </div>
             </div>

@@ -321,4 +321,62 @@ export const tauriPlatformAPI: PlatformAPI = {
             updatedAt: q.updated_at,
         }))
     },
+
+    getDocument: async (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+        documentId: string,
+    ): Promise<ResultDocument> => {
+        return invoke<ResultDocument>("get_document", {
+            connectionId,
+            databaseName,
+            collectionName,
+            documentId,
+        })
+    },
+
+    updateDocument: async (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+        documentId: string,
+        update: Record<string, unknown>,
+    ): Promise<boolean> => {
+        return invoke<boolean>("update_document", {
+            connectionId,
+            databaseName,
+            collectionName,
+            documentId,
+            update,
+        })
+    },
+
+    deleteDocument: async (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+        documentId: string,
+    ): Promise<boolean> => {
+        return invoke<boolean>("delete_document", {
+            connectionId,
+            databaseName,
+            collectionName,
+            documentId,
+        })
+    },
+
+    cloneDocument: async (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+        documentId: string,
+    ): Promise<string> => {
+        return invoke<string>("clone_document", {
+            connectionId,
+            databaseName,
+            collectionName,
+            documentId,
+        })
+    },
 }

@@ -12,6 +12,9 @@ export interface ResultsViewerProps {
     result: QueryResult | null
     viewMode: ResultsViewMode
     onViewModeChange: (mode: ResultsViewMode) => void
+    onEditDocument?: (documentId: string) => void
+    onCloneDocument?: (documentId: string) => void
+    onDeleteDocument?: (documentId: string) => void
 }
 
 /**
@@ -22,6 +25,9 @@ export function ResultsViewer({
     result,
     viewMode,
     onViewModeChange,
+    onEditDocument,
+    onCloneDocument,
+    onDeleteDocument,
 }: ResultsViewerProps): JSX.Element {
     if (!result) {
         return (
@@ -98,7 +104,12 @@ export function ResultsViewer({
                         </TabsTrigger>
                     </TabsList>
                     <TabsContent value="table" className="flex-1 overflow-hidden">
-                        <ResultsTable documents={documents} />
+                        <ResultsTable
+                            documents={documents}
+                            onEditDocument={onEditDocument}
+                            onCloneDocument={onCloneDocument}
+                            onDeleteDocument={onDeleteDocument}
+                        />
                     </TabsContent>
                     <TabsContent value="json" className="flex-1 overflow-hidden">
                         <ResultsJson documents={documents} />

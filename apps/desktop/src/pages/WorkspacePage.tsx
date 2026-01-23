@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom"
 import { BookMarked, Code2, FileCode, History, Play, Save } from "lucide-react"
 import {
     Button,
+    DocumentEditorDialog,
     QueryEditor,
     QueryHistory,
     ResizableHandle,
@@ -20,15 +21,18 @@ import {
     TabsContent,
     TabsList,
     TabsTrigger,
+    usePlatform,
     useQueryStore,
 } from "@dbland/ui"
 import { useState } from "react"
 
 export function WorkspacePage(): JSX.Element {
     const { connectionId } = useParams()
+    const platform = usePlatform()
     const [showHistory, setShowHistory] = useState(false)
     const [showSavedQueries, setShowSavedQueries] = useState(false)
     const [showSaveDialog, setShowSaveDialog] = useState(false)
+    const [editingDocumentId, setEditingDocumentId] = useState<string | null>(null)
 
     // Query store
     const activeQuery = useQueryStore(selectActiveQuery)
@@ -66,6 +70,50 @@ export function WorkspacePage(): JSX.Element {
             return
         }
         setShowSaveDialog(true)
+    }
+
+    const handleEditDocument = (documentId: string): void => {
+        setEditingDocumentId(documentId)
+    }
+
+    const handleCloneDocument = (documentId: string): void => {
+        if (!connectionId) {
+            return
+        }
+        // TODO: Get database and collection from context
+        platform
+            .cloneDocument(connectionId, "test", "test", documentId)
+            .then(() => {
+                // Re-execute query to refresh results
+                executeQuery(connectionId).catch((err: unknown) => {
+                    console.error("Failed to refresh results:", err)
+                })
+            })
+            .catch((err: unknown) => {
+                console.error("Failed to clone document:", err)
+            })
+    }
+
+    const handleDeleteDocument = (documentId: string): void => {
+        if (!connectionId) {
+            return
+        }
+        // eslint-disable-next-line no-alert
+        if (!confirm("Are you sure you want to delete this document?")) {
+            return
+        }
+        // TODO: Get database and collection from context
+        platform
+            .deleteDocument(connectionId, "test", "test", documentId)
+            .then(() => {
+                // Re-execute query to refresh results
+                executeQuery(connectionId).catch((err: unknown) => {
+                    console.error("Failed to refresh results:", err)
+                })
+            })
+            .catch((err: unknown) => {
+                console.error("Failed to delete document:", err)
+            })
     }
 
     return (
@@ -167,6 +215,9 @@ export function WorkspacePage(): JSX.Element {
                                             result={currentResult}
                                             viewMode={resultsViewMode}
                                             onViewModeChange={setResultsViewMode}
+                                            onEditDocument={handleEditDocument}
+                                            onCloneDocument={handleCloneDocument}
+                                            onDeleteDocument={handleDeleteDocument}
                                         />
                                     </div>
                                 </div>
@@ -214,6 +265,30 @@ export function WorkspacePage(): JSX.Element {
                     }
                 }}
             />
+
+            {/* Document Editor Dialog */}
+            {editingDocumentId && (
+                <DocumentEditorDialog
+                    open={!!editingDocumentId}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setEditingDocumentId(null)
+                        }
+                    }}
+                    connectionId={connectionId ?? ""}
+                    databaseName="test"
+                    collectionName="test"
+                    documentId={editingDocumentId}
+                    onSaved={() => {
+                        // Re-execute query to refresh results
+                        if (connectionId) {
+                            executeQuery(connectionId).catch((err: unknown) => {
+                                console.error("Failed to refresh results:", err)
+                            })
+                        }
+                    }}
+                />
+            )}
         </div>
     )
 }

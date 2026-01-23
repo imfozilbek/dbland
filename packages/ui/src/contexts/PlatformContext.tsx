@@ -170,6 +170,33 @@ export interface PlatformAPI {
     deleteSavedQuery: (id: number) => Promise<void>
     searchSavedQueries: (connectionId: string, searchQuery: string) => Promise<SavedQuery[]>
     getSavedQueriesByTag: (connectionId: string, tag: string) => Promise<SavedQuery[]>
+
+    // Document Operations
+    getDocument: (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+        documentId: string,
+    ) => Promise<ResultDocument>
+    updateDocument: (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+        documentId: string,
+        update: Record<string, unknown>,
+    ) => Promise<boolean>
+    deleteDocument: (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+        documentId: string,
+    ) => Promise<boolean>
+    cloneDocument: (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+        documentId: string,
+    ) => Promise<string>
 }
 
 /* -----------------------------------------------------------------------------
@@ -239,4 +266,16 @@ export const stubPlatformAPI: PlatformAPI = {
     },
     searchSavedQueries: async () => [],
     getSavedQueriesByTag: async () => [],
+    getDocument: async () => {
+        throw new Error("Not implemented")
+    },
+    updateDocument: async () => {
+        throw new Error("Not implemented")
+    },
+    deleteDocument: async () => {
+        throw new Error("Not implemented")
+    },
+    cloneDocument: async () => {
+        throw new Error("Not implemented")
+    },
 }
