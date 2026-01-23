@@ -17,8 +17,9 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.2.0-green.svg" alt="Version" />
+  <img src="https://img.shields.io/badge/version-0.8.0-green.svg" alt="Version" />
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue.svg" alt="Platform" />
+  <img src="https://img.shields.io/badge/MongoDB-Full%20Support-brightgreen.svg" alt="MongoDB" />
 </p>
 
 ---
@@ -43,12 +44,27 @@ DBLand is a modern, cross-platform database client for NoSQL databases. Built wi
 
 ## Features
 
+### ✅ Core Features
 - **Cross-platform** — Native apps for macOS, Windows, and Linux
 - **Connection Manager** — Save and organize your database connections
 - **Secure Storage** — Credentials encrypted with AES-256-GCM
-- **Multiple Databases** — Switch between MongoDB and Redis seamlessly
-- **Modern UI** — Clean, dark-mode interface built with Tailwind CSS
-- **Web Version** — Use in browser with WebSocket proxy (coming soon)
+- **Modern UI** — Clean interface with light/dark themes
+
+### ✅ MongoDB Support (Full)
+- **Query Editor** — Monaco-powered with syntax highlighting and autocomplete
+- **Query History** — Automatically save and search queries
+- **Saved Queries** — Organize queries with tags
+- **Results Viewer** — Table, JSON, and Tree view modes
+- **Document CRUD** — Create, read, update, delete, and clone documents
+- **Import/Export** — JSON format with chunked processing
+- **Aggregation Builder** — Visual pipeline builder with drag-and-drop (10+ stages)
+- **Index Management** — Create, drop, and monitor indexes with statistics
+- **Keyboard Shortcuts** — Efficient workflow navigation
+
+### 🔄 Coming Soon
+- **Redis Features** — Key browser, TTL management, pub/sub
+- **SSH Tunneling** — Secure connections via SSH
+- **Web Version** — Use in browser with WebSocket proxy
 
 ## Installation
 

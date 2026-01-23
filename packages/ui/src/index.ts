@@ -38,3 +38,5 @@ export * from "./stores"
 
 // Hooks
 export { usePlatformInit } from "./hooks/usePlatformInit"
+export { useKeyboardShortcuts, getShortcutLabel } from "./hooks/useKeyboardShortcuts"
+export type { KeyboardShortcut } from "./hooks/useKeyboardShortcuts"
