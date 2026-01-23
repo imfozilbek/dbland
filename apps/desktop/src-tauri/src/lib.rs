@@ -4,7 +4,7 @@ mod state;
 mod storage;
 
 use state::ConnectionPool;
-use storage::{ConnectionStorage, Crypto};
+use storage::{ConnectionStorage, Crypto, QueryHistoryStorage};
 use std::sync::Arc;
 use tauri::Manager;
 
@@ -12,6 +12,7 @@ use tauri::Manager;
 pub struct AppState {
     pub pool: ConnectionPool,
     pub storage: ConnectionStorage,
+    pub query_history: QueryHistoryStorage,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -46,11 +47,20 @@ pub fn run() {
             let storage = ConnectionStorage::new(db_path, &key)
                 .expect("Failed to initialize connection storage");
 
+            // Initialize query history storage
+            let history_db_path = app_data_dir.join("query_history.db");
+            let query_history = QueryHistoryStorage::new(history_db_path)
+                .expect("Failed to initialize query history storage");
+
             // Initialize connection pool
             let pool = ConnectionPool::new();
 
             // Create app state
-            let state = AppState { pool, storage };
+            let state = AppState {
+                pool,
+                storage,
+                query_history,
+            };
             app.manage(Arc::new(state));
 
             #[cfg(debug_assertions)]
@@ -72,6 +82,10 @@ pub fn run() {
             commands::schema::get_databases,
             commands::schema::get_collections,
             commands::query::execute_query,
+            commands::query::get_query_history,
+            commands::query::delete_query_history,
+            commands::query::clear_query_history,
+            commands::query::search_query_history,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
