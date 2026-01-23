@@ -6,12 +6,15 @@ import type {
     CollectionInfo,
     Connection,
     ConnectionConfig,
+    CreateIndexRequest,
     DatabaseInfo,
     ExecuteAggregationRequest,
     ExportOptions,
     ExportResult,
     ImportOptions,
     ImportResult,
+    Index,
+    IndexStats,
     NewSavedQuery,
     PlatformAPI,
     PreviewStageRequest,
@@ -530,5 +533,59 @@ export const tauriPlatformAPI: PlatformAPI = {
             documentsReturned: result.documents_returned,
             error: result.error,
         }
+    },
+
+    getIndexes: async (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+    ): Promise<Index[]> => {
+        return invoke<Index[]>("get_indexes", {
+            connectionId,
+            databaseName,
+            collectionName,
+        })
+    },
+
+    createIndex: async (request: CreateIndexRequest): Promise<string> => {
+        return invoke<string>("create_index", {
+            request: {
+                connection_id: request.connectionId,
+                database_name: request.databaseName,
+                collection_name: request.collectionName,
+                keys: request.keys,
+                unique: request.unique,
+                sparse: request.sparse,
+                ttl_seconds: request.ttlSeconds,
+                background: request.background,
+                name: request.name,
+            },
+        })
+    },
+
+    dropIndex: async (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+        indexName: string,
+    ): Promise<boolean> => {
+        return invoke<boolean>("drop_index", {
+            connectionId,
+            databaseName,
+            collectionName,
+            indexName,
+        })
+    },
+
+    getIndexStats: async (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+    ): Promise<IndexStats[]> => {
+        return invoke<IndexStats[]>("get_index_stats", {
+            connectionId,
+            databaseName,
+            collectionName,
+        })
     },
 }
