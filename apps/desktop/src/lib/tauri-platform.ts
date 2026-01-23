@@ -1,16 +1,20 @@
 import { invoke } from "@tauri-apps/api/core"
 import { open, save } from "@tauri-apps/plugin-dialog"
 import type {
+    AggregationPipelineStage,
+    AggregationResult,
     CollectionInfo,
     Connection,
     ConnectionConfig,
     DatabaseInfo,
+    ExecuteAggregationRequest,
     ExportOptions,
     ExportResult,
     ImportOptions,
     ImportResult,
     NewSavedQuery,
     PlatformAPI,
+    PreviewStageRequest,
     QueryHistoryEntry,
     QueryResult,
     SavedQuery,
@@ -462,5 +466,69 @@ export const tauriPlatformAPI: PlatformAPI = {
         })
 
         return selected as string | null
+    },
+
+    executeAggregationPipeline: async (
+        request: ExecuteAggregationRequest,
+    ): Promise<AggregationResult> => {
+        const pipeline: AggregationPipelineStage[] = request.pipeline.map((stage) => ({
+            stage_type: stage.stageType,
+            stage_data: stage.stageData,
+        }))
+
+        const result = await invoke<{
+            success: boolean
+            documents: Record<string, unknown>[]
+            execution_time_ms: number
+            documents_returned: number
+            error?: string
+        }>("execute_aggregation_pipeline", {
+            request: {
+                connection_id: request.connectionId,
+                database_name: request.databaseName,
+                collection_name: request.collectionName,
+                pipeline,
+            },
+        })
+
+        return {
+            success: result.success,
+            documents: result.documents,
+            executionTimeMs: result.execution_time_ms,
+            documentsReturned: result.documents_returned,
+            error: result.error,
+        }
+    },
+
+    previewPipelineStage: async (request: PreviewStageRequest): Promise<AggregationResult> => {
+        const pipeline: AggregationPipelineStage[] = request.pipeline.map((stage) => ({
+            stage_type: stage.stageType,
+            stage_data: stage.stageData,
+        }))
+
+        const result = await invoke<{
+            success: boolean
+            documents: Record<string, unknown>[]
+            execution_time_ms: number
+            documents_returned: number
+            error?: string
+        }>("preview_pipeline_stage", {
+            request: {
+                connection_id: request.connectionId,
+                database_name: request.databaseName,
+                collection_name: request.collectionName,
+                pipeline,
+                stage_index: request.stageIndex,
+                limit: request.limit,
+            },
+        })
+
+        return {
+            success: result.success,
+            documents: result.documents,
+            executionTimeMs: result.execution_time_ms,
+            documentsReturned: result.documents_returned,
+            error: result.error,
+        }
     },
 }
