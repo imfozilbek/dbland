@@ -103,6 +103,8 @@ pub fn run() {
             commands::document::update_document,
             commands::document::delete_document,
             commands::document::clone_document,
+            commands::import_export::import_data,
+            commands::import_export::export_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
