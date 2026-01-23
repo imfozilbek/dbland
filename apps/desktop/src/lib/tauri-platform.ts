@@ -4,10 +4,13 @@ import type {
     Connection,
     ConnectionConfig,
     DatabaseInfo,
+    NewSavedQuery,
     PlatformAPI,
     QueryHistoryEntry,
     QueryResult,
+    SavedQuery,
     TestConnectionResult,
+    UpdateSavedQuery,
 } from "@dbland/ui"
 
 /**
@@ -158,6 +161,164 @@ export const tauriPlatformAPI: PlatformAPI = {
             success: entry.success,
             resultCount: entry.result_count,
             error: entry.error,
+        }))
+    },
+
+    getSavedQueries: async (connectionId: string): Promise<SavedQuery[]> => {
+        const queries = await invoke<
+            {
+                id: number
+                connection_id: string
+                name: string
+                description?: string
+                query: string
+                language: string
+                database_name?: string
+                collection_name?: string
+                tags?: string
+                created_at: string
+                updated_at: string
+            }[]
+        >("get_saved_queries", { connectionId })
+
+        return queries.map((q) => ({
+            id: q.id,
+            connectionId: q.connection_id,
+            name: q.name,
+            description: q.description,
+            query: q.query,
+            language: q.language,
+            databaseName: q.database_name,
+            collectionName: q.collection_name,
+            tags: q.tags,
+            createdAt: q.created_at,
+            updatedAt: q.updated_at,
+        }))
+    },
+
+    saveQuery: async (query: NewSavedQuery): Promise<SavedQuery> => {
+        const saved = await invoke<{
+            id: number
+            connection_id: string
+            name: string
+            description?: string
+            query: string
+            language: string
+            database_name?: string
+            collection_name?: string
+            tags?: string
+            created_at: string
+            updated_at: string
+        }>("save_query", {
+            query: {
+                connection_id: query.connectionId,
+                name: query.name,
+                description: query.description,
+                query: query.query,
+                language: query.language,
+                database_name: query.databaseName,
+                collection_name: query.collectionName,
+                tags: query.tags,
+            },
+        })
+
+        return {
+            id: saved.id,
+            connectionId: saved.connection_id,
+            name: saved.name,
+            description: saved.description,
+            query: saved.query,
+            language: saved.language,
+            databaseName: saved.database_name,
+            collectionName: saved.collection_name,
+            tags: saved.tags,
+            createdAt: saved.created_at,
+            updatedAt: saved.updated_at,
+        }
+    },
+
+    updateSavedQuery: async (query: UpdateSavedQuery): Promise<void> => {
+        await invoke("update_saved_query", {
+            query: {
+                id: query.id,
+                name: query.name,
+                description: query.description,
+                query: query.query,
+                database_name: query.databaseName,
+                collection_name: query.collectionName,
+                tags: query.tags,
+            },
+        })
+    },
+
+    deleteSavedQuery: async (id: number): Promise<void> => {
+        await invoke("delete_saved_query", { id })
+    },
+
+    searchSavedQueries: async (
+        connectionId: string,
+        searchQuery: string,
+    ): Promise<SavedQuery[]> => {
+        const queries = await invoke<
+            {
+                id: number
+                connection_id: string
+                name: string
+                description?: string
+                query: string
+                language: string
+                database_name?: string
+                collection_name?: string
+                tags?: string
+                created_at: string
+                updated_at: string
+            }[]
+        >("search_saved_queries", { connectionId, searchQuery })
+
+        return queries.map((q) => ({
+            id: q.id,
+            connectionId: q.connection_id,
+            name: q.name,
+            description: q.description,
+            query: q.query,
+            language: q.language,
+            databaseName: q.database_name,
+            collectionName: q.collection_name,
+            tags: q.tags,
+            createdAt: q.created_at,
+            updatedAt: q.updated_at,
+        }))
+    },
+
+    getSavedQueriesByTag: async (connectionId: string, tag: string): Promise<SavedQuery[]> => {
+        const queries = await invoke<
+            {
+                id: number
+                connection_id: string
+                name: string
+                description?: string
+                query: string
+                language: string
+                database_name?: string
+                collection_name?: string
+                tags?: string
+                created_at: string
+                updated_at: string
+            }[]
+        >("get_saved_queries_by_tag", { connectionId, tag })
+
+        return queries.map((q) => ({
+            id: q.id,
+            connectionId: q.connection_id,
+            name: q.name,
+            description: q.description,
+            query: q.query,
+            language: q.language,
+            databaseName: q.database_name,
+            collectionName: q.collection_name,
+            tags: q.tags,
+            createdAt: q.created_at,
+            updatedAt: q.updated_at,
         }))
     },
 }

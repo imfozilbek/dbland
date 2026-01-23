@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom"
-import { Code2, FileCode, History, Play, Save } from "lucide-react"
+import { BookMarked, Code2, FileCode, History, Play, Save } from "lucide-react"
 import {
     Button,
     QueryEditor,
@@ -8,6 +8,9 @@ import {
     ResizablePanel,
     ResizablePanelGroup,
     ResultsViewer,
+    SavedQueries,
+    type SavedQuery,
+    SaveQueryDialog,
     selectActiveQuery,
     selectCurrentResult,
     selectIsExecuting,
@@ -24,6 +27,8 @@ import { useState } from "react"
 export function WorkspacePage(): JSX.Element {
     const { connectionId } = useParams()
     const [showHistory, setShowHistory] = useState(false)
+    const [showSavedQueries, setShowSavedQueries] = useState(false)
+    const [showSaveDialog, setShowSaveDialog] = useState(false)
 
     // Query store
     const activeQuery = useQueryStore(selectActiveQuery)
@@ -48,8 +53,19 @@ export function WorkspacePage(): JSX.Element {
         })
     }
 
-    const handleLoadQuery = (query: string): void => {
+    const handleLoadHistoryQuery = (query: string): void => {
         setQuery(query)
+    }
+
+    const handleLoadSavedQuery = (savedQuery: SavedQuery): void => {
+        setQuery(savedQuery.query)
+    }
+
+    const handleSaveQuery = (): void => {
+        if (!activeQuery.trim()) {
+            return
+        }
+        setShowSaveDialog(true)
     }
 
     return (
@@ -85,7 +101,13 @@ export function WorkspacePage(): JSX.Element {
                                 <Code2 className="h-4 w-4" />
                                 Format
                             </Button>
-                            <Button size="sm" variant="outline" className="gap-2">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-2"
+                                onClick={handleSaveQuery}
+                                disabled={!activeQuery.trim()}
+                            >
                                 <Save className="h-4 w-4" />
                                 Save
                             </Button>
@@ -95,17 +117,37 @@ export function WorkspacePage(): JSX.Element {
                                 className="gap-2"
                                 onClick={() => {
                                     setShowHistory(!showHistory)
+                                    if (!showHistory) {
+                                        setShowSavedQueries(false)
+                                    }
                                 }}
                             >
                                 <History className="h-4 w-4" />
                                 History
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant={showSavedQueries ? "default" : "outline"}
+                                className="gap-2"
+                                onClick={() => {
+                                    setShowSavedQueries(!showSavedQueries)
+                                    if (!showSavedQueries) {
+                                        setShowHistory(false)
+                                    }
+                                }}
+                            >
+                                <BookMarked className="h-4 w-4" />
+                                Saved
                             </Button>
                         </div>
                     </div>
 
                     <TabsContent value="query1" className="mt-0 flex-1">
                         <ResizablePanelGroup direction="horizontal" className="h-full">
-                            <ResizablePanel defaultSize={showHistory ? 70 : 100} minSize={30}>
+                            <ResizablePanel
+                                defaultSize={showHistory || showSavedQueries ? 70 : 100}
+                                minSize={30}
+                            >
                                 <div className="flex h-full flex-col">
                                     {/* Query editor */}
                                     <div className="flex-1 border-b p-4">
@@ -136,7 +178,19 @@ export function WorkspacePage(): JSX.Element {
                                     <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
                                         <QueryHistory
                                             connectionId={connectionId ?? null}
-                                            onLoadQuery={handleLoadQuery}
+                                            onLoadQuery={handleLoadHistoryQuery}
+                                        />
+                                    </ResizablePanel>
+                                </>
+                            )}
+
+                            {showSavedQueries && (
+                                <>
+                                    <ResizableHandle withHandle />
+                                    <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
+                                        <SavedQueries
+                                            connectionId={connectionId ?? null}
+                                            onLoadQuery={handleLoadSavedQuery}
                                         />
                                     </ResizablePanel>
                                 </>
@@ -145,6 +199,21 @@ export function WorkspacePage(): JSX.Element {
                     </TabsContent>
                 </Tabs>
             </div>
+
+            {/* Save Query Dialog */}
+            <SaveQueryDialog
+                open={showSaveDialog}
+                onOpenChange={setShowSaveDialog}
+                connectionId={connectionId ?? ""}
+                query={activeQuery}
+                language={queryLanguage}
+                onSaved={() => {
+                    // Refresh saved queries if panel is open
+                    if (showSavedQueries) {
+                        window.location.reload()
+                    }
+                }}
+            />
         </div>
     )
 }

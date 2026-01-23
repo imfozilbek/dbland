@@ -93,6 +93,41 @@ export interface QueryHistoryEntry {
     error?: string
 }
 
+export interface SavedQuery {
+    id: number
+    connectionId: string
+    name: string
+    description?: string
+    query: string
+    language: string
+    databaseName?: string
+    collectionName?: string
+    tags?: string
+    createdAt: string
+    updatedAt: string
+}
+
+export interface NewSavedQuery {
+    connectionId: string
+    name: string
+    description?: string
+    query: string
+    language: string
+    databaseName?: string
+    collectionName?: string
+    tags?: string
+}
+
+export interface UpdateSavedQuery {
+    id: number
+    name: string
+    description?: string
+    query: string
+    databaseName?: string
+    collectionName?: string
+    tags?: string
+}
+
 /* -----------------------------------------------------------------------------
  * Platform API Interface
  * -------------------------------------------------------------------------- */
@@ -127,6 +162,14 @@ export interface PlatformAPI {
         searchQuery: string,
         limit?: number,
     ) => Promise<QueryHistoryEntry[]>
+
+    // Saved Queries
+    getSavedQueries: (connectionId: string) => Promise<SavedQuery[]>
+    saveQuery: (query: NewSavedQuery) => Promise<SavedQuery>
+    updateSavedQuery: (query: UpdateSavedQuery) => Promise<void>
+    deleteSavedQuery: (id: number) => Promise<void>
+    searchSavedQueries: (connectionId: string, searchQuery: string) => Promise<SavedQuery[]>
+    getSavedQueriesByTag: (connectionId: string, tag: string) => Promise<SavedQuery[]>
 }
 
 /* -----------------------------------------------------------------------------
@@ -184,4 +227,16 @@ export const stubPlatformAPI: PlatformAPI = {
         throw new Error("Not implemented")
     },
     searchQueryHistory: async () => [],
+    getSavedQueries: async () => [],
+    saveQuery: async () => {
+        throw new Error("Not implemented")
+    },
+    updateSavedQuery: async () => {
+        throw new Error("Not implemented")
+    },
+    deleteSavedQuery: async () => {
+        throw new Error("Not implemented")
+    },
+    searchSavedQueries: async () => [],
+    getSavedQueriesByTag: async () => [],
 }
