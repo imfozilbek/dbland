@@ -24,6 +24,7 @@ export * from "./components/ui/avatar"
 export * from "./components/ui/collapsible"
 export * from "./components/ui/tree"
 export * from "./components/ui/resizable"
+export * from "./components/ui/textarea"
 
 // App Components
 export * from "./components/app"
