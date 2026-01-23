@@ -185,6 +185,33 @@ export interface AggregationResult {
     error?: string
 }
 
+export interface Index {
+    name: string
+    keys: Record<string, unknown>
+    unique: boolean
+    sparse: boolean
+    ttl?: number
+    background: boolean
+}
+
+export interface CreateIndexRequest {
+    connectionId: string
+    databaseName: string
+    collectionName: string
+    keys: Record<string, number>
+    unique?: boolean
+    sparse?: boolean
+    ttlSeconds?: number
+    background?: boolean
+    name?: string
+}
+
+export interface IndexStats {
+    name: string
+    accesses?: number
+    since?: string
+}
+
 /* -----------------------------------------------------------------------------
  * Platform API Interface
  * -------------------------------------------------------------------------- */
@@ -264,6 +291,25 @@ export interface PlatformAPI {
     // Aggregation
     executeAggregationPipeline: (request: ExecuteAggregationRequest) => Promise<AggregationResult>
     previewPipelineStage: (request: PreviewStageRequest) => Promise<AggregationResult>
+
+    // Indexes
+    getIndexes: (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+    ) => Promise<Index[]>
+    createIndex: (request: CreateIndexRequest) => Promise<string>
+    dropIndex: (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+        indexName: string,
+    ) => Promise<boolean>
+    getIndexStats: (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+    ) => Promise<IndexStats[]>
 }
 
 /* -----------------------------------------------------------------------------
@@ -359,4 +405,12 @@ export const stubPlatformAPI: PlatformAPI = {
     previewPipelineStage: async () => {
         throw new Error("Not implemented")
     },
+    getIndexes: async () => [],
+    createIndex: async () => {
+        throw new Error("Not implemented")
+    },
+    dropIndex: async () => {
+        throw new Error("Not implemented")
+    },
+    getIndexStats: async () => [],
 }
