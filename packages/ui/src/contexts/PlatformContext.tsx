@@ -156,6 +156,35 @@ export interface ExportResult {
     error?: string
 }
 
+export interface AggregationPipelineStage {
+    stageType: string
+    stageData: Record<string, unknown>
+}
+
+export interface ExecuteAggregationRequest {
+    connectionId: string
+    databaseName: string
+    collectionName: string
+    pipeline: AggregationPipelineStage[]
+}
+
+export interface PreviewStageRequest {
+    connectionId: string
+    databaseName: string
+    collectionName: string
+    pipeline: AggregationPipelineStage[]
+    stageIndex: number
+    limit?: number
+}
+
+export interface AggregationResult {
+    success: boolean
+    documents: ResultDocument[]
+    executionTimeMs: number
+    documentsReturned: number
+    error?: string
+}
+
 /* -----------------------------------------------------------------------------
  * Platform API Interface
  * -------------------------------------------------------------------------- */
@@ -231,6 +260,10 @@ export interface PlatformAPI {
     exportData: (connectionId: string, options: ExportOptions) => Promise<ExportResult>
     openFileDialog: (filters?: string[]) => Promise<string | null>
     saveFileDialog: (defaultName?: string, filters?: string[]) => Promise<string | null>
+
+    // Aggregation
+    executeAggregationPipeline: (request: ExecuteAggregationRequest) => Promise<AggregationResult>
+    previewPipelineStage: (request: PreviewStageRequest) => Promise<AggregationResult>
 }
 
 /* -----------------------------------------------------------------------------
@@ -320,4 +353,10 @@ export const stubPlatformAPI: PlatformAPI = {
     },
     openFileDialog: async () => null,
     saveFileDialog: async () => null,
+    executeAggregationPipeline: async () => {
+        throw new Error("Not implemented")
+    },
+    previewPipelineStage: async () => {
+        throw new Error("Not implemented")
+    },
 }
