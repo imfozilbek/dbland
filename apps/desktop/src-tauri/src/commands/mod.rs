@@ -8,5 +8,7 @@ pub mod indexes;
 pub mod profiler;
 pub mod query;
 pub mod redis;
+pub mod replica_set;
 pub mod saved_queries;
 pub mod schema;
+pub mod sharding;
