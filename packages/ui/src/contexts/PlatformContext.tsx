@@ -8,6 +8,25 @@ import { createContext, useContext } from "react"
 export type DatabaseType = "mongodb" | "redis"
 export type ConnectionStatus = "connected" | "disconnected" | "connecting" | "error"
 
+export interface SSHConfig {
+    enabled: boolean
+    host: string
+    port: number
+    username: string
+    authMethod: "password" | "key" | "agent"
+    password?: string
+    privateKeyPath?: string
+    passphrase?: string
+}
+
+export interface SSLConfig {
+    enabled: boolean
+    rejectUnauthorized: boolean
+    caPath?: string
+    certPath?: string
+    keyPath?: string
+}
+
 export interface ConnectionConfig {
     id?: string
     name: string
@@ -19,6 +38,8 @@ export interface ConnectionConfig {
     database?: string
     authDatabase?: string
     tls?: boolean
+    ssh?: SSHConfig
+    ssl?: SSLConfig
 }
 
 export interface Connection {
@@ -31,6 +52,8 @@ export interface Connection {
     database?: string
     authDatabase?: string
     tls: boolean
+    ssh?: SSHConfig
+    ssl?: SSLConfig
     status: ConnectionStatus
     lastConnectedAt?: string
 }
