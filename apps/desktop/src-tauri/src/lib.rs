@@ -112,6 +112,10 @@ pub fn run() {
             commands::indexes::create_index,
             commands::indexes::drop_index,
             commands::indexes::get_index_stats,
+            commands::redis::redis_scan_keys,
+            commands::redis::redis_get_value,
+            commands::redis::redis_set_ttl,
+            commands::redis::redis_slow_log,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
