@@ -30,6 +30,9 @@ export * from "./components/ui/table"
 // App Components
 export * from "./components/app"
 
+// Redis Components
+export * from "./components/redis"
+
 // Contexts
 export * from "./contexts/PlatformContext"
 

@@ -13,6 +13,7 @@ import {
 import { tauriPlatformAPI } from "./lib/tauri-platform"
 import { HomePage } from "./pages/HomePage"
 import { WorkspacePage } from "./pages/WorkspacePage"
+import { RedisWorkspacePage } from "./pages/RedisWorkspacePage"
 import { SettingsPage } from "./pages/SettingsPage"
 
 function AppLayout(): JSX.Element {
@@ -41,7 +42,15 @@ function AppLayout(): JSX.Element {
                         setDialogOpen(true)
                     }}
                     onConnectionSelect={(connectionId) => {
-                        navigate(`/workspace/${connectionId}`)
+                        // Get connection from store to determine type
+                        const { connections } = useConnectionStore.getState()
+                        const connection = connections.find((c) => c.id === connectionId)
+
+                        if (connection?.type === "redis") {
+                            navigate(`/redis/${connectionId}`)
+                        } else {
+                            navigate(`/workspace/${connectionId}`)
+                        }
                     }}
                     onCollectionSelect={(connectionId, database, collection) => {
                         navigate(
@@ -80,6 +89,7 @@ function App(): JSX.Element {
                         <Route path="/" element={<AppLayout />}>
                             <Route index element={<HomePage />} />
                             <Route path="workspace/:connectionId" element={<WorkspacePage />} />
+                            <Route path="redis/:connectionId" element={<RedisWorkspacePage />} />
                             <Route path="settings" element={<SettingsPage />} />
                         </Route>
                     </Routes>
