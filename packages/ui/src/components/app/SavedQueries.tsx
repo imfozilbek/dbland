@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react"
 import { type SavedQuery, usePlatform } from "../../contexts/PlatformContext"
 import { Badge } from "../ui/badge"

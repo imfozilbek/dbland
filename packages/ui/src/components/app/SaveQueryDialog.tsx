@@ -1,4 +1,3 @@
-
 import { useState } from "react"
 import { type NewSavedQuery, usePlatform } from "../../contexts/PlatformContext"
 import { Button } from "../ui/button"
