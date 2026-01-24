@@ -1,6 +1,6 @@
 {
     "name": "@dbland/desktop",
-    "version": "0.9.0",
+    "version": "1.0.0",
     "description": "DBLand Desktop Application",
     "private": true,
     "type": "module",

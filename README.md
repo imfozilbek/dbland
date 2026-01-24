@@ -17,10 +17,11 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.9.0-green.svg" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.0.0-brightgreen.svg" alt="Version" />
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue.svg" alt="Platform" />
   <img src="https://img.shields.io/badge/MongoDB-Full%20Support-brightgreen.svg" alt="MongoDB" />
   <img src="https://img.shields.io/badge/Redis-Full%20Support-brightgreen.svg" alt="Redis" />
+  <img src="https://img.shields.io/badge/SSH-Tunneling-blue.svg" alt="SSH" />
 </p>
 
 ---
