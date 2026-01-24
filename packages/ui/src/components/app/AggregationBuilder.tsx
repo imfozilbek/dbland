@@ -1,14 +1,14 @@
 import * as React from "react"
 import { useState } from "react"
 import {
-    usePlatform,
     type AggregationPipelineStage,
     type AggregationResult,
+    usePlatform,
 } from "../../contexts/PlatformContext"
 import { Button } from "../ui/button"
 import { Card } from "../ui/card"
 import { ScrollArea } from "../ui/scroll-area"
-import { Play, Plus, Code2 } from "lucide-react"
+import { Code2, Play } from "lucide-react"
 import { PipelineCanvas } from "./PipelineCanvas"
 import { StageLibrary } from "./StageLibrary"
 import { StageEditor } from "./StageEditor"

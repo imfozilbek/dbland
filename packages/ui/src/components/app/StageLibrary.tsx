@@ -1,5 +1,4 @@
 import * as React from "react"
-import { Button } from "../ui/button"
 import { ScrollArea } from "../ui/scroll-area"
 import { Card } from "../ui/card"
 import { Plus } from "lucide-react"

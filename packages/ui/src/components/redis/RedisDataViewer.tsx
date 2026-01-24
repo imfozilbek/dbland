@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Card } from "../ui/card"
 import { Label } from "../ui/label"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 import { ScrollArea } from "../ui/scroll-area"
 import { Clock } from "lucide-react"
 
@@ -16,15 +15,12 @@ type RedisValue =
     | { type: "string"; value: string }
     | { type: "list"; values: string[] }
     | { type: "set"; values: string[] }
-    | { type: "zset"; values: Array<[string, number]> }
-    | { type: "hash"; fields: Array<[string, string]> }
+    | { type: "zset"; values: [string, number][] }
+    | { type: "hash"; fields: [string, string][] }
     | { type: "none" }
 
-export function RedisDataViewer({
-    connectionId,
-    selectedKey,
-}: RedisDataViewerProps): JSX.Element {
-    const [value, setValue] = useState<RedisValue>({ type: "none" })
+export function RedisDataViewer({ connectionId, selectedKey }: RedisDataViewerProps): JSX.Element {
+    const [value, _setValue] = useState<RedisValue>({ type: "none" })
     const [ttl, setTTL] = useState<number | null>(null)
     const [newTTL, setNewTTL] = useState("")
     const [isLoading, setIsLoading] = useState(false)
@@ -95,7 +91,9 @@ export function RedisDataViewer({
                         type="number"
                         placeholder="3600"
                         value={newTTL}
-                        onChange={(e) => setNewTTL(e.target.value)}
+                        onChange={(e) => {
+                            setNewTTL(e.target.value)
+                        }}
                     />
                     <Button onClick={() => void handleSetTTL()}>Set</Button>
                 </div>

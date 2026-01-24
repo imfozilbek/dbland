@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Search, Loader2 } from "lucide-react"
+import { Loader2, Search } from "lucide-react"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { ScrollArea } from "../ui/scroll-area"
@@ -11,7 +11,7 @@ interface RedisKeyBrowserProps {
 }
 
 export function RedisKeyBrowser({
-    connectionId,
+    connectionId: _connectionId,
     onKeySelect,
     selectedKey,
 }: RedisKeyBrowserProps): JSX.Element {
@@ -40,7 +40,9 @@ export function RedisKeyBrowser({
                 <Input
                     placeholder="Pattern (e.g., user:*)"
                     value={pattern}
-                    onChange={(e) => setPattern(e.target.value)}
+                    onChange={(e) => {
+                        setPattern(e.target.value)
+                    }}
                     onKeyDown={(e) => {
                         if (e.key === "Enter") {
                             void handleScan()
@@ -48,7 +50,11 @@ export function RedisKeyBrowser({
                     }}
                 />
                 <Button onClick={() => void handleScan()} disabled={isLoading} size="icon">
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                    {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                        <Search className="h-4 w-4" />
+                    )}
                 </Button>
             </div>
 
@@ -62,7 +68,9 @@ export function RedisKeyBrowser({
                     {keys.map((key) => (
                         <button
                             key={key}
-                            onClick={() => onKeySelect(key)}
+                            onClick={() => {
+                                onKeySelect(key)
+                            }}
                             className={`w-full rounded px-2 py-1 text-left text-sm hover:bg-accent ${
                                 selectedKey === key ? "bg-accent" : ""
                             }`}
