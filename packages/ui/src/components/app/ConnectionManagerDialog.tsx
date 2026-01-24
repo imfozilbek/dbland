@@ -6,6 +6,10 @@ import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { Switch } from "../ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
+import { SSHTunnelConfig } from "../connection/SSHTunnelConfig"
+import { SSLTLSConfig } from "../connection/SSLTLSConfig"
+import { ConnectionStringBuilder } from "../connection/ConnectionStringBuilder"
 import {
     type Connection,
     type ConnectionConfig,
@@ -41,6 +45,17 @@ function getInitialFormData(connection?: Connection): ConnectionConfig {
         database: connection?.database ?? "",
         authDatabase: connection?.authDatabase ?? "",
         tls: connection?.tls ?? false,
+        ssh: connection?.ssh ?? {
+            enabled: false,
+            host: "",
+            port: 22,
+            username: "",
+            authMethod: "password",
+        },
+        ssl: connection?.ssl ?? {
+            enabled: false,
+            rejectUnauthorized: true,
+        },
     }
 }
 
@@ -190,8 +205,17 @@ export function ConnectionManagerDialog({
                     </p>
                 </div>
 
-                {/* Form */}
-                <div className="grid gap-4 py-4">
+                {/* Form with Tabs */}
+                <Tabs defaultValue="basic" className="w-full">
+                    <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="basic">Basic</TabsTrigger>
+                        <TabsTrigger value="ssh">SSH</TabsTrigger>
+                        <TabsTrigger value="ssl">SSL/TLS</TabsTrigger>
+                        <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="basic" className="mt-4">
+                        <div className="grid gap-4 py-4">
                     {/* Connection Type */}
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="type" className="text-right text-[13px]">
@@ -358,28 +382,63 @@ export function ConnectionManagerDialog({
                         </div>
                     )}
 
-                    {/* TLS */}
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="tls" className="text-right text-[13px]">
-                            TLS/SSL
-                        </Label>
-                        <div className="col-span-3 flex items-center">
-                            <Switch
-                                id="tls"
-                                checked={formData.tls ?? false}
-                                onCheckedChange={(checked) => {
-                                    updateField("tls", checked)
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="ssh" className="mt-4">
+                        <div className="grid gap-4 py-4">
+                            <SSHTunnelConfig
+                                value={formData.ssh ?? {
+                                    enabled: false,
+                                    host: "",
+                                    port: 22,
+                                    username: "",
+                                    authMethod: "password",
+                                }}
+                                onChange={(ssh) => {
+                                    updateField("ssh", ssh)
                                 }}
                             />
-                            <span className="ml-2 text-sm text-muted-foreground">
-                                {formData.tls ? "Enabled" : "Disabled"}
-                            </span>
                         </div>
-                    </div>
+                    </TabsContent>
+
+                    <TabsContent value="ssl" className="mt-4">
+                        <div className="grid gap-4 py-4">
+                            <SSLTLSConfig
+                                value={formData.ssl ?? {
+                                    enabled: false,
+                                    rejectUnauthorized: true,
+                                }}
+                                onChange={(ssl) => {
+                                    updateField("ssl", ssl)
+                                }}
+                            />
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="advanced" className="mt-4">
+                        <div className="grid gap-4 py-4">
+                            <ConnectionStringBuilder
+                                databaseType={formData.type}
+                                host={formData.host}
+                                port={formData.port}
+                                username={formData.username}
+                                password={formData.password}
+                                database={formData.database}
+                                authDatabase={formData.authDatabase}
+                                onParse={(parsed) => {
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        ...parsed,
+                                    }))
+                                }}
+                            />
+                        </div>
+                    </TabsContent>
 
                     {/* Test Result */}
                     {testResult && (
-                        <Alert variant={testResult.success ? "default" : "destructive"}>
+                        <Alert variant={testResult.success ? "default" : "destructive"} className="mt-4">
                             <AlertTitle>
                                 {testResult.success ? "Connection successful" : "Connection failed"}
                             </AlertTitle>
@@ -395,7 +454,7 @@ export function ConnectionManagerDialog({
                             </AlertDescription>
                         </Alert>
                     )}
-                </div>
+                </Tabs>
 
                 {/* Footer */}
                 <div className="mt-4 flex justify-end gap-2">
