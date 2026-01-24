@@ -35,6 +35,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Merge additional filters with geospatial conditions
   - Distance units in meters
 
+- **GridFS File Browser (Backend)**
+  - New commands: list_gridfs_files, get_gridfs_file_metadata, delete_gridfs_file, download_gridfs_file
+  - Browse files in GridFS buckets (default "fs" or custom buckets)
+  - View file metadata (filename, size, upload date, content type, custom metadata)
+  - Delete files (removes from both fs.files and fs.chunks)
+  - Download files (reassembles chunks and saves to disk)
+  - Base64 decoding for binary chunk data
+
+- **Replica Set Monitoring (Backend)**
+  - New commands: get_replica_set_status, get_replica_set_config
+  - Monitor replica set members (PRIMARY, SECONDARY, ARBITER states)
+  - View member health, uptime, and replication lag
+  - Track sync sources and replication topology
+  - View replica set configuration
+
+- **Sharding Visualization (Backend)**
+  - New commands: get_sharding_status, list_shards, list_sharded_collections, get_chunk_distribution
+  - List all shards with host and state information
+  - View sharded collections with shard keys
+  - Analyze chunk distribution across shards
+  - Monitor balancer status
+  - Query config database (shards, collections, chunks)
+
 ### Fixed
 
 - **TypeScript Compilation**
