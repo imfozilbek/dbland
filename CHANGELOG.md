@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Configure slow query threshold
   - Clear profiler data
 
+- **Collection Statistics (Backend)**
+  - New command: get_detailed_collection_stats
+  - Detailed collection metrics (count, size, avgObjSize)
+  - Index size breakdown per index
+  - Storage statistics (storageSize, numExtents)
+  - Validation rules (validationLevel, validationAction)
+  - Capped collection info (max, maxSize)
+  - Sharding distribution per shard
+
 ### Fixed
 
 - **TypeScript Compilation**

@@ -117,6 +117,7 @@ pub fn run() {
             commands::profiler::set_profiler_level,
             commands::profiler::get_profiler_data,
             commands::profiler::clear_profiler_data,
+            commands::collection_stats::get_detailed_collection_stats,
             commands::redis::redis_scan_keys,
             commands::redis::redis_get_value,
             commands::redis::redis_set_ttl,
