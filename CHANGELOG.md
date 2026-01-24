@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **TypeScript Compilation**
+  - Fixed `@tanstack/react-virtual` import typo in ResultsTable
+  - Removed 14 unused React imports across UI components
+  - Fixed react-resizable-panels API v4.4.1 compatibility (Group/Separator)
+  - Changed `direction` prop to `orientation` prop in ResizablePanelGroup
+  - Updated AggregationPipelineStage type to allow `string | number` for stageData
+  - Added missing ResultDocument import to tauri-platform.ts
+  - Removed unnecessary String() conversion in ObjectId handling
+  - All packages now build successfully without errors
+
+- **UI Integration**
+  - Installed @tauri-apps/plugin-dialog dependency
+  - Fixed ThemeProvider props (removed storageKey, uses settings store)
+  - Fixed keyboard shortcuts API (array-based instead of object-based)
+  - Removed unused imports in WorkspacePage and RedisWorkspacePage
+  - Completed web-platform.ts stub with all 30+ PlatformAPI methods
+
+- **Code Quality**
+  - Applied prettier formatting to all modified files
+  - Fixed ESLint errors (0 errors, warnings only)
+  - All quality gates passing (format, lint, build, test)
+
 ---
 
 ## [1.0.0] - 2025-01-24
