@@ -131,7 +131,9 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
                     <Input
                         id="bucket"
                         value={bucket}
-                        onChange={(e) => setBucket(e.target.value)}
+                        onChange={(e) => {
+                            setBucket(e.target.value)
+                        }}
                         placeholder="fs"
                     />
                 </div>
@@ -140,7 +142,9 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
                     <Input
                         id="filter"
                         value={filterText}
-                        onChange={(e) => setFilterText(e.target.value)}
+                        onChange={(e) => {
+                            setFilterText(e.target.value)
+                        }}
                         placeholder="Search files..."
                     />
                 </div>
@@ -212,14 +216,18 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    onClick={() => handleDownload(file)}
+                                                    onClick={() => {
+                                                        void handleDownload(file)
+                                                    }}
                                                 >
                                                     <Download className="h-4 w-4" />
                                                 </Button>
                                                 <Button
                                                     size="sm"
                                                     variant="destructive"
-                                                    onClick={() => handleDelete(file)}
+                                                    onClick={() => {
+                                                        handleDelete(file)
+                                                    }}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

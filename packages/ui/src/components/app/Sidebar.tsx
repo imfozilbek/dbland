@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { ChevronDown, ChevronRight, FolderTree, Plus, Settings } from "lucide-react"
+import { ChevronDown, ChevronRight, FolderTree, Plus, Settings, Sparkles } from "lucide-react"
 import { cn } from "../../lib/utils"
 import { Button } from "../ui/button"
 import { ScrollArea } from "../ui/scroll-area"
@@ -41,15 +41,21 @@ export function Sidebar({
     }
 
     return (
-        <aside className="flex w-60 flex-col border-r bg-background">
+        <aside className="flex w-64 flex-col bg-[#171717] border-r border-[#262626]">
             {/* Header */}
-            <div className="flex h-12 items-center justify-between border-b px-3">
-                <span className="text-[13px] font-semibold tracking-tight">Connections</span>
+            <div className="flex h-14 items-center justify-between px-4 border-b border-[#262626]">
+                <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-md bg-[#3ECF8E]/10">
+                        <Sparkles className="h-4 w-4 text-[#3ECF8E]" />
+                    </div>
+                    <span className="text-sm font-semibold text-white">Connections</span>
+                </div>
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    className="h-8 w-8 text-[#8F8F8F] hover:text-white hover:bg-[#262626]"
                     onClick={onAddConnectionClick}
+                    title="Add Connection"
                 >
                     <Plus className="h-4 w-4" />
                 </Button>
@@ -57,48 +63,59 @@ export function Sidebar({
 
             {/* Connection list */}
             <ScrollArea className="flex-1">
-                <div className="p-2">
+                <div className="p-3">
                     {/* Connections group */}
-                    <div>
+                    <div className="space-y-1">
                         <button
                             onClick={() => {
                                 toggleGroup("connections")
                             }}
                             className={cn(
-                                "flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-[13px] font-medium",
-                                "transition-colors duration-150 hover:bg-muted",
+                                "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium",
+                                "text-[#8F8F8F] hover:text-white hover:bg-[#262626]/50",
+                                "transition-all duration-150",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3ECF8E]",
                             )}
                         >
                             {expandedGroups.includes("connections") ? (
-                                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                <ChevronDown className="h-4 w-4 text-[#6B7280]" />
                             ) : (
-                                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                                <ChevronRight className="h-4 w-4 text-[#6B7280]" />
                             )}
-                            <FolderTree className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span>All Connections</span>
+                            <FolderTree className="h-4 w-4" />
+                            <span className="flex-1 text-left">All Connections</span>
                             {isLoading && (
-                                <span className="ml-auto text-[11px] text-muted-foreground">
-                                    ...
-                                </span>
+                                <div className="h-3 w-3 rounded-full border-2 border-[#3ECF8E] border-t-transparent animate-spin" />
                             )}
                         </button>
 
                         {expandedGroups.includes("connections") && (
-                            <div className="mt-0.5">
+                            <div className="mt-1 ml-2 space-y-0.5 animate-fadeIn">
                                 {connections.length === 0 && !isLoading && (
-                                    <p className="px-2 py-2 text-center text-[12px] italic text-muted-foreground">
-                                        No connections yet
-                                    </p>
+                                    <div className="px-3 py-6 text-center">
+                                        <p className="text-xs text-[#6B7280]">No connections yet</p>
+                                        <button
+                                            onClick={onAddConnectionClick}
+                                            className="mt-2 text-xs text-[#3ECF8E] hover:text-[#4AE19A] transition-colors"
+                                        >
+                                            + Add your first connection
+                                        </button>
+                                    </div>
                                 )}
 
-                                {connections.map((conn) => (
-                                    <ConnectionTree
+                                {connections.map((conn, index) => (
+                                    <div
                                         key={conn.id}
-                                        connection={conn}
-                                        isActive={activePath.includes(conn.id)}
-                                        onConnectionSelect={onConnectionSelect}
-                                        onCollectionSelect={onCollectionSelect}
-                                    />
+                                        className="animate-fadeInUp"
+                                        style={{ animationDelay: `${index * 30}ms` }}
+                                    >
+                                        <ConnectionTree
+                                            connection={conn}
+                                            isActive={activePath.includes(conn.id)}
+                                            onConnectionSelect={onConnectionSelect}
+                                            onCollectionSelect={onCollectionSelect}
+                                        />
+                                    </div>
                                 ))}
                             </div>
                         )}
@@ -107,16 +124,22 @@ export function Sidebar({
             </ScrollArea>
 
             {/* Footer */}
-            <div className="border-t p-2">
+            <div className="border-t border-[#262626] p-3">
                 <button
                     onClick={onSettingsClick}
                     className={cn(
-                        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px]",
-                        "transition-colors duration-150 hover:bg-muted",
-                        activePath === "/settings" && "bg-muted font-medium",
+                        "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm",
+                        "text-[#8F8F8F] hover:text-white hover:bg-[#262626]/50",
+                        "transition-all duration-150",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3ECF8E]",
+                        activePath === "/settings" && [
+                            "bg-[#262626]",
+                            "text-white",
+                            "border-l-2 border-l-purple-500",
+                        ],
                     )}
                 >
-                    <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+                    <Settings className="h-4 w-4" />
                     <span>Settings</span>
                 </button>
             </div>

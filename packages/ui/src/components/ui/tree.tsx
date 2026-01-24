@@ -44,11 +44,11 @@ const TreeItem = React.forwardRef<HTMLButtonElement, TreeItemProps>(
             <button
                 ref={ref}
                 className={cn(
-                    "group flex w-full items-center gap-2 rounded-md px-2 py-1 text-[13px]",
-                    "transition-colors duration-150",
-                    "hover:bg-muted",
-                    "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                    isActive && "bg-muted font-medium",
+                    "group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px]",
+                    "transition-all duration-150",
+                    "hover:bg-accent",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                    isActive && ["bg-accent", "border-l-2 border-l-primary", "font-medium"],
                     className,
                 )}
                 style={{ paddingLeft }}
@@ -61,7 +61,7 @@ const TreeItem = React.forwardRef<HTMLButtonElement, TreeItemProps>(
                 {isLoading ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                 ) : icon ? (
-                    <span className="flex h-3.5 w-3.5 items-center justify-center text-muted-foreground">
+                    <span className="flex h-3.5 w-3.5 items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors">
                         {icon}
                     </span>
                 ) : null}
@@ -71,12 +71,14 @@ const TreeItem = React.forwardRef<HTMLButtonElement, TreeItemProps>(
 
                 {/* Badge */}
                 {badge !== undefined && (
-                    <span className="text-[11px] tabular-nums text-muted-foreground">{badge}</span>
+                    <span className="text-[11px] tabular-nums text-muted-foreground px-1.5 py-0.5 rounded bg-secondary">
+                        {badge}
+                    </span>
                 )}
 
                 {/* Actions (visible on hover) */}
                 {actions && (
-                    <span className="opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                         {actions}
                     </span>
                 )}
@@ -137,19 +139,20 @@ const TreeGroup = React.forwardRef<HTMLDivElement, TreeGroupProps>(
                 <CollapsiblePrimitive.Trigger asChild>
                     <div
                         className={cn(
-                            "group flex w-full items-center gap-2 rounded-md px-2 py-1 text-[13px]",
-                            "transition-colors duration-150",
-                            "hover:bg-muted",
+                            "group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px]",
+                            "transition-all duration-150",
+                            "hover:bg-accent",
                             "cursor-pointer select-none",
-                            isActive && "bg-muted",
+                            isActive && ["bg-accent", "border-l-2 border-l-primary"],
                         )}
                         style={{ paddingLeft }}
                     >
                         {/* Chevron */}
                         <ChevronRight
                             className={cn(
-                                "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-150",
+                                "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200",
                                 "group-data-[state=open]:rotate-90",
+                                "group-hover:text-foreground",
                             )}
                         />
 
@@ -165,7 +168,7 @@ const TreeGroup = React.forwardRef<HTMLDivElement, TreeGroupProps>(
                         {/* Clickable Label */}
                         {onLabelClick ? (
                             <span
-                                className="flex-1 truncate text-left font-medium hover:underline"
+                                className="flex-1 truncate text-left font-medium hover:text-primary transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation()
                                     onLabelClick()
@@ -179,7 +182,7 @@ const TreeGroup = React.forwardRef<HTMLDivElement, TreeGroupProps>(
 
                         {/* Badge */}
                         {badge !== undefined && (
-                            <span className="text-[11px] tabular-nums text-muted-foreground">
+                            <span className="text-[11px] tabular-nums text-muted-foreground px-1.5 py-0.5 rounded bg-secondary">
                                 {badge}
                             </span>
                         )}
@@ -190,7 +193,7 @@ const TreeGroup = React.forwardRef<HTMLDivElement, TreeGroupProps>(
                         {/* Actions (visible on hover) */}
                         {actions && (
                             <span
-                                className="opacity-0 transition-opacity group-hover:opacity-100"
+                                className="opacity-0 transition-opacity duration-150 group-hover:opacity-100"
                                 onClick={(e) => {
                                     e.stopPropagation()
                                 }}
@@ -225,7 +228,7 @@ const TreeEmpty = React.forwardRef<HTMLDivElement, TreeEmptyProps>(
         return (
             <div
                 ref={ref}
-                className={cn("py-1 text-[12px] italic text-muted-foreground", className)}
+                className={cn("py-2 text-[12px] italic text-muted-foreground", className)}
                 style={{ paddingLeft }}
                 {...props}
             >

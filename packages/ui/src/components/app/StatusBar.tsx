@@ -1,4 +1,4 @@
-import { Circle } from "lucide-react"
+import { Circle, Loader2, Wifi, WifiOff } from "lucide-react"
 import { cn } from "../../lib/utils"
 
 export type StatusBarStatus = "connected" | "disconnected" | "connecting" | "error" | "ready"
@@ -14,40 +14,57 @@ export function StatusBar({
     status = "disconnected",
     statusText,
     centerText = "Ready",
-    version = "v0.2.0",
+    version = "v1.0.0",
 }: StatusBarProps): JSX.Element {
-    const statusColors: Record<StatusBarStatus, string> = {
-        connected: "fill-green-500 text-green-500",
-        disconnected: "fill-gray-400 text-gray-400",
-        connecting: "fill-yellow-500 text-yellow-500 animate-pulse",
-        error: "fill-red-500 text-red-500",
-        ready: "fill-gray-400 text-gray-400",
+    const statusConfig: Record<
+        StatusBarStatus,
+        { icon: React.ReactNode; color: string; text: string }
+    > = {
+        connected: {
+            icon: <Wifi className="h-3 w-3" />,
+            color: "text-[#22C55E]",
+            text: "Connected",
+        },
+        disconnected: {
+            icon: <WifiOff className="h-3 w-3" />,
+            color: "text-[#6B7280]",
+            text: "Disconnected",
+        },
+        connecting: {
+            icon: <Loader2 className="h-3 w-3 animate-spin" />,
+            color: "text-[#F59E0B]",
+            text: "Connecting...",
+        },
+        error: {
+            icon: <Circle className="h-2 w-2 fill-current" />,
+            color: "text-[#EF4444]",
+            text: "Error",
+        },
+        ready: {
+            icon: <Circle className="h-2 w-2 fill-current" />,
+            color: "text-[#6B7280]",
+            text: "Ready",
+        },
     }
 
-    const defaultStatusText: Record<StatusBarStatus, string> = {
-        connected: "Connected",
-        disconnected: "Disconnected",
-        connecting: "Connecting...",
-        error: "Error",
-        ready: "Ready",
-    }
+    const config = statusConfig[status]
 
     return (
-        <footer className="flex h-6 items-center justify-between border-t bg-muted/30 px-4 text-[11px] text-muted-foreground">
+        <footer className="flex h-7 items-center justify-between border-t border-[#27272A] bg-[#0F0F11] px-4 text-xs">
             {/* Left - Connection status */}
-            <div className="flex items-center gap-1.5">
-                <Circle className={cn("h-2 w-2", statusColors[status])} />
-                <span>{statusText ?? defaultStatusText[status]}</span>
+            <div className={cn("flex items-center gap-1.5", config.color)}>
+                {config.icon}
+                <span>{statusText ?? config.text}</span>
             </div>
 
             {/* Center - Query status */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-[#6B7280]">
                 <span>{centerText}</span>
             </div>
 
             {/* Right - Version */}
             <div className="flex items-center gap-2">
-                <span>{version}</span>
+                <span className="text-[#52525B] font-mono">{version}</span>
             </div>
         </footer>
     )

@@ -96,29 +96,35 @@ export function ConnectionTree({
         onConnectionSelect?.(connection.id)
     }, [connection.id, onConnectionSelect])
 
-    // Get connection icon color
-    const getTypeColor = (): string => {
-        return connection.type === "mongodb" ? "text-[#00ed64]" : "text-[#dc382d]"
+    // Get connection icon with database type color
+    const getTypeIcon = (): JSX.Element => {
+        const colorClass = connection.type === "mongodb" ? "text-mongodb" : "text-redis"
+        return <Database className={cn("h-3.5 w-3.5", colorClass)} />
     }
 
-    // Get status indicator
+    // Get status indicator with brand colors
     const getStatusIndicator = (): JSX.Element => {
-        const statusColors: Record<Connection["status"], string> = {
-            connected: "bg-green-500",
-            connecting: "bg-yellow-500 animate-pulse",
-            error: "bg-red-500",
-            disconnected: "bg-gray-400",
+        const statusStyles: Record<Connection["status"], string> = {
+            connected: "bg-success",
+            connecting: "bg-warning animate-pulse-status",
+            error: "bg-destructive",
+            disconnected: "bg-muted-foreground",
         }
 
         return (
-            <span className={cn("ml-auto h-2 w-2 rounded-full", statusColors[connection.status])} />
+            <span
+                className={cn(
+                    "ml-auto h-2 w-2 rounded-full transition-colors",
+                    statusStyles[connection.status],
+                )}
+            />
         )
     }
 
     return (
         <Tree>
             <TreeGroup
-                icon={<Database className={cn("h-3.5 w-3.5", getTypeColor())} />}
+                icon={getTypeIcon()}
                 label={connection.name}
                 statusIndicator={getStatusIndicator()}
                 open={isOpen}
@@ -135,7 +141,9 @@ export function ConnectionTree({
 
                 {/* Error state */}
                 {connection.status === "error" && (
-                    <TreeEmpty level={1}>Connection failed</TreeEmpty>
+                    <TreeEmpty level={1}>
+                        <span className="text-destructive">Connection failed</span>
+                    </TreeEmpty>
                 )}
 
                 {/* Connected but loading databases */}
@@ -150,19 +158,24 @@ export function ConnectionTree({
 
                 {/* Database list */}
                 {isConnected &&
-                    databases.map((db) => (
-                        <DatabaseNode
+                    databases.map((db, index) => (
+                        <div
                             key={db.name}
-                            connectionId={connection.id}
-                            database={db}
-                            isExpanded={expandedDatabases.has(db.name)}
-                            onOpenChange={(open) => {
-                                void handleDatabaseOpenChange(db.name, open)
-                            }}
-                            onCollectionClick={(collName) => {
-                                handleCollectionClick(db.name, collName)
-                            }}
-                        />
+                            className="animate-fadeInUp"
+                            style={{ animationDelay: `${index * 30}ms` }}
+                        >
+                            <DatabaseNode
+                                connectionId={connection.id}
+                                database={db}
+                                isExpanded={expandedDatabases.has(db.name)}
+                                onOpenChange={(open) => {
+                                    void handleDatabaseOpenChange(db.name, open)
+                                }}
+                                onCollectionClick={(collName) => {
+                                    handleCollectionClick(db.name, collName)
+                                }}
+                            />
+                        </div>
                     ))}
             </TreeGroup>
         </Tree>
@@ -212,17 +225,22 @@ function DatabaseNode({
             )}
 
             {/* Collection list */}
-            {collections.map((coll) => (
-                <TreeItem
+            {collections.map((coll, index) => (
+                <div
                     key={coll.name}
-                    icon={<Table2 className="h-3.5 w-3.5 text-muted-foreground" />}
-                    label={coll.name}
-                    badge={coll.documentCount}
-                    level={2}
-                    onClick={() => {
-                        onCollectionClick(coll.name)
-                    }}
-                />
+                    className="animate-fadeInUp"
+                    style={{ animationDelay: `${index * 20}ms` }}
+                >
+                    <TreeItem
+                        icon={<Table2 className="h-3.5 w-3.5 text-muted-foreground" />}
+                        label={coll.name}
+                        badge={coll.documentCount}
+                        level={2}
+                        onClick={() => {
+                            onCollectionClick(coll.name)
+                        }}
+                    />
+                </div>
             ))}
         </TreeGroup>
     )

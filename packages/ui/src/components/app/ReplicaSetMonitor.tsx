@@ -27,7 +27,9 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
 
         if (autoRefresh) {
             const interval = setInterval(loadStatus, 5000)
-            return () => clearInterval(interval)
+            return () => {
+                clearInterval(interval)
+            }
         }
     }, [connectionId, autoRefresh])
 
@@ -131,7 +133,9 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
                         <input
                             type="checkbox"
                             checked={autoRefresh}
-                            onChange={(e) => setAutoRefresh(e.target.checked)}
+                            onChange={(e) => {
+                                setAutoRefresh(e.target.checked)
+                            }}
                             className="h-4 w-4"
                         />
                         Auto-refresh (5s)

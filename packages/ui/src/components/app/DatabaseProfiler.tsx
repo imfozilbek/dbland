@@ -195,7 +195,9 @@ export function DatabaseProfiler({
                             type="number"
                             className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
                             value={slowMs}
-                            onChange={(e) => setSlowMs(e.target.value)}
+                            onChange={(e) => {
+                                setSlowMs(e.target.value)
+                            }}
                             min="1"
                         />
                     </div>
@@ -204,7 +206,12 @@ export function DatabaseProfiler({
                 <Button onClick={handleSetProfilerLevel}>Apply</Button>
 
                 {profilerLevel && profilerLevel.level > 0 && (
-                    <Button variant="outline" onClick={() => loadProfilerData(100)}>
+                    <Button
+                        variant="outline"
+                        onClick={() => {
+                            loadProfilerData(100)
+                        }}
+                    >
                         Refresh
                     </Button>
                 )}
@@ -267,7 +274,9 @@ export function DatabaseProfiler({
                                         <TableRow
                                             key={index}
                                             className="cursor-pointer"
-                                            onClick={() => toggleRowExpansion(index)}
+                                            onClick={() => {
+                                                toggleRowExpansion(index)
+                                            }}
                                         >
                                             <TableCell>
                                                 {expandedRows.has(index) ? (

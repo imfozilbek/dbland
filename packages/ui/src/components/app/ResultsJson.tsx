@@ -69,7 +69,7 @@ function highlightJson(json: string): JSX.Element {
                 if (part.startsWith('"')) {
                     const isKey = json[json.indexOf(part) + part.length] === ":"
                     return (
-                        <span key={index} className={isKey ? "text-blue-400" : "text-green-400"}>
+                        <span key={index} className={isKey ? "syntax-property" : "syntax-string"}>
                             {part}
                         </span>
                     )
@@ -78,7 +78,10 @@ function highlightJson(json: string): JSX.Element {
                 // Boolean or null
                 if (["true", "false", "null"].includes(part)) {
                     return (
-                        <span key={index} className="text-purple-400">
+                        <span
+                            key={index}
+                            className={part === "null" ? "syntax-null" : "syntax-boolean"}
+                        >
                             {part}
                         </span>
                     )
@@ -87,7 +90,7 @@ function highlightJson(json: string): JSX.Element {
                 // Number
                 if (/^-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(part)) {
                     return (
-                        <span key={index} className="text-orange-400">
+                        <span key={index} className="syntax-number">
                             {part}
                         </span>
                     )

@@ -190,9 +190,9 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
                                             <TableRow
                                                 key={coll.namespace}
                                                 className="cursor-pointer hover:bg-muted/50"
-                                                onClick={() =>
+                                                onClick={() => {
                                                     loadChunkDistribution(coll.namespace)
-                                                }
+                                                }}
                                             >
                                                 <TableCell className="font-mono text-sm">
                                                     {coll.namespace}

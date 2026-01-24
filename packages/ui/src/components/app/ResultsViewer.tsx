@@ -33,7 +33,10 @@ export function ResultsViewer({
         return (
             <Card className="h-full flex items-center justify-center">
                 <CardContent className="text-muted-foreground text-center py-8">
-                    <p>Run a query to see results</p>
+                    <div className="animate-fadeIn">
+                        <p className="text-sm">Run a query to see results</p>
+                        <p className="text-xs mt-1 opacity-70">Press Cmd+Enter to execute</p>
+                    </div>
                 </CardContent>
             </Card>
         )
@@ -41,14 +44,14 @@ export function ResultsViewer({
 
     if (!result.success) {
         return (
-            <Card className="h-full">
+            <Card className="h-full animate-fadeIn">
                 <CardHeader className="pb-2">
                     <div className="flex items-center gap-2">
                         <Badge variant="destructive">Error</Badge>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-destructive font-mono text-sm whitespace-pre-wrap">
+                    <div className="text-destructive font-mono text-sm whitespace-pre-wrap bg-destructive/5 rounded-md p-3 border border-destructive/20">
                         {result.error ?? "Unknown error occurred"}
                     </div>
                 </CardContent>
@@ -59,20 +62,21 @@ export function ResultsViewer({
     const { stats, documents, cursor } = result
 
     return (
-        <Card className="h-full flex flex-col">
+        <Card className="h-full flex flex-col animate-fadeIn">
             <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Badge variant="success" className="bg-green-500/10 text-green-500">
-                            Success
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                            {stats.documentsReturned}{" "}
-                            {stats.documentsReturned === 1 ? "document" : "documents"}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                            • {stats.executionTimeMs}ms
-                        </span>
+                    <div className="flex items-center gap-3">
+                        <Badge variant="success">Success</Badge>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span className="font-medium text-foreground">
+                                {stats.documentsReturned}
+                            </span>
+                            <span>{stats.documentsReturned === 1 ? "document" : "documents"}</span>
+                            <span className="text-border">•</span>
+                            <span className="font-mono text-xs bg-secondary px-1.5 py-0.5 rounded">
+                                {stats.executionTimeMs}ms
+                            </span>
+                        </div>
                         {cursor?.hasMore && (
                             <Badge variant="outline" className="text-xs">
                                 More available

@@ -46,11 +46,9 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
     if (value === null || value === undefined) {
         return (
             <div style={{ paddingLeft }} className="py-1 text-sm font-mono">
-                <span className="text-blue-400">{label}</span>
+                <span className="syntax-property">{label}</span>
                 <span className="text-muted-foreground">: </span>
-                <span className="text-muted-foreground italic">
-                    {value === null ? "null" : "undefined"}
-                </span>
+                <span className="syntax-null">{value === null ? "null" : "undefined"}</span>
             </div>
         )
     }
@@ -59,9 +57,9 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
     if (typeof value === "boolean") {
         return (
             <div style={{ paddingLeft }} className="py-1 text-sm font-mono">
-                <span className="text-blue-400">{label}</span>
+                <span className="syntax-property">{label}</span>
                 <span className="text-muted-foreground">: </span>
-                <span className="text-purple-400">{String(value)}</span>
+                <span className="syntax-boolean">{String(value)}</span>
             </div>
         )
     }
@@ -70,9 +68,9 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
     if (typeof value === "number") {
         return (
             <div style={{ paddingLeft }} className="py-1 text-sm font-mono">
-                <span className="text-blue-400">{label}</span>
+                <span className="syntax-property">{label}</span>
                 <span className="text-muted-foreground">: </span>
-                <span className="text-orange-400">{value}</span>
+                <span className="syntax-number">{value}</span>
             </div>
         )
     }
@@ -81,9 +79,9 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
     if (typeof value === "string") {
         return (
             <div style={{ paddingLeft }} className="py-1 text-sm font-mono">
-                <span className="text-blue-400">{label}</span>
+                <span className="syntax-property">{label}</span>
                 <span className="text-muted-foreground">: </span>
-                <span className="text-green-400">&quot;{value}&quot;</span>
+                <span className="syntax-string">&quot;{value}&quot;</span>
             </div>
         )
     }
@@ -100,11 +98,11 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
                     }}
                 >
                     {isExpanded ? (
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     )}
-                    <span className="text-blue-400">{label}</span>
+                    <span className="syntax-property">{label}</span>
                     <span className="text-muted-foreground">: [</span>
                     <span className="text-muted-foreground text-xs">{value.length} items</span>
                     <span className="text-muted-foreground">]</span>
@@ -130,11 +128,11 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
                     }}
                 >
                     {isExpanded ? (
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     )}
-                    <span className="text-blue-400">{label}</span>
+                    <span className="syntax-property">{label}</span>
                     <span className="text-muted-foreground">: {"{"}</span>
                     <span className="text-muted-foreground text-xs">
                         {entries.length} properties
@@ -152,10 +150,10 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
     // Fallback - safe to convert to string here as all other types are handled above
     return (
         <div style={{ paddingLeft }} className="py-1 text-sm font-mono">
-            <span className="text-blue-400">{label}</span>
+            <span className="syntax-property">{label}</span>
             <span className="text-muted-foreground">: </span>
             {/* eslint-disable-next-line @typescript-eslint/no-base-to-string */}
-            <span>{String(value)}</span>
+            <span className="syntax-value">{String(value)}</span>
         </div>
     )
 }

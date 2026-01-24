@@ -50,7 +50,7 @@ export function GeospatialQueryBuilder({
         } else {
             try {
                 coordinates = JSON.parse(polygonCoords)
-            } catch (err) {
+            } catch (_err) {
                 setError("Invalid polygon coordinates JSON")
                 setIsLoading(false)
                 return
@@ -61,7 +61,7 @@ export function GeospatialQueryBuilder({
         if (additionalFilter.trim() && additionalFilter.trim() !== "{}") {
             try {
                 filter = JSON.parse(additionalFilter)
-            } catch (err) {
+            } catch (_err) {
                 setError("Invalid additional filter JSON")
                 setIsLoading(false)
                 return
@@ -122,7 +122,9 @@ export function GeospatialQueryBuilder({
                     <Input
                         id="field"
                         value={field}
-                        onChange={(e) => setField(e.target.value)}
+                        onChange={(e) => {
+                            setField(e.target.value)
+                        }}
                         placeholder="location"
                     />
                 </div>
@@ -131,7 +133,9 @@ export function GeospatialQueryBuilder({
                     <Label htmlFor="query-type">Query Type</Label>
                     <Select
                         value={queryType}
-                        onValueChange={(v) => setQueryType(v as typeof queryType)}
+                        onValueChange={(v) => {
+                            setQueryType(v as typeof queryType)
+                        }}
                     >
                         <SelectTrigger id="query-type">
                             <SelectValue />
@@ -154,7 +158,9 @@ export function GeospatialQueryBuilder({
                                     type="number"
                                     step="0.000001"
                                     value={longitude}
-                                    onChange={(e) => setLongitude(e.target.value)}
+                                    onChange={(e) => {
+                                        setLongitude(e.target.value)
+                                    }}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -164,7 +170,9 @@ export function GeospatialQueryBuilder({
                                     type="number"
                                     step="0.000001"
                                     value={latitude}
-                                    onChange={(e) => setLatitude(e.target.value)}
+                                    onChange={(e) => {
+                                        setLatitude(e.target.value)
+                                    }}
                                 />
                             </div>
                         </div>
@@ -176,7 +184,9 @@ export function GeospatialQueryBuilder({
                                     id="max-distance"
                                     type="number"
                                     value={maxDistance}
-                                    onChange={(e) => setMaxDistance(e.target.value)}
+                                    onChange={(e) => {
+                                        setMaxDistance(e.target.value)
+                                    }}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -185,7 +195,9 @@ export function GeospatialQueryBuilder({
                                     id="min-distance"
                                     type="number"
                                     value={minDistance}
-                                    onChange={(e) => setMinDistance(e.target.value)}
+                                    onChange={(e) => {
+                                        setMinDistance(e.target.value)
+                                    }}
                                     placeholder="Optional"
                                 />
                             </div>
@@ -197,7 +209,9 @@ export function GeospatialQueryBuilder({
                         <Textarea
                             id="polygon"
                             value={polygonCoords}
-                            onChange={(e) => setPolygonCoords(e.target.value)}
+                            onChange={(e) => {
+                                setPolygonCoords(e.target.value)
+                            }}
                             className="font-mono text-xs"
                             rows={8}
                         />
@@ -212,7 +226,9 @@ export function GeospatialQueryBuilder({
                     <Textarea
                         id="additional-filter"
                         value={additionalFilter}
-                        onChange={(e) => setAdditionalFilter(e.target.value)}
+                        onChange={(e) => {
+                            setAdditionalFilter(e.target.value)
+                        }}
                         className="font-mono text-xs"
                         rows={4}
                         placeholder='{"category": "restaurant"}'
@@ -232,11 +248,7 @@ export function GeospatialQueryBuilder({
 
             {/* Results Panel */}
             <div className="flex-1">
-                <ResultsViewer
-                    result={result}
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
-                />
+                <ResultsViewer result={result} viewMode={viewMode} onViewModeChange={setViewMode} />
             </div>
         </div>
     )

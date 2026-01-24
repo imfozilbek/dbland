@@ -64,15 +64,15 @@ export function ResultsTable({
         <ScrollArea ref={parentRef} className="h-full">
             <div className="relative">
                 {/* Header */}
-                <div className="sticky top-0 z-10 bg-background border-b">
+                <div className="sticky top-0 z-10 bg-secondary border-b border-border">
                     <div className="flex">
-                        <div className="w-12 px-2 py-2 text-xs font-medium text-muted-foreground border-r">
+                        <div className="w-12 px-2 py-2 text-xs font-medium text-muted-foreground border-r border-border">
                             #
                         </div>
                         {columns.map((column) => (
                             <div
                                 key={column}
-                                className="min-w-[150px] px-3 py-2 text-xs font-medium text-muted-foreground border-r last:border-r-0"
+                                className="min-w-[150px] px-3 py-2 text-xs font-medium text-muted-foreground border-r border-border last:border-r-0"
                             >
                                 {column}
                             </div>
@@ -102,16 +102,15 @@ export function ResultsTable({
                                     height: `${virtualRow.size}px`,
                                     transform: `translateY(${virtualRow.start}px)`,
                                 }}
-                                className="flex hover:bg-muted/50"
+                                className="flex hover:bg-accent/50 transition-colors duration-150"
                             >
-                                <div className="w-12 px-2 py-2 text-xs text-muted-foreground border-r border-b">
-                                    {}
+                                <div className="w-12 px-2 py-2 text-xs text-muted-foreground border-r border-b border-border">
                                     {virtualRow.index + 1}
                                 </div>
                                 {columns.map((column) => (
                                     <div
                                         key={column}
-                                        className="min-w-[150px] px-3 py-2 text-xs font-mono border-r border-b last:border-r-0 truncate"
+                                        className="min-w-[150px] px-3 py-2 text-xs font-mono border-r border-b border-border last:border-r-0 truncate"
                                         title={formatCellValue(doc[column])}
                                     >
                                         {renderCellValue(doc[column])}
@@ -150,7 +149,7 @@ export function ResultsTable({
                                                 onClick={() => {
                                                     onDeleteDocument(docId)
                                                 }}
-                                                className="text-red-600"
+                                                className="text-destructive"
                                             >
                                                 <Trash2 className="mr-2 h-4 w-4" />
                                                 Delete
@@ -196,19 +195,19 @@ function renderCellValue(value: unknown): JSX.Element {
         return <span className="text-muted-foreground italic">undefined</span>
     }
     if (typeof value === "boolean") {
-        return <span className="text-blue-500">{String(value)}</span>
+        return <span className="syntax-boolean">{String(value)}</span>
     }
     if (typeof value === "number") {
-        return <span className="text-green-500">{value}</span>
+        return <span className="syntax-number">{value}</span>
     }
     if (typeof value === "string") {
-        return <span className="text-foreground">{value}</span>
+        return <span className="syntax-string">{value}</span>
     }
     if (typeof value === "object") {
         try {
-            return <span className="text-purple-500">{JSON.stringify(value)}</span>
+            return <span className="syntax-property">{JSON.stringify(value)}</span>
         } catch {
-            return <span className="text-purple-500">[Object]</span>
+            return <span className="syntax-property">[Object]</span>
         }
     }
     // Safe to convert primitives to string
