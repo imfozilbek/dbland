@@ -1,5 +1,6 @@
 use crate::state::connection_pool::{ConnectionConfig, DatabaseType};
 use crate::storage::sqlite::SavedConnection;
+use crate::tunnel::SSHTunnelConfig;
 use crate::AppState;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -20,6 +21,7 @@ pub struct ConnectionConfigDto {
     #[serde(rename = "authDatabase")]
     pub auth_database: Option<String>,
     pub tls: Option<bool>,
+    pub ssh: Option<SSHTunnelConfig>,
 }
 
 impl ConnectionConfigDto {
@@ -37,6 +39,7 @@ impl ConnectionConfigDto {
             database: self.database.clone(),
             auth_database: self.auth_database.clone(),
             tls: self.tls.unwrap_or(false),
+            ssh: self.ssh.clone(),
         })
     }
 }
@@ -145,6 +148,7 @@ pub async fn connect(
         database: saved.database,
         auth_database: saved.auth_database,
         tls: saved.tls,
+        ssh: saved.ssh,
     };
 
     state.pool.connect(config).await.map_err(|e| e.to_string())?;
@@ -216,6 +220,7 @@ pub async fn save_connection(
         database: config.database.clone(),
         auth_database: config.auth_database.clone(),
         tls: config.tls.unwrap_or(false),
+        ssh: config.ssh.clone(),
         created_at: now.clone(),
         updated_at: now,
         last_connected_at: None,
