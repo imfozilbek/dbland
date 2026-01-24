@@ -11,6 +11,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0] - 2025-01-24
+
+### Added
+
+#### SSH Tunneling & Advanced Connectivity (Phase 6)
+
+- **SSH Tunnel Support**
+  - SSH tunneling for secure remote connections
+  - Password authentication for SSH
+  - Private key file authentication with optional passphrase
+  - SSH agent authentication support
+  - Automatic tunnel creation and management
+  - AES-256-GCM encrypted storage of SSH credentials
+  - Integration with connection pool
+
+- **Connection Manager Enhancements**
+  - Tabbed interface: Basic, SSH, SSL/TLS, Advanced
+  - SSHTunnelConfig component for SSH configuration
+  - SSLTLSConfig component for TLS/SSL settings
+  - ConnectionStringBuilder for URI parsing and building
+  - Support for certificate and key file paths
+
+- **Security**
+  - Encrypted SSH configuration in SQLite database
+  - Database migration for existing connections
+  - Secure credential handling (never exposed to frontend)
+
+#### Redis Features (Phase 7)
+
+- **Redis Key Browser**
+  - Pattern-based key search with SCAN command
+  - Key selection and navigation
+  - Support for wildcards and patterns
+
+- **Redis Data Viewers**
+  - String value viewer
+  - List viewer with index display
+  - Set viewer with member listing
+  - Hash viewer with field/value pairs
+  - Sorted Set (ZSet) viewer with scores
+
+- **TTL Management**
+  - View current TTL for keys
+  - Set/update TTL values
+  - Visual TTL indicator
+
+- **Performance Monitoring**
+  - Slow log viewer with command details
+  - Duration highlighting (red >1s, yellow >100ms, blue <100ms)
+  - Timestamp and command display
+  - Refresh functionality
+
+### Changed
+
+- Updated all package versions to 0.9.0
+- Enhanced connection configuration with SSH and SSL/TLS options
+- Improved connection storage schema with encrypted fields
+
+### Technical
+
+- Added ssh2 dependency for SSH tunneling
+- Created tunnel module with SSHTunnel implementation
+- Extended Redis adapter with SCAN, TYPE, TTL, SLOWLOG commands
+- Added 8 new Tauri commands for Redis operations
+- Created 3 new UI components for Redis data visualization
+
+---
+
 ## [0.8.0] - 2025-01-24
 
 ### Added

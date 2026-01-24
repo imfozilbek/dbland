@@ -17,9 +17,10 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.8.0-green.svg" alt="Version" />
+  <img src="https://img.shields.io/badge/version-0.9.0-green.svg" alt="Version" />
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue.svg" alt="Platform" />
   <img src="https://img.shields.io/badge/MongoDB-Full%20Support-brightgreen.svg" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/Redis-Full%20Support-brightgreen.svg" alt="Redis" />
 </p>
 
 ---
@@ -48,6 +49,8 @@ DBLand is a modern, cross-platform database client for NoSQL databases. Built wi
 - **Cross-platform** — Native apps for macOS, Windows, and Linux
 - **Connection Manager** — Save and organize your database connections
 - **Secure Storage** — Credentials encrypted with AES-256-GCM
+- **SSH Tunneling** — Secure connections via SSH (password, key, agent)
+- **SSL/TLS Support** — Encrypted database connections
 - **Modern UI** — Clean interface with light/dark themes
 
 ### ✅ MongoDB Support (Full)
@@ -61,10 +64,16 @@ DBLand is a modern, cross-platform database client for NoSQL databases. Built wi
 - **Index Management** — Create, drop, and monitor indexes with statistics
 - **Keyboard Shortcuts** — Efficient workflow navigation
 
+### ✅ Redis Support (Full)
+- **Key Browser** — Pattern-based search with SCAN command
+- **Data Viewers** — String, List, Set, Hash, Sorted Set viewers
+- **TTL Management** — View and set expiration times
+- **Slow Log** — Monitor slow queries with performance metrics
+- **Type Detection** — Automatic detection of key data types
+
 ### 🔄 Coming Soon
-- **Redis Features** — Key browser, TTL management, pub/sub
-- **SSH Tunneling** — Secure connections via SSH
 - **Web Version** — Use in browser with WebSocket proxy
+- **More Databases** — Elasticsearch, Cassandra, CouchDB, DynamoDB, Neo4j
 
 ## Installation
 
