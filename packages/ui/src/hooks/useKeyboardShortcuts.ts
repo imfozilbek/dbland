@@ -15,9 +15,7 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]): void {
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent): void => {
             for (const shortcut of shortcuts) {
-                const ctrlOrCmdPressed = isMac
-                    ? event.metaKey
-                    : event.ctrlKey
+                const ctrlOrCmdPressed = isMac ? event.metaKey : event.ctrlKey
 
                 const keyMatches = event.key.toLowerCase() === shortcut.key.toLowerCase()
                 const ctrlMatches = shortcut.ctrlOrCmd ? ctrlOrCmdPressed : !ctrlOrCmdPressed
