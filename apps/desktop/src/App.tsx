@@ -82,7 +82,7 @@ function AppLayout(): JSX.Element {
 
 function App(): JSX.Element {
     return (
-        <ThemeProvider defaultTheme="system" storageKey="dbland-ui-theme">
+        <ThemeProvider defaultTheme="system">
             <PlatformProvider api={tauriPlatformAPI}>
                 <BrowserRouter>
                     <Routes>

@@ -1,7 +1,6 @@
 import { invoke } from "@tauri-apps/api/core"
 import { open, save } from "@tauri-apps/plugin-dialog"
 import type {
-    AggregationPipelineStage,
     AggregationResult,
     CollectionInfo,
     Connection,
@@ -22,6 +21,7 @@ import type {
     PreviewStageRequest,
     QueryHistoryEntry,
     QueryResult,
+    ResultDocument,
     SavedQuery,
     ScanKeysRequest,
     ScanKeysResult,
@@ -480,7 +480,7 @@ export const tauriPlatformAPI: PlatformAPI = {
     executeAggregationPipeline: async (
         request: ExecuteAggregationRequest,
     ): Promise<AggregationResult> => {
-        const pipeline: AggregationPipelineStage[] = request.pipeline.map((stage) => ({
+        const pipeline = request.pipeline.map((stage) => ({
             stage_type: stage.stageType,
             stage_data: stage.stageData,
         }))
@@ -510,7 +510,7 @@ export const tauriPlatformAPI: PlatformAPI = {
     },
 
     previewPipelineStage: async (request: PreviewStageRequest): Promise<AggregationResult> => {
-        const pipeline: AggregationPipelineStage[] = request.pipeline.map((stage) => ({
+        const pipeline = request.pipeline.map((stage) => ({
             stage_type: stage.stageType,
             stage_data: stage.stageData,
         }))

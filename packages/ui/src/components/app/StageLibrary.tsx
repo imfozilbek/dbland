@@ -1,4 +1,4 @@
-import * as React from "react"
+
 import { ScrollArea } from "../ui/scroll-area"
 import { Card } from "../ui/card"
 import { Plus } from "lucide-react"

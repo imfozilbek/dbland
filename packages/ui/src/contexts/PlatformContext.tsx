@@ -181,7 +181,7 @@ export interface ExportResult {
 
 export interface AggregationPipelineStage {
     stageType: string
-    stageData: Record<string, unknown>
+    stageData: Record<string, unknown> | string | number
 }
 
 export interface ExecuteAggregationRequest {

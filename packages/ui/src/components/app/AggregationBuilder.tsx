@@ -1,4 +1,4 @@
-import * as React from "react"
+
 import { useState } from "react"
 import {
     type AggregationPipelineStage,
@@ -146,7 +146,7 @@ export function AggregationBuilder({
                 </div>
             </div>
 
-            <ResizablePanelGroup direction="horizontal" className="flex-1">
+            <ResizablePanelGroup orientation="horizontal" className="flex-1">
                 <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
                     <StageLibrary onAddStage={handleAddStage} />
                 </ResizablePanel>

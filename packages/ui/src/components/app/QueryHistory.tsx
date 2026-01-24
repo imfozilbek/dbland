@@ -1,4 +1,4 @@
-import * as React from "react"
+
 import { useEffect, useState } from "react"
 import { type QueryHistoryEntry, usePlatform } from "../../contexts/PlatformContext"
 import { Badge } from "../ui/badge"

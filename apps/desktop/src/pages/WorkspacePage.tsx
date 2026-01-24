@@ -34,7 +34,6 @@ import {
     selectQueryLanguage,
     selectResultsViewMode,
     Tabs,
-    TabsContent,
     TabsList,
     TabsTrigger,
     usePlatform,
@@ -87,13 +86,6 @@ export function WorkspacePage(): JSX.Element {
             setSelectedCollection(coll)
         }
     }, [searchParams])
-
-    // Keyboard shortcuts
-    useKeyboardShortcuts({
-        onExecuteQuery: handleExecuteQuery,
-        onFormatQuery: formatQueryAction,
-        onSaveQuery: handleSaveQuery,
-    })
 
     const handleExecuteQuery = (): void => {
         if (!connectionId) {
@@ -164,6 +156,29 @@ export function WorkspacePage(): JSX.Element {
                 console.error("Failed to delete document:", err)
             })
     }
+
+    // Keyboard shortcuts
+    useKeyboardShortcuts([
+        {
+            key: "Enter",
+            ctrlOrCmd: true,
+            handler: handleExecuteQuery,
+            description: "Execute query",
+        },
+        {
+            key: "s",
+            ctrlOrCmd: true,
+            handler: handleSaveQuery,
+            description: "Save query",
+        },
+        {
+            key: "f",
+            ctrlOrCmd: true,
+            shift: true,
+            handler: formatQueryAction,
+            description: "Format query",
+        },
+    ])
 
     return (
         <div className="flex h-full flex-col">
@@ -289,7 +304,7 @@ export function WorkspacePage(): JSX.Element {
                         </div>
 
                         {/* Query editor and results */}
-                        <ResizablePanelGroup direction="horizontal" className="flex-1">
+                        <ResizablePanelGroup orientation="horizontal" className="flex-1">
                             <ResizablePanel
                                 defaultSize={showHistory || showSavedQueries ? 70 : 100}
                                 minSize={30}

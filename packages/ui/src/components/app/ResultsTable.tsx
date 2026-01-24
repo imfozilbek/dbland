@@ -1,4 +1,4 @@
-import { useVirtualizer } from "@tantml:react-virtual"
+import { useVirtualizer } from "@tanstack/react-virtual"
 import { useRef } from "react"
 import type { ResultDocument } from "../../contexts/PlatformContext"
 import { ScrollArea } from "../ui/scroll-area"
@@ -35,7 +35,7 @@ export function ResultsTable({
                 return doc._id
             }
             if (typeof doc._id === "object" && doc._id !== null && "$oid" in doc._id) {
-                return String(doc._id.$oid)
+                return String((doc._id as { $oid: string }).$oid)
             }
         }
         return null

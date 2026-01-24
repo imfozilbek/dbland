@@ -11,13 +11,11 @@ import {
     TabsContent,
     TabsList,
     TabsTrigger,
-    usePlatform,
 } from "@dbland/ui"
 import { Database, Key, Clock } from "lucide-react"
 
 export function RedisWorkspacePage(): JSX.Element {
     const { connectionId } = useParams()
-    const platform = usePlatform()
     const [selectedKey, setSelectedKey] = useState<string | null>(null)
 
     return (
@@ -45,7 +43,7 @@ export function RedisWorkspacePage(): JSX.Element {
                 </TabsList>
 
                 <TabsContent value="browser" className="flex-1 overflow-hidden mt-0">
-                    <ResizablePanelGroup direction="horizontal" className="h-full">
+                    <ResizablePanelGroup orientation="horizontal" className="h-full">
                         <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
                             <div className="h-full p-4">
                                 <RedisKeyBrowser

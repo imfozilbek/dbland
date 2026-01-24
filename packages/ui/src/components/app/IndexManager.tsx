@@ -1,4 +1,4 @@
-import * as React from "react"
+
 import { useEffect, useState } from "react"
 import { type Index, type IndexStats, usePlatform } from "../../contexts/PlatformContext"
 import { Button } from "../ui/button"
