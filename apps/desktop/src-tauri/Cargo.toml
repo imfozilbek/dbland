@@ -36,6 +36,8 @@ urlencoding = "2"
 thiserror = "2"
 # Date/time
 chrono = { version = "0.4", features = ["serde"] }
+# SSH tunneling
+ssh2 = "0.9"
 
 [features]
 default = ["custom-protocol"]

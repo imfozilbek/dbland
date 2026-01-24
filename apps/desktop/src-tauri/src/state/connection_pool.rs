@@ -7,6 +7,7 @@ use crate::adapters::{
     redis::{RedisAdapter, RedisConfig},
     AdapterError, DatabaseAdapter, TestResult,
 };
+use crate::tunnel::{SSHTunnel, SSHTunnelConfig};
 
 /// Database type enum
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -45,12 +46,14 @@ pub struct ConnectionConfig {
     pub database: Option<String>,
     pub auth_database: Option<String>,
     pub tls: bool,
+    pub ssh: Option<SSHTunnelConfig>,
 }
 
 /// Active connection wrapper
 struct ActiveConnection {
     adapter: Box<dyn DatabaseAdapter>,
     config: ConnectionConfig,
+    tunnel: Option<SSHTunnel>,
 }
 
 /// Connection pool manages all active database connections
@@ -80,12 +83,42 @@ impl ConnectionPool {
 
     /// Connect and store the connection
     pub async fn connect(&self, config: ConnectionConfig) -> Result<(), AdapterError> {
-        let mut adapter = self.create_adapter(&config)?;
+        // Check if SSH tunnel is needed
+        let (tunnel, effective_host, effective_port) = if let Some(ssh_config) = &config.ssh {
+            if ssh_config.enabled {
+                // Create and start SSH tunnel
+                let mut tunnel = SSHTunnel::new(
+                    ssh_config.clone(),
+                    config.host.clone(),
+                    config.port,
+                )
+                .map_err(|e: crate::tunnel::ssh::SSHTunnelError| AdapterError::ConnectionFailed(e.to_string()))?;
+
+                tunnel
+                    .start()
+                    .map_err(|e: crate::tunnel::ssh::SSHTunnelError| AdapterError::ConnectionFailed(e.to_string()))?;
+
+                let local_port = tunnel.local_port();
+                (Some(tunnel), "127.0.0.1".to_string(), local_port)
+            } else {
+                (None, config.host.clone(), config.port)
+            }
+        } else {
+            (None, config.host.clone(), config.port)
+        };
+
+        // Create config with effective host/port (tunnel if enabled)
+        let mut effective_config = config.clone();
+        effective_config.host = effective_host;
+        effective_config.port = effective_port;
+
+        let mut adapter = self.create_adapter(&effective_config)?;
         adapter.connect().await?;
 
         let active = ActiveConnection {
             adapter,
             config: config.clone(),
+            tunnel,
         };
 
         let mut guard = self.connections.write().await;
@@ -100,6 +133,11 @@ impl ConnectionPool {
 
         if let Some(mut active) = guard.remove(connection_id) {
             active.adapter.disconnect().await?;
+
+            // Stop SSH tunnel if exists
+            if let Some(mut tunnel) = active.tunnel {
+                tunnel.stop();
+            }
         }
 
         Ok(())

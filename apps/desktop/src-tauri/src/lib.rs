@@ -2,6 +2,7 @@ mod adapters;
 mod commands;
 mod state;
 mod storage;
+mod tunnel;
 
 use state::ConnectionPool;
 use storage::{ConnectionStorage, Crypto, QueryHistoryStorage, SavedQueriesStorage};
