@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Database Profiler (Backend)**
+  - New profiler commands: get_profiler_level, set_profiler_level, get_profiler_data, clear_profiler_data
+  - Query system.profile collection for performance monitoring
+  - Set profiler levels (0=off, 1=slow ops, 2=all ops)
+  - Configure slow query threshold
+  - Clear profiler data
+
 ### Fixed
 
 - **TypeScript Compilation**

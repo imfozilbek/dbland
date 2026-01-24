@@ -100,4 +100,7 @@ pub trait DatabaseAdapter: Send + Sync {
         collection: Option<&str>,
         query: &str,
     ) -> Result<QueryResult, AdapterError>;
+
+    /// Enable downcasting to concrete adapter types
+    fn as_any(&self) -> &dyn std::any::Any;
 }

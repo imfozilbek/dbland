@@ -285,6 +285,10 @@ impl DatabaseAdapter for RedisAdapter {
             error: None,
         })
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 /// Convert Redis value to JSON

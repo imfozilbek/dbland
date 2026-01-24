@@ -44,12 +44,6 @@ pub async fn execute_aggregation_pipeline(
 ) -> Result<AggregationResult, String> {
     let start = std::time::Instant::now();
 
-    // Get adapter from pool
-    let adapter = state
-        .pool
-        .get(&request.connection_id)
-        .ok_or_else(|| format!("Connection {} not found", request.connection_id))?;
-
     // Build MongoDB aggregation pipeline
     let mut pipeline_stages = Vec::new();
     for stage in &request.pipeline {
@@ -60,24 +54,31 @@ pub async fn execute_aggregation_pipeline(
 
     let pipeline_str = format!("[{}]", pipeline_stages.join(","));
 
-    // Execute aggregation via adapter
+    // Execute aggregation via pool
     let query = format!(
         "db.{}.aggregate({})",
         request.collection_name, pipeline_str
     );
 
-    let result = adapter
-        .execute_query(&query, &request.database_name)
+    let result = state
+        .pool
+        .execute_query(
+            &request.connection_id,
+            &request.database_name,
+            Some(&request.collection_name),
+            &query,
+        )
         .await
         .map_err(|e| format!("Aggregation failed: {:?}", e))?;
 
     let execution_time_ms = start.elapsed().as_millis() as u64;
+    let documents_returned = result.documents.len();
 
     Ok(AggregationResult {
         success: result.success,
         documents: result.documents,
         execution_time_ms,
-        documents_returned: result.documents.len(),
+        documents_returned,
         error: result.error,
     })
 }
@@ -88,12 +89,6 @@ pub async fn preview_pipeline_stage(
     request: PreviewStageRequest,
 ) -> Result<AggregationResult, String> {
     let start = std::time::Instant::now();
-
-    // Get adapter from pool
-    let adapter = state
-        .pool
-        .get(&request.connection_id)
-        .ok_or_else(|| format!("Connection {} not found", request.connection_id))?;
 
     // Build pipeline up to the requested stage
     let stages_to_run: Vec<_> = request
@@ -122,18 +117,25 @@ pub async fn preview_pipeline_stage(
         request.collection_name, pipeline_str
     );
 
-    let result = adapter
-        .execute_query(&query, &request.database_name)
+    let result = state
+        .pool
+        .execute_query(
+            &request.connection_id,
+            &request.database_name,
+            Some(&request.collection_name),
+            &query,
+        )
         .await
         .map_err(|e| format!("Preview failed: {:?}", e))?;
 
     let execution_time_ms = start.elapsed().as_millis() as u64;
+    let documents_returned = result.documents.len();
 
     Ok(AggregationResult {
         success: result.success,
         documents: result.documents,
         execution_time_ms,
-        documents_returned: result.documents.len(),
+        documents_returned,
         error: result.error,
     })
 }

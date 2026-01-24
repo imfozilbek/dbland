@@ -3,6 +3,7 @@ pub mod connection;
 pub mod document;
 pub mod import_export;
 pub mod indexes;
+pub mod profiler;
 pub mod query;
 pub mod redis;
 pub mod saved_queries;

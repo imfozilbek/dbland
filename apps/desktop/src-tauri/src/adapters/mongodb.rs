@@ -79,7 +79,7 @@ impl Default for MongoDbConfig {
 /// MongoDB database adapter
 pub struct MongoDbAdapter {
     config: MongoDbConfig,
-    client: Arc<RwLock<Option<Client>>>,
+    pub client: Arc<RwLock<Option<Client>>>,
 }
 
 impl MongoDbAdapter {
@@ -320,5 +320,9 @@ impl DatabaseAdapter for MongoDbAdapter {
             documents_affected: count,
             error: None,
         })
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }

@@ -41,15 +41,11 @@ pub async fn get_indexes(
     database_name: String,
     collection_name: String,
 ) -> Result<Vec<Index>, String> {
-    let adapter = state
-        .pool
-        .get(&connection_id)
-        .ok_or_else(|| format!("Connection {} not found", connection_id))?;
-
     let query = format!("db.{}.getIndexes()", collection_name);
 
-    let result = adapter
-        .execute_query(&query, &database_name)
+    let result = state
+        .pool
+        .execute_query(&connection_id, &database_name, Some(&collection_name), &query)
         .await
         .map_err(|e| format!("Failed to get indexes: {:?}", e))?;
 
@@ -88,30 +84,25 @@ pub async fn create_index(
     state: State<'_, Arc<AppState>>,
     request: CreateIndexRequest,
 ) -> Result<String, String> {
-    let adapter = state
-        .pool
-        .get(&request.connection_id)
-        .ok_or_else(|| format!("Connection {} not found", request.connection_id))?;
-
     let keys_str = serde_json::to_string(&request.keys)
         .map_err(|e| format!("Failed to serialize keys: {}", e))?;
 
-    let mut options = Vec::new();
+    let mut options: Vec<String> = Vec::new();
 
     if let Some(true) = request.unique {
-        options.push("unique: true");
+        options.push("unique: true".to_string());
     }
     if let Some(true) = request.sparse {
-        options.push("sparse: true");
+        options.push("sparse: true".to_string());
     }
     if let Some(ttl) = request.ttl_seconds {
-        options.push(&format!("expireAfterSeconds: {}", ttl));
+        options.push(format!("expireAfterSeconds: {}", ttl));
     }
     if let Some(true) = request.background {
-        options.push("background: true");
+        options.push("background: true".to_string());
     }
     if let Some(ref name) = request.name {
-        options.push(&format!("name: \"{}\"", name));
+        options.push(format!("name: \"{}\"", name));
     }
 
     let options_str = if options.is_empty() {
@@ -125,8 +116,9 @@ pub async fn create_index(
         request.collection_name, keys_str, options_str
     );
 
-    let result = adapter
-        .execute_query(&query, &request.database_name)
+    let result = state
+        .pool
+        .execute_query(&request.connection_id, &request.database_name, Some(&request.collection_name), &query)
         .await
         .map_err(|e| format!("Failed to create index: {:?}", e))?;
 
@@ -145,15 +137,11 @@ pub async fn drop_index(
     collection_name: String,
     index_name: String,
 ) -> Result<bool, String> {
-    let adapter = state
-        .pool
-        .get(&connection_id)
-        .ok_or_else(|| format!("Connection {} not found", connection_id))?;
-
     let query = format!("db.{}.dropIndex(\"{}\")", collection_name, index_name);
 
-    let result = adapter
-        .execute_query(&query, &database_name)
+    let result = state
+        .pool
+        .execute_query(&connection_id, &database_name, Some(&collection_name), &query)
         .await
         .map_err(|e| format!("Failed to drop index: {:?}", e))?;
 
@@ -167,15 +155,11 @@ pub async fn get_index_stats(
     database_name: String,
     collection_name: String,
 ) -> Result<Vec<IndexStats>, String> {
-    let adapter = state
-        .pool
-        .get(&connection_id)
-        .ok_or_else(|| format!("Connection {} not found", connection_id))?;
-
     let query = format!("db.{}.aggregate([{{$indexStats: {{}}}}])", collection_name);
 
-    let result = adapter
-        .execute_query(&query, &database_name)
+    let result = state
+        .pool
+        .execute_query(&connection_id, &database_name, Some(&collection_name), &query)
         .await
         .map_err(|e| format!("Failed to get index stats: {:?}", e))?;
 
