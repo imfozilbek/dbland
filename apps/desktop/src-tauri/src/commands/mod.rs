@@ -3,6 +3,7 @@ pub mod collection_stats;
 pub mod connection;
 pub mod document;
 pub mod geospatial;
+pub mod gridfs;
 pub mod import_export;
 pub mod indexes;
 pub mod profiler;

@@ -39,6 +39,8 @@ thiserror = "2"
 chrono = { version = "0.4", features = ["serde"] }
 # SSH tunneling
 ssh2 = "0.9"
+# Base64 encoding/decoding for GridFS
+base64 = "0.22"
 
 [features]
 default = ["custom-protocol"]
