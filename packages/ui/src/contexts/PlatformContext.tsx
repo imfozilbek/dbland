@@ -277,6 +277,116 @@ export interface SlowLogEntry {
     command: string
 }
 
+// Database Profiler
+export interface ProfilerLevel {
+    level: number
+    slowMs?: number
+}
+
+export interface ProfilerEntry {
+    ts: string
+    op: string
+    ns: string
+    command: Record<string, unknown>
+    millis: number
+    numYield: number
+    responseLength: number
+}
+
+// Collection Statistics
+export interface DetailedCollectionStats {
+    count: number
+    size: number
+    avgObjSize: number
+    totalIndexSize: number
+    indexSizes: Record<string, number>
+    storageSize: number
+    numExtents: number
+    numOrphanDocs?: number
+    validationLevel?: string
+    validationAction?: string
+    capped: boolean
+    max?: number
+    maxSize?: number
+    sharded: boolean
+    shardDistribution?: Record<string, number>
+}
+
+// Geospatial
+export interface GeospatialQueryRequest {
+    connectionId: string
+    databaseName: string
+    collectionName: string
+    field: string
+    geoType: "near" | "within" | "intersects"
+    coordinates: number[]
+    maxDistance?: number
+    minDistance?: number
+    additionalFilter?: Record<string, unknown>
+}
+
+export interface GeospatialQueryResult {
+    success: boolean
+    documents: ResultDocument[]
+    executionTimeMs: number
+    documentsReturned: number
+    error?: string
+}
+
+// GridFS
+export interface GridFSFile {
+    id: string
+    filename: string
+    length: number
+    chunkSize: number
+    uploadDate: string
+    md5?: string
+    contentType?: string
+    metadata?: Record<string, unknown>
+}
+
+// Replica Set
+export interface ReplicaSetMember {
+    name: string
+    stateStr: string
+    health: number
+    uptime: number
+    optimeDate: string
+    lastHeartbeat?: string
+    pingMs?: number
+    syncSourceHost?: string
+    configVersion: number
+}
+
+export interface ReplicaSetStatus {
+    setName: string
+    date: string
+    myState: number
+    members: ReplicaSetMember[]
+    ok: number
+}
+
+// Sharding
+export interface ShardInfo {
+    shardId: string
+    host: string
+    state: number
+    tags: string[]
+}
+
+export interface ShardedCollection {
+    namespace: string
+    shardKey: Record<string, unknown>
+    unique: boolean
+    balancing: boolean
+    chunkCount: number
+}
+
+export interface ChunkDistribution {
+    shardId: string
+    chunkCount: number
+}
+
 /* -----------------------------------------------------------------------------
  * Platform API Interface
  * -------------------------------------------------------------------------- */
@@ -381,6 +491,72 @@ export interface PlatformAPI {
     redisGetValue: (request: GetValueRequest) => Promise<GetValueResult>
     redisSetTTL: (request: SetTTLRequest) => Promise<boolean>
     redisSlowLog: (connectionId: string, count?: number) => Promise<SlowLogEntry[]>
+
+    // Database Profiler
+    getProfilerLevel: (connectionId: string, databaseName: string) => Promise<ProfilerLevel>
+    setProfilerLevel: (
+        connectionId: string,
+        databaseName: string,
+        level: number,
+        slowMs?: number,
+    ) => Promise<void>
+    getProfilerData: (
+        connectionId: string,
+        databaseName: string,
+        limit?: number,
+    ) => Promise<ProfilerEntry[]>
+    clearProfilerData: (connectionId: string, databaseName: string) => Promise<void>
+
+    // Collection Statistics
+    getDetailedCollectionStats: (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+    ) => Promise<DetailedCollectionStats>
+
+    // Geospatial
+    executeGeospatialQuery: (request: GeospatialQueryRequest) => Promise<GeospatialQueryResult>
+
+    // GridFS
+    listGridFSFiles: (
+        connectionId: string,
+        databaseName: string,
+        bucket?: string,
+        limit?: number,
+    ) => Promise<GridFSFile[]>
+    getGridFSFileMetadata: (
+        connectionId: string,
+        databaseName: string,
+        fileId: string,
+        bucket?: string,
+    ) => Promise<GridFSFile>
+    deleteGridFSFile: (
+        connectionId: string,
+        databaseName: string,
+        fileId: string,
+        bucket?: string,
+    ) => Promise<void>
+    downloadGridFSFile: (
+        connectionId: string,
+        databaseName: string,
+        fileId: string,
+        savePath: string,
+        bucket?: string,
+    ) => Promise<string>
+
+    // Replica Set
+    getReplicaSetStatus: (connectionId: string) => Promise<ReplicaSetStatus>
+    getReplicaSetConfig: (connectionId: string) => Promise<unknown>
+
+    // Sharding
+    getShardingStatus: (connectionId: string) => Promise<unknown>
+    listShards: (connectionId: string) => Promise<ShardInfo[]>
+    listShardedCollections: (connectionId: string) => Promise<ShardedCollection[]>
+    getChunkDistribution: (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+    ) => Promise<ChunkDistribution[]>
 }
 
 /* -----------------------------------------------------------------------------
@@ -488,4 +664,40 @@ export const stubPlatformAPI: PlatformAPI = {
     redisGetValue: async () => ({ value: { type: "none" }, ttl: null }),
     redisSetTTL: async () => false,
     redisSlowLog: async () => [],
+    getProfilerLevel: async () => ({ level: 0 }),
+    setProfilerLevel: async () => {
+        throw new Error("Not implemented")
+    },
+    getProfilerData: async () => [],
+    clearProfilerData: async () => {
+        throw new Error("Not implemented")
+    },
+    getDetailedCollectionStats: async () => {
+        throw new Error("Not implemented")
+    },
+    executeGeospatialQuery: async () => {
+        throw new Error("Not implemented")
+    },
+    listGridFSFiles: async () => [],
+    getGridFSFileMetadata: async () => {
+        throw new Error("Not implemented")
+    },
+    deleteGridFSFile: async () => {
+        throw new Error("Not implemented")
+    },
+    downloadGridFSFile: async () => {
+        throw new Error("Not implemented")
+    },
+    getReplicaSetStatus: async () => {
+        throw new Error("Not implemented")
+    },
+    getReplicaSetConfig: async () => {
+        throw new Error("Not implemented")
+    },
+    getShardingStatus: async () => {
+        throw new Error("Not implemented")
+    },
+    listShards: async () => [],
+    listShardedCollections: async () => [],
+    getChunkDistribution: async () => [],
 }

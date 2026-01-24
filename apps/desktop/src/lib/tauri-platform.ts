@@ -2,16 +2,21 @@ import { invoke } from "@tauri-apps/api/core"
 import { open, save } from "@tauri-apps/plugin-dialog"
 import type {
     AggregationResult,
+    ChunkDistribution,
     CollectionInfo,
     Connection,
     ConnectionConfig,
     CreateIndexRequest,
     DatabaseInfo,
+    DetailedCollectionStats,
     ExecuteAggregationRequest,
     ExportOptions,
     ExportResult,
+    GeospatialQueryRequest,
+    GeospatialQueryResult,
     GetValueRequest,
     GetValueResult,
+    GridFSFile,
     ImportOptions,
     ImportResult,
     Index,
@@ -19,13 +24,18 @@ import type {
     NewSavedQuery,
     PlatformAPI,
     PreviewStageRequest,
+    ProfilerEntry,
+    ProfilerLevel,
     QueryHistoryEntry,
     QueryResult,
+    ReplicaSetStatus,
     ResultDocument,
     SavedQuery,
     ScanKeysRequest,
     ScanKeysResult,
     SetTTLRequest,
+    ShardedCollection,
+    ShardInfo,
     SlowLogEntry,
     TestConnectionResult,
     UpdateSavedQuery,
@@ -629,6 +639,175 @@ export const tauriPlatformAPI: PlatformAPI = {
         return invoke<SlowLogEntry[]>("redis_slow_log", {
             connectionId,
             count: count ?? 10,
+        })
+    },
+
+    // Database Profiler
+    getProfilerLevel: async (
+        connectionId: string,
+        databaseName: string,
+    ): Promise<ProfilerLevel> => {
+        return invoke<ProfilerLevel>("get_profiler_level", {
+            connectionId,
+            databaseName,
+        })
+    },
+
+    setProfilerLevel: async (
+        connectionId: string,
+        databaseName: string,
+        level: number,
+        slowMs?: number,
+    ): Promise<void> => {
+        return invoke("set_profiler_level", {
+            connectionId,
+            databaseName,
+            level,
+            slowMs,
+        })
+    },
+
+    getProfilerData: async (
+        connectionId: string,
+        databaseName: string,
+        limit?: number,
+    ): Promise<ProfilerEntry[]> => {
+        return invoke<ProfilerEntry[]>("get_profiler_data", {
+            connectionId,
+            databaseName,
+            limit,
+        })
+    },
+
+    clearProfilerData: async (connectionId: string, databaseName: string): Promise<void> => {
+        return invoke("clear_profiler_data", {
+            connectionId,
+            databaseName,
+        })
+    },
+
+    // Collection Statistics
+    getDetailedCollectionStats: async (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+    ): Promise<DetailedCollectionStats> => {
+        return invoke<DetailedCollectionStats>("get_detailed_collection_stats", {
+            connectionId,
+            databaseName,
+            collectionName,
+        })
+    },
+
+    // Geospatial
+    executeGeospatialQuery: async (
+        request: GeospatialQueryRequest,
+    ): Promise<GeospatialQueryResult> => {
+        return invoke<GeospatialQueryResult>("execute_geospatial_query", {
+            request,
+        })
+    },
+
+    // GridFS
+    listGridFSFiles: async (
+        connectionId: string,
+        databaseName: string,
+        bucket?: string,
+        limit?: number,
+    ): Promise<GridFSFile[]> => {
+        return invoke<GridFSFile[]>("list_gridfs_files", {
+            connectionId,
+            databaseName,
+            bucket,
+            limit,
+        })
+    },
+
+    getGridFSFileMetadata: async (
+        connectionId: string,
+        databaseName: string,
+        fileId: string,
+        bucket?: string,
+    ): Promise<GridFSFile> => {
+        return invoke<GridFSFile>("get_gridfs_file_metadata", {
+            connectionId,
+            databaseName,
+            fileId,
+            bucket,
+        })
+    },
+
+    deleteGridFSFile: async (
+        connectionId: string,
+        databaseName: string,
+        fileId: string,
+        bucket?: string,
+    ): Promise<void> => {
+        return invoke("delete_gridfs_file", {
+            connectionId,
+            databaseName,
+            fileId,
+            bucket,
+        })
+    },
+
+    downloadGridFSFile: async (
+        connectionId: string,
+        databaseName: string,
+        fileId: string,
+        savePath: string,
+        bucket?: string,
+    ): Promise<string> => {
+        return invoke<string>("download_gridfs_file", {
+            connectionId,
+            databaseName,
+            fileId,
+            savePath,
+            bucket,
+        })
+    },
+
+    // Replica Set
+    getReplicaSetStatus: async (connectionId: string): Promise<ReplicaSetStatus> => {
+        return invoke<ReplicaSetStatus>("get_replica_set_status", {
+            connectionId,
+        })
+    },
+
+    getReplicaSetConfig: async (connectionId: string): Promise<unknown> => {
+        return invoke<unknown>("get_replica_set_config", {
+            connectionId,
+        })
+    },
+
+    // Sharding
+    getShardingStatus: async (connectionId: string): Promise<unknown> => {
+        return invoke<unknown>("get_sharding_status", {
+            connectionId,
+        })
+    },
+
+    listShards: async (connectionId: string): Promise<ShardInfo[]> => {
+        return invoke<ShardInfo[]>("list_shards", {
+            connectionId,
+        })
+    },
+
+    listShardedCollections: async (connectionId: string): Promise<ShardedCollection[]> => {
+        return invoke<ShardedCollection[]>("list_sharded_collections", {
+            connectionId,
+        })
+    },
+
+    getChunkDistribution: async (
+        connectionId: string,
+        databaseName: string,
+        collectionName: string,
+    ): Promise<ChunkDistribution[]> => {
+        return invoke<ChunkDistribution[]>("get_chunk_distribution", {
+            connectionId,
+            databaseName,
+            collectionName,
         })
     },
 }
