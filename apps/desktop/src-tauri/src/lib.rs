@@ -118,6 +118,7 @@ pub fn run() {
             commands::profiler::get_profiler_data,
             commands::profiler::clear_profiler_data,
             commands::collection_stats::get_detailed_collection_stats,
+            commands::geospatial::execute_geospatial_query,
             commands::redis::redis_scan_keys,
             commands::redis::redis_get_value,
             commands::redis::redis_set_ttl,

@@ -27,6 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Capped collection info (max, maxSize)
   - Sharding distribution per shard
 
+- **Geospatial Queries (Backend)**
+  - New command: execute_geospatial_query
+  - Support for $near queries with distance limits
+  - Support for $geoWithin polygon queries
+  - Support for $geoIntersects queries
+  - Merge additional filters with geospatial conditions
+  - Distance units in meters
+
 ### Fixed
 
 - **TypeScript Compilation**
