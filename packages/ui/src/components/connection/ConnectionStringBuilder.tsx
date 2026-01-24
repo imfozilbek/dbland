@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Label } from "../ui/label"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
@@ -90,7 +90,9 @@ export function ConnectionStringBuilder({
                         id="connection-string"
                         placeholder={`${databaseType}://user:password@host:port/database`}
                         value={connectionString}
-                        onChange={(e) => setConnectionString(e.target.value)}
+                        onChange={(e) => {
+                            setConnectionString(e.target.value)
+                        }}
                         className="font-mono text-sm"
                     />
                     <Button onClick={handleParseConnectionString} variant="outline" size="icon">

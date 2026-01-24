@@ -1,12 +1,12 @@
 import * as React from "react"
-import { useState, useEffect } from "react"
-import { usePlatform, type Index, type IndexStats } from "../../contexts/PlatformContext"
+import { useEffect, useState } from "react"
+import { type Index, type IndexStats, usePlatform } from "../../contexts/PlatformContext"
 import { Button } from "../ui/button"
 import { Card } from "../ui/card"
 import { ScrollArea } from "../ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import { Badge } from "../ui/badge"
-import { Plus, Trash2, RefreshCw } from "lucide-react"
+import { Plus, RefreshCw, Trash2 } from "lucide-react"
 import { CreateIndexDialog } from "./CreateIndexDialog"
 
 export interface IndexManagerProps {

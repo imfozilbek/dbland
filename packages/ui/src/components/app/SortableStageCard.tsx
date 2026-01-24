@@ -3,7 +3,7 @@ import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { Card } from "../ui/card"
 import { Button } from "../ui/button"
-import { GripVertical, Trash2, Eye } from "lucide-react"
+import { Eye, GripVertical, Trash2 } from "lucide-react"
 import type { AggregationPipelineStage } from "../../contexts/PlatformContext"
 
 export interface SortableStageCardProps {

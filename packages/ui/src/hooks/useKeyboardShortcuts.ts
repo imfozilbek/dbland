@@ -9,7 +9,7 @@ export interface KeyboardShortcut {
     description: string
 }
 
-const isMac = typeof window !== "undefined" && navigator.platform.toUpperCase().indexOf("MAC") >= 0
+const isMac = typeof window !== "undefined" && navigator.platform.toUpperCase().includes("MAC")
 
 export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]): void {
     useEffect(() => {

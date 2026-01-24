@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Card } from "../ui/card"
 import { Button } from "../ui/button"
 import { RefreshCw } from "lucide-react"
@@ -46,9 +46,8 @@ export function RedisSlowLogViewer({ connectionId }: RedisSlowLogViewerProps): J
             return `${micros}µs`
         } else if (micros < 1000000) {
             return `${(micros / 1000).toFixed(2)}ms`
-        } else {
-            return `${(micros / 1000000).toFixed(2)}s`
         }
+        return `${(micros / 1000000).toFixed(2)}s`
     }
 
     return (
