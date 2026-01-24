@@ -35,7 +35,7 @@ export function ResultsTable({
                 return doc._id
             }
             if (typeof doc._id === "object" && doc._id !== null && "$oid" in doc._id) {
-                return String((doc._id as { $oid: string }).$oid)
+                return (doc._id as { $oid: string }).$oid
             }
         }
         return null
@@ -105,7 +105,7 @@ export function ResultsTable({
                                 className="flex hover:bg-muted/50"
                             >
                                 <div className="w-12 px-2 py-2 text-xs text-muted-foreground border-r border-b">
-                                    {/* eslint-disable-next-line @typescript-eslint/restrict-plus-operands */}
+                                    {}
                                     {virtualRow.index + 1}
                                 </div>
                                 {columns.map((column) => (

@@ -458,7 +458,7 @@ export const tauriPlatformAPI: PlatformAPI = {
                 : undefined,
         })
 
-        return selected as string | null
+        return selected
     },
 
     saveFileDialog: async (defaultName?: string, filters?: string[]): Promise<string | null> => {
@@ -474,7 +474,7 @@ export const tauriPlatformAPI: PlatformAPI = {
                 : undefined,
         })
 
-        return selected as string | null
+        return selected
     },
 
     executeAggregationPipeline: async (

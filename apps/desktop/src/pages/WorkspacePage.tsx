@@ -36,11 +36,11 @@ import {
     Tabs,
     TabsList,
     TabsTrigger,
+    useKeyboardShortcuts,
     usePlatform,
     useQueryStore,
-    useKeyboardShortcuts,
 } from "@dbland/ui"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 
 export function WorkspacePage(): JSX.Element {
     const { connectionId } = useParams()

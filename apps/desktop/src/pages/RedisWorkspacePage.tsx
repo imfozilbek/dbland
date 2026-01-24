@@ -12,7 +12,7 @@ import {
     TabsList,
     TabsTrigger,
 } from "@dbland/ui"
-import { Database, Key, Clock } from "lucide-react"
+import { Clock, Database, Key } from "lucide-react"
 
 export function RedisWorkspacePage(): JSX.Element {
     const { connectionId } = useParams()
