@@ -1,0 +1,262 @@
+import { useEffect, useState } from "react"
+import {
+    type ChunkDistribution,
+    type ShardedCollection,
+    type ShardInfo,
+    usePlatform,
+} from "../../contexts/PlatformContext"
+import { Badge } from "../ui/badge"
+import { Button } from "../ui/button"
+import { Card } from "../ui/card"
+import { ScrollArea } from "../ui/scroll-area"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
+import { Grid, RefreshCw, Server } from "lucide-react"
+
+export interface ShardingDashboardProps {
+    connectionId: string | null
+}
+
+export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX.Element {
+    const platform = usePlatform()
+    const [shards, setShards] = useState<ShardInfo[]>([])
+    const [collections, setCollections] = useState<ShardedCollection[]>([])
+    const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
+    const [chunkDist, setChunkDist] = useState<ChunkDistribution[]>([])
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (!connectionId) {
+            setShards([])
+            setCollections([])
+            return
+        }
+
+        loadData()
+    }, [connectionId])
+
+    const loadData = (): void => {
+        if (!connectionId) {
+            return
+        }
+
+        setIsLoading(true)
+        setError(null)
+
+        Promise.all([
+            platform.listShards(connectionId),
+            platform.listShardedCollections(connectionId),
+        ])
+            .then(([shardsData, collectionsData]) => {
+                setShards(shardsData)
+                setCollections(collectionsData)
+            })
+            .catch((err: unknown) => {
+                console.error("Failed to load sharding data:", err)
+                setError(err instanceof Error ? err.message : "Failed to load sharding data")
+            })
+            .finally(() => {
+                setIsLoading(false)
+            })
+    }
+
+    const loadChunkDistribution = (namespace: string): void => {
+        if (!connectionId) {
+            return
+        }
+
+        const [db, coll] = namespace.split(".")
+        if (!db || !coll) {
+            return
+        }
+
+        setSelectedCollection(namespace)
+        platform
+            .getChunkDistribution(connectionId, db, coll)
+            .then((data) => {
+                setChunkDist(data)
+            })
+            .catch((err: unknown) => {
+                console.error("Failed to load chunk distribution:", err)
+            })
+    }
+
+    if (!connectionId) {
+        return (
+            <div className="flex h-full items-center justify-center text-muted-foreground">
+                <Grid className="mr-2 h-5 w-5" />
+                Select a connection to view sharding status
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="flex h-full flex-col items-center justify-center space-y-4">
+                <div className="text-destructive">{error}</div>
+                <Button onClick={loadData} variant="outline">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Retry
+                </Button>
+            </div>
+        )
+    }
+
+    if (isLoading && shards.length === 0) {
+        return (
+            <div className="flex h-full items-center justify-center text-muted-foreground">
+                Loading sharding information...
+            </div>
+        )
+    }
+
+    return (
+        <div className="flex h-full flex-col space-y-4 p-4">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Server className="h-5 w-5" />
+                    <h2 className="text-lg font-semibold">Sharding Dashboard</h2>
+                    <Badge variant="secondary">{shards.length} Shards</Badge>
+                </div>
+                <Button onClick={loadData} variant="outline" size="sm" disabled={isLoading}>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+                    Refresh
+                </Button>
+            </div>
+
+            {/* Tabs */}
+            <Tabs defaultValue="shards" className="flex-1 flex flex-col">
+                <TabsList>
+                    <TabsTrigger value="shards">Shards</TabsTrigger>
+                    <TabsTrigger value="collections">Sharded Collections</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="shards" className="flex-1 overflow-hidden">
+                    <ScrollArea className="h-full">
+                        <div className="space-y-3">
+                            {shards.map((shard) => (
+                                <Card key={shard.shardId} className="p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <div className="font-mono text-sm font-medium">
+                                                {shard.shardId}
+                                            </div>
+                                            <div className="mt-1 text-xs text-muted-foreground">
+                                                {shard.host}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Badge
+                                                variant={
+                                                    shard.state === 1 ? "default" : "destructive"
+                                                }
+                                            >
+                                                {shard.state === 1 ? "Active" : "Inactive"}
+                                            </Badge>
+                                            {shard.tags.length > 0 && (
+                                                <div className="flex gap-1">
+                                                    {shard.tags.map((tag, i) => (
+                                                        <Badge key={i} variant="outline">
+                                                            {tag}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="collections" className="flex-1 overflow-hidden">
+                    <div className="flex h-full gap-4">
+                        {/* Collections List */}
+                        <div className="w-1/2 overflow-hidden rounded-lg border">
+                            <ScrollArea className="h-full">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Collection</TableHead>
+                                            <TableHead>Shard Key</TableHead>
+                                            <TableHead>Options</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {collections.map((coll) => (
+                                            <TableRow
+                                                key={coll.namespace}
+                                                className="cursor-pointer hover:bg-muted/50"
+                                                onClick={() =>
+                                                    loadChunkDistribution(coll.namespace)
+                                                }
+                                            >
+                                                <TableCell className="font-mono text-sm">
+                                                    {coll.namespace}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <code className="rounded bg-muted px-2 py-1 text-xs">
+                                                        {JSON.stringify(coll.shardKey)}
+                                                    </code>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex gap-1">
+                                                        {coll.unique && (
+                                                            <Badge variant="outline">Unique</Badge>
+                                                        )}
+                                                        {coll.balancing && (
+                                                            <Badge variant="secondary">
+                                                                Balancing
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </ScrollArea>
+                        </div>
+
+                        {/* Chunk Distribution */}
+                        <div className="w-1/2 overflow-hidden rounded-lg border">
+                            {selectedCollection ? (
+                                <div className="p-4">
+                                    <h3 className="mb-4 font-semibold">{selectedCollection}</h3>
+                                    {chunkDist.length === 0 ? (
+                                        <div className="flex h-32 items-center justify-center text-muted-foreground">
+                                            Loading distribution...
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {chunkDist.map((dist) => (
+                                                <div
+                                                    key={dist.shardId}
+                                                    className="flex items-center justify-between rounded-md border p-3"
+                                                >
+                                                    <div className="font-mono text-sm">
+                                                        {dist.shardId}
+                                                    </div>
+                                                    <Badge variant="default">
+                                                        {dist.chunkCount.toLocaleString()} chunks
+                                                    </Badge>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex h-full items-center justify-center text-muted-foreground">
+                                    Select a collection to view chunk distribution
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </TabsContent>
+            </Tabs>
+        </div>
+    )
+}
