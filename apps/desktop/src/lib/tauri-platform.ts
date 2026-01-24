@@ -11,6 +11,8 @@ import type {
     ExecuteAggregationRequest,
     ExportOptions,
     ExportResult,
+    GetValueRequest,
+    GetValueResult,
     ImportOptions,
     ImportResult,
     Index,
@@ -21,6 +23,10 @@ import type {
     QueryHistoryEntry,
     QueryResult,
     SavedQuery,
+    ScanKeysRequest,
+    ScanKeysResult,
+    SetTTLRequest,
+    SlowLogEntry,
     TestConnectionResult,
     UpdateSavedQuery,
 } from "@dbland/ui"
@@ -586,6 +592,43 @@ export const tauriPlatformAPI: PlatformAPI = {
             connectionId,
             databaseName,
             collectionName,
+        })
+    },
+
+    // Redis methods
+    redisScanKeys: async (request: ScanKeysRequest): Promise<ScanKeysResult> => {
+        return invoke<ScanKeysResult>("redis_scan_keys", {
+            request: {
+                connection_id: request.connectionId,
+                pattern: request.pattern,
+                count: request.count,
+            },
+        })
+    },
+
+    redisGetValue: async (request: GetValueRequest): Promise<GetValueResult> => {
+        return invoke<GetValueResult>("redis_get_value", {
+            request: {
+                connection_id: request.connectionId,
+                key: request.key,
+            },
+        })
+    },
+
+    redisSetTTL: async (request: SetTTLRequest): Promise<boolean> => {
+        return invoke<boolean>("redis_set_ttl", {
+            request: {
+                connection_id: request.connectionId,
+                key: request.key,
+                seconds: request.seconds,
+            },
+        })
+    },
+
+    redisSlowLog: async (connectionId: string, count?: number): Promise<SlowLogEntry[]> => {
+        return invoke<SlowLogEntry[]>("redis_slow_log", {
+            connectionId,
+            count: count ?? 10,
         })
     },
 }

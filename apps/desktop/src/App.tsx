@@ -5,6 +5,7 @@ import {
     PlatformProvider,
     Sidebar,
     StatusBar,
+    ThemeProvider,
     Toolbar,
     useConnectionStore,
     usePlatformInit,
@@ -72,17 +73,19 @@ function AppLayout(): JSX.Element {
 
 function App(): JSX.Element {
     return (
-        <PlatformProvider api={tauriPlatformAPI}>
-            <BrowserRouter>
-                <Routes>
-                    <Route path="/" element={<AppLayout />}>
-                        <Route index element={<HomePage />} />
-                        <Route path="workspace/:connectionId" element={<WorkspacePage />} />
-                        <Route path="settings" element={<SettingsPage />} />
-                    </Route>
-                </Routes>
-            </BrowserRouter>
-        </PlatformProvider>
+        <ThemeProvider defaultTheme="system" storageKey="dbland-ui-theme">
+            <PlatformProvider api={tauriPlatformAPI}>
+                <BrowserRouter>
+                    <Routes>
+                        <Route path="/" element={<AppLayout />}>
+                            <Route index element={<HomePage />} />
+                            <Route path="workspace/:connectionId" element={<WorkspacePage />} />
+                            <Route path="settings" element={<SettingsPage />} />
+                        </Route>
+                    </Routes>
+                </BrowserRouter>
+            </PlatformProvider>
+        </ThemeProvider>
     )
 }
 

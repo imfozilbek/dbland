@@ -235,6 +235,48 @@ export interface IndexStats {
     since?: string
 }
 
+export interface ScanKeysRequest {
+    connectionId: string
+    pattern: string
+    count?: number
+}
+
+export interface ScanKeysResult {
+    keys: string[]
+    cursor: number
+}
+
+export interface GetValueRequest {
+    connectionId: string
+    key: string
+}
+
+export interface GetValueResult {
+    value: RedisValue
+    ttl: number | null
+}
+
+export type RedisValue =
+    | { type: "string"; value: string }
+    | { type: "list"; values: string[] }
+    | { type: "set"; values: string[] }
+    | { type: "zset"; values: [string, number][] }
+    | { type: "hash"; fields: [string, string][] }
+    | { type: "none" }
+
+export interface SetTTLRequest {
+    connectionId: string
+    key: string
+    seconds: number
+}
+
+export interface SlowLogEntry {
+    id: number
+    timestamp: number
+    duration: number
+    command: string
+}
+
 /* -----------------------------------------------------------------------------
  * Platform API Interface
  * -------------------------------------------------------------------------- */
@@ -333,6 +375,12 @@ export interface PlatformAPI {
         databaseName: string,
         collectionName: string,
     ) => Promise<IndexStats[]>
+
+    // Redis
+    redisScanKeys: (request: ScanKeysRequest) => Promise<ScanKeysResult>
+    redisGetValue: (request: GetValueRequest) => Promise<GetValueResult>
+    redisSetTTL: (request: SetTTLRequest) => Promise<boolean>
+    redisSlowLog: (connectionId: string, count?: number) => Promise<SlowLogEntry[]>
 }
 
 /* -----------------------------------------------------------------------------
@@ -436,4 +484,8 @@ export const stubPlatformAPI: PlatformAPI = {
         throw new Error("Not implemented")
     },
     getIndexStats: async () => [],
+    redisScanKeys: async () => ({ keys: [], cursor: 0 }),
+    redisGetValue: async () => ({ value: { type: "none" }, ttl: null }),
+    redisSetTTL: async () => false,
+    redisSlowLog: async () => [],
 }
