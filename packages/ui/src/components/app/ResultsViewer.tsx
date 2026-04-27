@@ -1,12 +1,30 @@
-import { Grid, Table, TreePine } from "lucide-react"
+import { Braces, ListTree, Play, Table } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 import { Badge } from "../ui/badge"
 import { Card, CardContent, CardHeader } from "../ui/card"
+import { EmptyState } from "../ui/empty-state"
 import type { QueryResult } from "../../contexts/PlatformContext"
 import type { ResultsViewMode } from "../../stores/query-store"
 import { ResultsTable } from "./ResultsTable"
 import { ResultsJson } from "./ResultsJson"
 import { ResultsTree } from "./ResultsTree"
+
+/**
+ * Render the keyboard shortcut for "execute query" using the convention
+ * each platform expects (⌘ on macOS, Ctrl elsewhere). We only consult the
+ * window during render so SSR / non-browser hosts still produce a sensible
+ * fallback string.
+ */
+function getExecuteShortcutLabel(): string {
+    if (typeof navigator !== "undefined") {
+        const platform = navigator.platform || ""
+        const userAgent = navigator.userAgent || ""
+        if (/Mac|iPhone|iPad|iPod/.test(platform) || userAgent.includes("Macintosh")) {
+            return "⌘ Enter"
+        }
+    }
+    return "Ctrl + Enter"
+}
 
 export interface ResultsViewerProps {
     result: QueryResult | null
@@ -31,14 +49,21 @@ export function ResultsViewer({
 }: ResultsViewerProps): JSX.Element {
     if (!result) {
         return (
-            <Card className="h-full flex items-center justify-center">
-                <CardContent className="text-muted-foreground text-center py-8">
-                    <div className="animate-fadeIn">
-                        <p className="text-sm">Run a query to see results</p>
-                        <p className="text-xs mt-1 opacity-70">Press Cmd+Enter to execute</p>
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="flex h-full items-center justify-center">
+                <EmptyState
+                    icon={<Play className="h-5 w-5" />}
+                    title="No results yet"
+                    description={
+                        <>
+                            Run a query to populate this panel.{" "}
+                            <span className="rounded border border-[var(--border)] bg-[var(--card)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--foreground)]">
+                                {getExecuteShortcutLabel()}
+                            </span>{" "}
+                            executes.
+                        </>
+                    }
+                />
+            </div>
         )
     }
 
@@ -99,11 +124,11 @@ export function ResultsViewer({
                             Table
                         </TabsTrigger>
                         <TabsTrigger value="json" className="flex items-center gap-2">
-                            <Grid className="h-4 w-4" />
+                            <Braces className="h-4 w-4" />
                             JSON
                         </TabsTrigger>
                         <TabsTrigger value="tree" className="flex items-center gap-2">
-                            <TreePine className="h-4 w-4" />
+                            <ListTree className="h-4 w-4" />
                             Tree
                         </TabsTrigger>
                     </TabsList>
