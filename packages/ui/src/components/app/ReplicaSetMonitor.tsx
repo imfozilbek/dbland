@@ -80,6 +80,27 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
         return `${days}d ${hours}h ${minutes}m`
     }
 
+    /**
+     * Replication lag — distance between PRIMARY's last write and the secondary's
+     * last applied op. Surfaces as a human-friendly duration; the colour cue is
+     * carried by the surrounding state badge so this is purely informational.
+     */
+    const formatLag = (now: string, secondaryOptime: string): string => {
+        const lagMs = new Date(now).getTime() - new Date(secondaryOptime).getTime()
+        if (Number.isNaN(lagMs) || lagMs < 0) {
+            return "—"
+        }
+        if (lagMs < 1000) {
+            return `${lagMs}ms`
+        }
+        if (lagMs < 60_000) {
+            return `${(lagMs / 1000).toFixed(1)}s`
+        }
+        const minutes = Math.floor(lagMs / 60_000)
+        const seconds = Math.floor((lagMs % 60_000) / 1000)
+        return `${minutes}m ${seconds}s`
+    }
+
     if (!connectionId) {
         return (
             <div className="flex h-full items-center justify-center text-muted-foreground">
@@ -176,6 +197,16 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
 
                                 {/* Member Details */}
                                 <div className="grid grid-cols-2 gap-4 text-sm">
+                                    {member.stateStr !== "PRIMARY" && (
+                                        <div>
+                                            <div className="text-muted-foreground">
+                                                Replication lag
+                                            </div>
+                                            <div className="font-medium">
+                                                {formatLag(status.date, member.optimeDate)}
+                                            </div>
+                                        </div>
+                                    )}
                                     {member.pingMs !== undefined && member.pingMs !== null && (
                                         <div>
                                             <div className="text-muted-foreground">Ping</div>

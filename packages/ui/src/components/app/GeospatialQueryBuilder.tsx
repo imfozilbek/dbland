@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { toast } from "sonner"
 import { type QueryResult, usePlatform } from "../../contexts/PlatformContext"
 import { type ResultsViewMode } from "../../stores/query-store"
 import { Button } from "../ui/button"
@@ -6,8 +7,16 @@ import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { Textarea } from "../ui/textarea"
-import { MapPin } from "lucide-react"
+import { Crosshair, MapPin } from "lucide-react"
 import { ResultsViewer } from "./ResultsViewer"
+
+/**
+ * Fallback coordinates when geolocation is unavailable / denied.
+ * Greenwich (0,0 was confusing for users — Greenwich is meaningful and visible
+ * on every world map), so a "Use my location" button is preferred.
+ */
+const FALLBACK_LONGITUDE = "0"
+const FALLBACK_LATITUDE = "51.4778"
 
 export interface GeospatialQueryBuilderProps {
     connectionId: string | null
@@ -23,8 +32,8 @@ export function GeospatialQueryBuilder({
     const platform = usePlatform()
     const [field, setField] = useState("location")
     const [queryType, setQueryType] = useState<"near" | "within" | "intersects">("near")
-    const [longitude, setLongitude] = useState("-73.97")
-    const [latitude, setLatitude] = useState("40.77")
+    const [longitude, setLongitude] = useState(FALLBACK_LONGITUDE)
+    const [latitude, setLatitude] = useState(FALLBACK_LATITUDE)
     const [maxDistance, setMaxDistance] = useState("1000")
     const [minDistance, setMinDistance] = useState("")
     const [polygonCoords, setPolygonCoords] = useState(
@@ -35,6 +44,28 @@ export function GeospatialQueryBuilder({
     const [viewMode, setViewMode] = useState<ResultsViewMode>("table")
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+
+    const handleUseMyLocation = (): void => {
+        if (typeof navigator === "undefined" || !navigator.geolocation) {
+            toast.error("Geolocation not available", {
+                description: "Your browser does not support the geolocation API.",
+            })
+            return
+        }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setLongitude(pos.coords.longitude.toFixed(6))
+                setLatitude(pos.coords.latitude.toFixed(6))
+                toast.success("Location set")
+            },
+            (err) => {
+                toast.error("Could not get your location", {
+                    description: err.message,
+                })
+            },
+            { timeout: 10_000, enableHighAccuracy: false },
+        )
+    }
 
     const handleExecute = (): void => {
         if (!connectionId || !databaseName || !collectionName) {
@@ -175,6 +206,18 @@ export function GeospatialQueryBuilder({
                                     }}
                                 />
                             </div>
+                        </div>
+                        <div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={handleUseMyLocation}
+                                aria-label="Use device location for coordinates"
+                            >
+                                <Crosshair className="mr-2 h-4 w-4" />
+                                Use my location
+                            </Button>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
