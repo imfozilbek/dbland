@@ -26,6 +26,7 @@ export * from "./components/ui/tree"
 export * from "./components/ui/resizable"
 export * from "./components/ui/textarea"
 export * from "./components/ui/table"
+export * from "./components/ui/empty-state"
 
 // App Components
 export * from "./components/app"

@@ -8,7 +8,8 @@ import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { ScrollArea } from "../ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
-import { Download, File, RefreshCw, Trash2 } from "lucide-react"
+import { Download, File, FolderOpen, Loader2, RefreshCw, Trash2 } from "lucide-react"
+import { EmptyState } from "../ui/empty-state"
 
 export interface GridFSBrowserProps {
     connectionId: string | null
@@ -177,12 +178,21 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
             <div className="flex-1 overflow-hidden rounded-lg border">
                 <ScrollArea className="h-full">
                     {isLoading ? (
-                        <div className="flex h-32 items-center justify-center text-muted-foreground">
-                            Loading GridFS files...
+                        <div className="flex h-32 items-center justify-center gap-2 text-[var(--muted-foreground)]">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span className="text-sm">Loading GridFS files…</span>
                         </div>
                     ) : filteredFiles.length === 0 ? (
-                        <div className="flex h-32 items-center justify-center text-muted-foreground">
-                            {filterText ? "No matching files found" : "No files in this bucket"}
+                        <div className="flex h-40 items-center justify-center">
+                            <EmptyState
+                                icon={<FolderOpen className="h-5 w-5" />}
+                                title={filterText ? "No matches" : "Bucket is empty"}
+                                description={
+                                    filterText
+                                        ? `Nothing in "${bucket}" matches "${filterText}". Try a shorter prefix.`
+                                        : `The "${bucket}" bucket has no files yet. Upload one through your application or change buckets above.`
+                                }
+                            />
                         </div>
                     ) : (
                         <Table>

@@ -4,11 +4,12 @@ import { usePlatform } from "../../contexts/PlatformContext"
 import { useConfirm } from "../../hooks/use-confirm"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
+import { EmptyState } from "../ui/empty-state"
 import { Label } from "../ui/label"
 import { ScrollArea } from "../ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
-import { Activity, ChevronDown, ChevronRight, Trash2 } from "lucide-react"
+import { Activity, ChevronDown, ChevronRight, Loader2, Trash2 } from "lucide-react"
 
 export interface DatabaseProfilerProps {
     connectionId: string | null
@@ -28,6 +29,125 @@ interface ProfilerEntry {
     millis: number
     numYield: number
     responseLength: number
+}
+
+interface ProfilerTableSectionProps {
+    isLoading: boolean
+    entries: ProfilerEntry[]
+    profilerLevel: ProfilerLevel | null
+    expandedRows: Set<number>
+    toggleRowExpansion: (index: number) => void
+    formatTimestamp: (ts: string) => string
+    getDurationBadgeColor: (millis: number) => "default" | "secondary" | "destructive" | "outline"
+}
+
+/**
+ * Loading / empty / data states for the profiler entry list. Lives in its
+ * own component so the parent's branching stays under the complexity cap.
+ */
+function ProfilerTableSection({
+    isLoading,
+    entries,
+    profilerLevel,
+    expandedRows,
+    toggleRowExpansion,
+    formatTimestamp,
+    getDurationBadgeColor,
+}: ProfilerTableSectionProps): JSX.Element {
+    if (isLoading) {
+        return (
+            <div className="flex h-32 items-center justify-center gap-2 text-[var(--muted-foreground)]">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Loading profiler data…</span>
+            </div>
+        )
+    }
+    if (entries.length === 0) {
+        return (
+            <div className="flex h-40 items-center justify-center">
+                <EmptyState
+                    icon={<Activity className="h-5 w-5" />}
+                    title="No profiler entries"
+                    description={
+                        profilerLevel?.level === 0
+                            ? "Profiler is off. Enable level 1 (slow ops) or 2 (all ops) above to start collecting data."
+                            : "Run a few queries on this database — they will appear here as system.profile records them."
+                    }
+                />
+            </div>
+        )
+    }
+    return (
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead>Timestamp</TableHead>
+                    <TableHead>Operation</TableHead>
+                    <TableHead>Namespace</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Yields</TableHead>
+                    <TableHead>Response Size</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {entries.map((entry, index) => (
+                    <>
+                        <TableRow
+                            key={`${entry.ts}-${entry.ns}-${index}`}
+                            className="cursor-pointer"
+                            tabIndex={0}
+                            role="button"
+                            aria-expanded={expandedRows.has(index)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault()
+                                    toggleRowExpansion(index)
+                                }
+                            }}
+                            onClick={() => {
+                                toggleRowExpansion(index)
+                            }}
+                        >
+                            <TableCell>
+                                {expandedRows.has(index) ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                )}
+                            </TableCell>
+                            <TableCell className="text-xs">{formatTimestamp(entry.ts)}</TableCell>
+                            <TableCell>
+                                <Badge variant="outline">{entry.op}</Badge>
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">{entry.ns}</TableCell>
+                            <TableCell>
+                                <Badge variant={getDurationBadgeColor(entry.millis)}>
+                                    {entry.millis}ms
+                                </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">{entry.numYield}</TableCell>
+                            <TableCell className="text-right">
+                                {(entry.responseLength / 1024).toFixed(2)}KB
+                            </TableCell>
+                        </TableRow>
+                        {expandedRows.has(index) && (
+                            <TableRow key={`${index}-detail`}>
+                                <TableCell colSpan={7} className="bg-muted/50">
+                                    <div className="p-4">
+                                        <div className="mb-2 text-sm font-medium">Command:</div>
+                                        <pre className="overflow-auto rounded bg-background p-3 text-xs">
+                                            {JSON.stringify(entry.command, null, 2)}
+                                        </pre>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </>
+                ))}
+            </TableBody>
+        </Table>
+    )
 }
 
 export function DatabaseProfiler({
@@ -264,95 +384,15 @@ export function DatabaseProfiler({
             {/* Profiler Data Table */}
             <div className="flex-1 overflow-hidden rounded-lg border">
                 <ScrollArea className="h-full">
-                    {isLoading ? (
-                        <div className="flex h-32 items-center justify-center text-muted-foreground">
-                            Loading profiler data...
-                        </div>
-                    ) : entries.length === 0 ? (
-                        <div className="flex h-32 items-center justify-center text-muted-foreground">
-                            No profiler data available
-                        </div>
-                    ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-12"></TableHead>
-                                    <TableHead>Timestamp</TableHead>
-                                    <TableHead>Operation</TableHead>
-                                    <TableHead>Namespace</TableHead>
-                                    <TableHead>Duration</TableHead>
-                                    <TableHead>Yields</TableHead>
-                                    <TableHead>Response Size</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {entries.map((entry, index) => (
-                                    <>
-                                        <TableRow
-                                            key={`${entry.ts}-${entry.ns}-${index}`}
-                                            className="cursor-pointer"
-                                            tabIndex={0}
-                                            role="button"
-                                            aria-expanded={expandedRows.has(index)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter" || e.key === " ") {
-                                                    e.preventDefault()
-                                                    toggleRowExpansion(index)
-                                                }
-                                            }}
-                                            onClick={() => {
-                                                toggleRowExpansion(index)
-                                            }}
-                                        >
-                                            <TableCell>
-                                                {expandedRows.has(index) ? (
-                                                    <ChevronDown className="h-4 w-4" />
-                                                ) : (
-                                                    <ChevronRight className="h-4 w-4" />
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-xs">
-                                                {formatTimestamp(entry.ts)}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline">{entry.op}</Badge>
-                                            </TableCell>
-                                            <TableCell className="font-mono text-xs">
-                                                {entry.ns}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant={getDurationBadgeColor(entry.millis)}
-                                                >
-                                                    {entry.millis}ms
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                {entry.numYield}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                {(entry.responseLength / 1024).toFixed(2)}KB
-                                            </TableCell>
-                                        </TableRow>
-                                        {expandedRows.has(index) && (
-                                            <TableRow key={`${index}-detail`}>
-                                                <TableCell colSpan={7} className="bg-muted/50">
-                                                    <div className="p-4">
-                                                        <div className="text-sm font-medium mb-2">
-                                                            Command:
-                                                        </div>
-                                                        <pre className="rounded bg-background p-3 text-xs overflow-auto">
-                                                            {JSON.stringify(entry.command, null, 2)}
-                                                        </pre>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    )}
+                    <ProfilerTableSection
+                        isLoading={isLoading}
+                        entries={entries}
+                        profilerLevel={profilerLevel}
+                        expandedRows={expandedRows}
+                        toggleRowExpansion={toggleRowExpansion}
+                        formatTimestamp={formatTimestamp}
+                        getDurationBadgeColor={getDurationBadgeColor}
+                    />
                 </ScrollArea>
             </div>
             {confirmDialog}

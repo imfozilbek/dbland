@@ -1,6 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useRef } from "react"
 import type { ResultDocument } from "../../contexts/PlatformContext"
+import { cn } from "../../lib/utils"
 import { ScrollArea } from "../ui/scroll-area"
 import {
     ContextMenu,
@@ -8,7 +9,8 @@ import {
     ContextMenuItem,
     ContextMenuTrigger,
 } from "../ui/context-menu"
-import { Copy, Edit, Trash2 } from "lucide-react"
+import { EmptyState } from "../ui/empty-state"
+import { Copy, Edit, Inbox, Trash2 } from "lucide-react"
 
 export interface ResultsTableProps {
     documents: ResultDocument[]
@@ -43,8 +45,12 @@ export function ResultsTable({
 
     if (documents.length === 0) {
         return (
-            <div className="h-full flex items-center justify-center text-muted-foreground">
-                No documents found
+            <div className="flex h-full items-center justify-center">
+                <EmptyState
+                    icon={<Inbox className="h-5 w-5" />}
+                    title="No documents"
+                    description="The query ran successfully but the result set is empty. Adjust the filter or check the collection."
+                />
             </div>
         )
     }
@@ -64,15 +70,18 @@ export function ResultsTable({
         <ScrollArea ref={parentRef} className="h-full">
             <div className="relative">
                 {/* Header */}
-                <div className="sticky top-0 z-10 bg-secondary border-b border-border">
+                <div
+                    role="row"
+                    className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--popover)] backdrop-blur supports-[backdrop-filter]:bg-[var(--popover)]/85"
+                >
                     <div className="flex">
-                        <div className="w-12 px-2 py-2 text-xs font-medium text-muted-foreground border-r border-border">
+                        <div className="w-12 border-r border-[var(--border)] px-2 py-2 text-right font-mono text-[10px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
                             #
                         </div>
                         {columns.map((column) => (
                             <div
                                 key={column}
-                                className="min-w-[150px] px-3 py-2 text-xs font-medium text-muted-foreground border-r border-border last:border-r-0"
+                                className="min-w-[150px] border-r border-[var(--border)] px-3 py-2 text-xs font-medium text-[var(--muted-foreground)] last:border-r-0"
                             >
                                 {column}
                             </div>
@@ -91,9 +100,12 @@ export function ResultsTable({
                     {rowVirtualizer.getVirtualItems().map((virtualRow) => {
                         const doc = documents[virtualRow.index]
                         const docId = getDocumentId(doc)
+                        const isZebra = virtualRow.index % 2 === 1
                         const rowContent = (
                             <div
                                 key={virtualRow.key}
+                                role="row"
+                                aria-rowindex={virtualRow.index + 1}
                                 style={{
                                     position: "absolute",
                                     top: 0,
@@ -102,15 +114,18 @@ export function ResultsTable({
                                     height: `${virtualRow.size}px`,
                                     transform: `translateY(${virtualRow.start}px)`,
                                 }}
-                                className="flex hover:bg-accent/50 transition-colors duration-150"
+                                className={cn(
+                                    "flex transition-colors duration-150 hover:bg-[var(--accent)]/60",
+                                    isZebra && "bg-[var(--card)]/40",
+                                )}
                             >
-                                <div className="w-12 px-2 py-2 text-xs text-muted-foreground border-r border-b border-border">
+                                <div className="w-12 border-r border-b border-[var(--border)] px-2 py-2 text-right font-mono text-[10px] tabular-nums text-[var(--muted-foreground)]/70">
                                     {virtualRow.index + 1}
                                 </div>
                                 {columns.map((column) => (
                                     <div
                                         key={column}
-                                        className="min-w-[150px] px-3 py-2 text-xs font-mono border-r border-b border-border last:border-r-0 truncate"
+                                        className="min-w-[150px] truncate border-r border-b border-[var(--border)] px-3 py-2 font-mono text-xs last:border-r-0"
                                         title={formatCellValue(doc[column])}
                                     >
                                         {renderCellValue(doc[column])}

@@ -7,7 +7,8 @@ import { Card } from "../ui/card"
 import { ScrollArea } from "../ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import { Badge } from "../ui/badge"
-import { Plus, RefreshCw, Trash2 } from "lucide-react"
+import { Database, Plus, RefreshCw, Trash2 } from "lucide-react"
+import { EmptyState } from "../ui/empty-state"
 import { CreateIndexDialog } from "./CreateIndexDialog"
 
 export interface IndexManagerProps {
@@ -115,8 +116,23 @@ export function IndexManager({
             <ScrollArea className="flex-1">
                 <div className="p-4">
                     {indexes.length === 0 ? (
-                        <Card className="p-8 text-center">
-                            <p className="text-muted-foreground">No indexes found</p>
+                        <Card className="p-2">
+                            <EmptyState
+                                icon={<Database className="h-5 w-5" />}
+                                title="No indexes"
+                                description={`Only the default _id index exists on ${collectionName}. Create one to speed up frequent filters.`}
+                                action={
+                                    <Button
+                                        size="sm"
+                                        onClick={() => {
+                                            setShowCreateDialog(true)
+                                        }}
+                                    >
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Create index
+                                    </Button>
+                                }
+                            />
                         </Card>
                     ) : (
                         <Table>

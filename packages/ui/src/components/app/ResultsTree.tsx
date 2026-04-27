@@ -1,5 +1,6 @@
-import { ChevronDown, ChevronRight } from "lucide-react"
+import { ChevronDown, ChevronRight, FolderTree } from "lucide-react"
 import { useState } from "react"
+import { EmptyState } from "../ui/empty-state"
 import { ScrollArea } from "../ui/scroll-area"
 import type { ResultDocument } from "../../contexts/PlatformContext"
 
@@ -14,8 +15,12 @@ export interface ResultsTreeProps {
 export function ResultsTree({ documents }: ResultsTreeProps): JSX.Element {
     if (documents.length === 0) {
         return (
-            <div className="h-full flex items-center justify-center text-muted-foreground">
-                No documents found
+            <div className="flex h-full items-center justify-center">
+                <EmptyState
+                    icon={<FolderTree className="h-5 w-5" />}
+                    title="No documents"
+                    description="The result set is empty — nothing to expand. Adjust the query and re-run."
+                />
             </div>
         )
     }

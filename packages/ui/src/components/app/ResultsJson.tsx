@@ -1,5 +1,8 @@
-import { Copy } from "lucide-react"
+import { Braces, Copy } from "lucide-react"
+import { useState } from "react"
+import { toast } from "sonner"
 import { Button } from "../ui/button"
+import { EmptyState } from "../ui/empty-state"
 import { ScrollArea } from "../ui/scroll-area"
 import type { ResultDocument } from "../../contexts/PlatformContext"
 
@@ -13,35 +16,60 @@ export interface ResultsJsonProps {
  */
 export function ResultsJson({ documents }: ResultsJsonProps): JSX.Element {
     const jsonString = JSON.stringify(documents, null, 4)
+    const [justCopied, setJustCopied] = useState(false)
 
     const handleCopy = (): void => {
         navigator.clipboard
             .writeText(jsonString)
             .then(() => {
-                // Success
+                setJustCopied(true)
+                toast.success("Copied to clipboard", {
+                    description: `${documents.length} ${
+                        documents.length === 1 ? "document" : "documents"
+                    } as JSON`,
+                })
+                setTimeout(() => {
+                    setJustCopied(false)
+                }, 1500)
             })
             .catch((err: unknown) => {
                 console.error("Failed to copy JSON:", err)
+                toast.error("Could not copy JSON", {
+                    description: err instanceof Error ? err.message : "Unknown error",
+                })
             })
     }
 
     if (documents.length === 0) {
         return (
-            <div className="h-full flex items-center justify-center text-muted-foreground">
-                No documents found
+            <div className="flex h-full items-center justify-center">
+                <EmptyState
+                    icon={<Braces className="h-5 w-5" />}
+                    title="No documents"
+                    description="There is nothing to render as JSON. Adjust the query and re-run."
+                />
             </div>
         )
     }
 
     return (
-        <div className="h-full flex flex-col">
-            <div className="flex items-center justify-end mb-2">
-                <Button variant="ghost" size="sm" onClick={handleCopy} className="gap-2">
+        <div className="flex h-full flex-col">
+            <div className="mb-2 flex items-center justify-between">
+                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--muted-foreground)]/70">
+                    {documents.length} {documents.length === 1 ? "document" : "documents"}
+                </span>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopy}
+                    aria-label="Copy result as JSON"
+                    className="gap-2"
+                >
                     <Copy className="h-4 w-4" />
-                    Copy JSON
+                    {justCopied ? "Copied" : "Copy JSON"}
                 </Button>
             </div>
-            <ScrollArea className="flex-1 border rounded-md bg-muted/30">
+            <ScrollArea className="flex-1 rounded-md border border-[var(--border)] bg-[var(--card)]/40">
                 <pre className="p-4 text-xs">
                     <code className="language-json">{highlightJson(jsonString)}</code>
                 </pre>
