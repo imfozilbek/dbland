@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { type GridFSFile, usePlatform } from "../../contexts/PlatformContext"
+import { useConfirm } from "../../hooks/use-confirm"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
@@ -15,6 +17,7 @@ export interface GridFSBrowserProps {
 
 export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps): JSX.Element {
     const platform = usePlatform()
+    const [confirm, confirmDialog] = useConfirm()
     const [files, setFiles] = useState<GridFSFile[]>([])
     const [bucket, setBucket] = useState("fs")
     const [isLoading, setIsLoading] = useState(false)
@@ -60,22 +63,29 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
             }
 
             await platform.downloadGridFSFile(connectionId, databaseName, file.id, savePath, bucket)
-            // eslint-disable-next-line no-alert
-            alert(`File downloaded to: ${savePath}`)
+            toast.success("Download complete", {
+                description: savePath,
+            })
         } catch (err: unknown) {
             console.error("Failed to download file:", err)
-            // eslint-disable-next-line no-alert
-            alert(`Download failed: ${err instanceof Error ? err.message : "Unknown error"}`)
+            toast.error("Download failed", {
+                description: err instanceof Error ? err.message : "Unknown error",
+            })
         }
     }
 
-    const handleDelete = (file: GridFSFile): void => {
+    const handleDelete = async (file: GridFSFile): Promise<void> => {
         if (!connectionId || !databaseName) {
             return
         }
 
-        // eslint-disable-next-line no-alert
-        if (!confirm(`Delete file "${file.filename}"?`)) {
+        const confirmed = await confirm({
+            title: "Delete file?",
+            description: `"${file.filename}" will be permanently removed from the GridFS bucket.`,
+            confirmLabel: "Delete",
+            destructive: true,
+        })
+        if (!confirmed) {
             return
         }
 
@@ -83,11 +93,13 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
             .deleteGridFSFile(connectionId, databaseName, file.id, bucket)
             .then(() => {
                 setFiles((prev) => prev.filter((f) => f.id !== file.id))
+                toast.success("File deleted", { description: file.filename })
             })
             .catch((err: unknown) => {
                 console.error("Failed to delete file:", err)
-                // eslint-disable-next-line no-alert
-                alert(`Delete failed: ${err instanceof Error ? err.message : "Unknown error"}`)
+                toast.error("Delete failed", {
+                    description: err instanceof Error ? err.message : "Unknown error",
+                })
             })
     }
 
@@ -216,6 +228,7 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
+                                                    aria-label={`Download ${file.filename}`}
                                                     onClick={() => {
                                                         void handleDownload(file)
                                                     }}
@@ -225,8 +238,9 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
                                                 <Button
                                                     size="sm"
                                                     variant="destructive"
+                                                    aria-label={`Delete ${file.filename}`}
                                                     onClick={() => {
-                                                        handleDelete(file)
+                                                        void handleDelete(file)
                                                     }}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
@@ -240,6 +254,7 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
                     )}
                 </ScrollArea>
             </div>
+            {confirmDialog}
         </div>
     )
 }

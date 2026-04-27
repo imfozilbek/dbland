@@ -43,3 +43,8 @@ export * from "./stores"
 export { usePlatformInit } from "./hooks/usePlatformInit"
 export { useKeyboardShortcuts, getShortcutLabel } from "./hooks/useKeyboardShortcuts"
 export type { KeyboardShortcut } from "./hooks/useKeyboardShortcuts"
+export { useConfirm } from "./hooks/use-confirm"
+export type { ConfirmOptions } from "./hooks/use-confirm"
+
+// Toast (re-export sonner so consumers don't depend on it directly)
+export { Toaster, toast } from "sonner"

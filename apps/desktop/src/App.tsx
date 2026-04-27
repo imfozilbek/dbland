@@ -6,6 +6,7 @@ import {
     Sidebar,
     StatusBar,
     ThemeProvider,
+    Toaster,
     Toolbar,
     useConnectionStore,
     usePlatformInit,
@@ -94,6 +95,7 @@ function App(): JSX.Element {
                         </Route>
                     </Routes>
                 </BrowserRouter>
+                <Toaster theme="dark" position="bottom-right" richColors closeButton />
             </PlatformProvider>
         </ThemeProvider>
     )

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { usePlatform } from "../../contexts/PlatformContext"
+import { useConfirm } from "../../hooks/use-confirm"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { Label } from "../ui/label"
@@ -33,6 +35,7 @@ export function DatabaseProfiler({
     databaseName,
 }: DatabaseProfilerProps): JSX.Element {
     const platform = usePlatform()
+    const [confirm, confirmDialog] = useConfirm()
     const [profilerLevel, setProfilerLevel] = useState<ProfilerLevel | null>(null)
     const [entries, setEntries] = useState<ProfilerEntry[]>([])
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
@@ -110,13 +113,18 @@ export function DatabaseProfiler({
             })
     }
 
-    const handleClearProfilerData = (): void => {
+    const handleClearProfilerData = async (): Promise<void> => {
         if (!connectionId || !databaseName) {
             return
         }
 
-        // eslint-disable-next-line no-alert
-        if (!confirm("Clear all profiler data for this database?")) {
+        const confirmed = await confirm({
+            title: "Clear profiler data?",
+            description: `All collected profile entries for "${databaseName}" will be removed. The profiler level itself stays untouched.`,
+            confirmLabel: "Clear",
+            destructive: true,
+        })
+        if (!confirmed) {
             return
         }
 
@@ -124,9 +132,13 @@ export function DatabaseProfiler({
             .clearProfilerData(connectionId, databaseName)
             .then(() => {
                 setEntries([])
+                toast.success("Profiler data cleared")
             })
             .catch((err: unknown) => {
                 console.error("Failed to clear profiler data:", err)
+                toast.error("Failed to clear profiler data", {
+                    description: err instanceof Error ? err.message : "Unknown error",
+                })
             })
     }
 
@@ -217,7 +229,12 @@ export function DatabaseProfiler({
                 )}
 
                 {entries.length > 0 && (
-                    <Button variant="destructive" onClick={handleClearProfilerData}>
+                    <Button
+                        variant="destructive"
+                        onClick={() => {
+                            void handleClearProfilerData()
+                        }}
+                    >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Clear Data
                     </Button>
@@ -329,6 +346,7 @@ export function DatabaseProfiler({
                     )}
                 </ScrollArea>
             </div>
+            {confirmDialog}
         </div>
     )
 }
