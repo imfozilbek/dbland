@@ -23,7 +23,7 @@ export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element 
 
     const handleSave = (): void => {
         try {
-            const parsed = JSON.parse(jsonContent)
+            const parsed = JSON.parse(jsonContent) as Record<string, unknown>
             onUpdate({
                 ...stage,
                 stageData: parsed,

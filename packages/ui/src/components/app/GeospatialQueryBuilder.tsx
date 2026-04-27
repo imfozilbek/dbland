@@ -49,7 +49,7 @@ export function GeospatialQueryBuilder({
             coordinates = [parseFloat(longitude), parseFloat(latitude)]
         } else {
             try {
-                coordinates = JSON.parse(polygonCoords)
+                coordinates = JSON.parse(polygonCoords) as number[]
             } catch (_err) {
                 setError("Invalid polygon coordinates JSON")
                 setIsLoading(false)
@@ -60,7 +60,7 @@ export function GeospatialQueryBuilder({
         let filter: Record<string, unknown> | undefined
         if (additionalFilter.trim() && additionalFilter.trim() !== "{}") {
             try {
-                filter = JSON.parse(additionalFilter)
+                filter = JSON.parse(additionalFilter) as Record<string, unknown>
             } catch (_err) {
                 setError("Invalid additional filter JSON")
                 setIsLoading(false)

@@ -1,41 +1,37 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Card } from "../ui/card"
 import { Button } from "../ui/button"
 import { RefreshCw } from "lucide-react"
 import { ScrollArea } from "../ui/scroll-area"
+import { type SlowLogEntry, usePlatform } from "../../contexts/PlatformContext"
 
 interface RedisSlowLogViewerProps {
     connectionId: string
 }
 
-interface SlowLogEntry {
-    id: number
-    timestamp: number
-    duration_micros: number
-    command: string[]
-}
+const SLOW_LOG_LIMIT = 50
 
 export function RedisSlowLogViewer({ connectionId }: RedisSlowLogViewerProps): JSX.Element {
+    const platform = usePlatform()
     const [entries, setEntries] = useState<SlowLogEntry[]>([])
     const [isLoading, setIsLoading] = useState(false)
 
-    useEffect(() => {
-        void loadSlowLog()
-    }, [connectionId])
-
-    const loadSlowLog = async (): Promise<void> => {
+    const loadSlowLog = useCallback(async (): Promise<void> => {
         setIsLoading(true)
         try {
-            // TODO: Call platform API to get slow log
-            // const result = await platformAPI.redisSlowLog(connectionId, 50)
-            // setEntries(result)
-            setEntries([])
+            const result = await platform.redisSlowLog(connectionId, SLOW_LOG_LIMIT)
+            setEntries(result)
         } catch (error) {
             console.error("Failed to load slow log:", error)
+            setEntries([])
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [connectionId, platform])
+
+    useEffect(() => {
+        void loadSlowLog()
+    }, [loadSlowLog])
 
     const formatTimestamp = (timestamp: number): string => {
         return new Date(timestamp * 1000).toLocaleString()
@@ -81,18 +77,18 @@ export function RedisSlowLogViewer({ connectionId }: RedisSlowLogViewerProps): J
                                 <div className="flex items-center gap-2">
                                     <span
                                         className={`rounded px-2 py-0.5 text-xs font-medium ${
-                                            entry.duration_micros > 1000000
+                                            entry.duration > 1000000
                                                 ? "bg-red-100 text-red-900 dark:bg-red-900 dark:text-red-100"
-                                                : entry.duration_micros > 100000
+                                                : entry.duration > 100000
                                                   ? "bg-yellow-100 text-yellow-900 dark:bg-yellow-900 dark:text-yellow-100"
                                                   : "bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100"
                                         }`}
                                     >
-                                        {formatDuration(entry.duration_micros)}
+                                        {formatDuration(entry.duration)}
                                     </span>
                                 </div>
                                 <pre className="whitespace-pre-wrap break-words rounded bg-muted p-2 text-xs">
-                                    {entry.command.join(" ")}
+                                    {entry.command}
                                 </pre>
                             </div>
                         </Card>

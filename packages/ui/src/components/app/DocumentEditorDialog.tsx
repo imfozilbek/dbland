@@ -68,7 +68,7 @@ export function DocumentEditorDialog({
 
     const handleSaveJson = (): void => {
         try {
-            const parsed = JSON.parse(jsonContent)
+            const parsed = JSON.parse(jsonContent) as Record<string, unknown>
             handleSave(parsed)
         } catch (_err) {
             setError("Invalid JSON")
@@ -159,7 +159,7 @@ export function DocumentEditorDialog({
                                     value={JSON.stringify(value, null, 2)}
                                     onChange={(e) => {
                                         try {
-                                            const parsed = JSON.parse(e.target.value)
+                                            const parsed: unknown = JSON.parse(e.target.value)
                                             setDocument({ ...document, [key]: parsed })
                                         } catch {
                                             // Invalid JSON, keep as string for now

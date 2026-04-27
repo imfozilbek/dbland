@@ -27,7 +27,7 @@ export function formatQuery(query: string, language: QueryLanguage): string {
 function formatMongoDBQuery(query: string): string {
     try {
         // Try to parse as JSON and prettify
-        const parsed = JSON.parse(query)
+        const parsed: unknown = JSON.parse(query)
         return JSON.stringify(parsed, null, 4)
     } catch {
         // If not valid JSON, try to format as MongoDB shell syntax

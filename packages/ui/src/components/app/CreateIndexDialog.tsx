@@ -46,7 +46,7 @@ export function CreateIndexDialog({
 
         let keys: Record<string, number>
         try {
-            keys = JSON.parse(keysJson)
+            keys = JSON.parse(keysJson) as Record<string, number>
         } catch (_err) {
             setError("Invalid JSON for keys")
             return

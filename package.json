@@ -18,6 +18,7 @@
         "format:check": "prettier --check \"{packages,libs,apps}/**/*.{ts,tsx}\"",
         "lint": "eslint \"{packages,libs,apps}/**/*.{ts,tsx}\" --fix",
         "lint:check": "eslint \"{packages,libs,apps}/**/*.{ts,tsx}\"",
+        "typecheck": "pnpm -r typecheck",
         "test": "pnpm -r test:run",
         "test:watch": "pnpm -r test:watch",
         "test:coverage": "pnpm -r test:coverage",

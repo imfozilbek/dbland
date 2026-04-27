@@ -169,4 +169,19 @@ export default tseslint.config(
             "@typescript-eslint/no-unnecessary-type-parameters": "off",
         },
     },
+    {
+        // Platform adapters: thin pass-throughs over Tauri invoke / web stubs.
+        // The PlatformAPI contract returns Promise<T>, so the rules
+        // require-await and promise-function-async fight each other —
+        // one wants `async`, the other doesn't. Disable both for adapter files.
+        files: [
+            "**/lib/tauri-platform.ts",
+            "**/lib/web-platform.ts",
+            "**/contexts/PlatformContext.tsx",
+        ],
+        rules: {
+            "@typescript-eslint/require-await": "off",
+            "@typescript-eslint/promise-function-async": "off",
+        },
+    },
 )

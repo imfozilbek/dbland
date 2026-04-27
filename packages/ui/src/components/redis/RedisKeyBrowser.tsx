@@ -3,6 +3,7 @@ import { Loader2, Search } from "lucide-react"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { ScrollArea } from "../ui/scroll-area"
+import { usePlatform } from "../../contexts/PlatformContext"
 
 interface RedisKeyBrowserProps {
     connectionId: string
@@ -10,11 +11,14 @@ interface RedisKeyBrowserProps {
     selectedKey?: string
 }
 
+const SCAN_BATCH_SIZE = 100
+
 export function RedisKeyBrowser({
-    connectionId: _connectionId,
+    connectionId,
     onKeySelect,
     selectedKey,
 }: RedisKeyBrowserProps): JSX.Element {
+    const platform = usePlatform()
     const [pattern, setPattern] = useState("*")
     const [keys, setKeys] = useState<string[]>([])
     const [isLoading, setIsLoading] = useState(false)
@@ -22,13 +26,15 @@ export function RedisKeyBrowser({
     const handleScan = async (): Promise<void> => {
         setIsLoading(true)
         try {
-            // Call platform API to scan keys
-            // TODO: Implement platform API call
-            // const result = await platformAPI.redisScanKeys(connectionId, pattern, 100)
-            // setKeys(result.keys)
-            setKeys([])
+            const result = await platform.redisScanKeys({
+                connectionId,
+                pattern,
+                count: SCAN_BATCH_SIZE,
+            })
+            setKeys(result.keys)
         } catch (error) {
             console.error("Failed to scan keys:", error)
+            setKeys([])
         } finally {
             setIsLoading(false)
         }

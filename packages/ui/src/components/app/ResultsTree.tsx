@@ -108,7 +108,7 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
                     <span className="text-muted-foreground">]</span>
                 </div>
                 {isExpanded &&
-                    value.map((item, index) => (
+                    (value as unknown[]).map((item: unknown, index) => (
                         <TreeNode key={index} label={`[${index}]`} value={item} level={level + 1} />
                     ))}
             </div>

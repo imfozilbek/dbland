@@ -1,47 +1,40 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Card } from "../ui/card"
 import { Label } from "../ui/label"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { ScrollArea } from "../ui/scroll-area"
 import { Clock } from "lucide-react"
+import { type RedisValue, usePlatform } from "../../contexts/PlatformContext"
 
 interface RedisDataViewerProps {
     connectionId: string
     selectedKey: string
 }
 
-type RedisValue =
-    | { type: "string"; value: string }
-    | { type: "list"; values: string[] }
-    | { type: "set"; values: string[] }
-    | { type: "zset"; values: [string, number][] }
-    | { type: "hash"; fields: [string, string][] }
-    | { type: "none" }
-
 export function RedisDataViewer({ connectionId, selectedKey }: RedisDataViewerProps): JSX.Element {
-    const [value, _setValue] = useState<RedisValue>({ type: "none" })
+    const platform = usePlatform()
+    const [value, setValue] = useState<RedisValue>({ type: "none" })
     const [ttl, setTTL] = useState<number | null>(null)
     const [newTTL, setNewTTL] = useState("")
     const [isLoading, setIsLoading] = useState(false)
 
-    useEffect(() => {
-        void loadValue()
-    }, [selectedKey, connectionId])
-
-    const loadValue = async (): Promise<void> => {
+    const loadValue = useCallback(async (): Promise<void> => {
         setIsLoading(true)
         try {
-            // TODO: Call platform API to get value
-            // const result = await platformAPI.redisGetValue(connectionId, selectedKey)
-            // setValue(result.value)
-            // setTTL(result.ttl)
+            const result = await platform.redisGetValue({ connectionId, key: selectedKey })
+            setValue(result.value)
+            setTTL(result.ttl)
         } catch (error) {
             console.error("Failed to load value:", error)
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [connectionId, selectedKey, platform])
+
+    useEffect(() => {
+        void loadValue()
+    }, [loadValue])
 
     const handleSetTTL = async (): Promise<void> => {
         const seconds = parseInt(newTTL, 10)
@@ -50,8 +43,7 @@ export function RedisDataViewer({ connectionId, selectedKey }: RedisDataViewerPr
         }
 
         try {
-            // TODO: Call platform API to set TTL
-            // await platformAPI.redisSetTTL(connectionId, selectedKey, seconds)
+            await platform.redisSetTTL({ connectionId, key: selectedKey, seconds })
             setTTL(seconds)
             setNewTTL("")
         } catch (error) {
