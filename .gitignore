@@ -90,3 +90,8 @@ Thumbs.db
 
 # Yarn Integrity file
 .yarn-integrity
+
+# Local Claude / soul-kit dev tools (per-developer, not part of repo)
+.claude/
+.soul/
+scripts/check-soul.sh
