@@ -291,17 +291,33 @@
 
 ---
 
-## Future Roadmap (Post v1.0)
+## v1.1.0 - Enhanced MongoDB Features
 
-### v1.1.0 - Enhanced MongoDB Features
+**Статус:** ✅ Completed
 
-**Планируется:**
-- [ ] Database profiler
-- [ ] Collection statistics
-- [ ] Geospatial query support
-- [ ] GridFS file browser
-- [ ] Replica set monitoring
-- [ ] Sharding visualization
+**Цели:**
+- [x] Database profiler (system.profile, level/threshold control)
+- [x] Collection statistics (count, size, indexes, validation, sharding)
+- [x] Geospatial query support ($near, $geoWithin, $geoIntersects)
+- [x] GridFS file browser (list, metadata, download, delete)
+- [x] Replica set monitoring (members, health, lag, config)
+- [x] Sharding visualization (shards, sharded collections, chunks)
+
+**Deliverables:**
+- 6 new Tauri commands in `apps/desktop/src-tauri/src/commands/`
+- 6 new React components in `packages/ui/src/components/app/`
+- Web platform stub completed for the full v1.1.0 surface
+- Supabase-inspired UI redesign across all shared components
+
+**Hardening (post-merge):**
+- Strict CSP enabled, encryption key moved to OS keychain
+- MongoDB query operator whitelist (no server-side eval)
+- Restored `pnpm typecheck`, lint warnings 113 → 5
+- Connection entity given real domain behaviour, magic numbers extracted
+
+---
+
+## Future Roadmap (Post v1.1)
 
 ### v1.2.0 - Enhanced Redis Features
 

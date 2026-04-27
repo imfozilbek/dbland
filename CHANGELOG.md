@@ -9,6 +9,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **CSP enabled** in `tauri.conf.json` (was `null`). Default-src restricted to
+  `self` + IPC; script-src self only; explicit deny for frame and object.
+- **Master encryption key moved to OS keychain** (was a plaintext `.key` file
+  on disk). Existing `.key` files are migrated on first launch and deleted.
+- **MongoDB query whitelist** rejects `$where`, `$function`, `$accumulator`
+  before they reach the driver.
+- **SSH tunnel logs** no longer dump errors to stderr; structured `log::warn!`
+  emits only the variant kind, not host or auth payloads.
+- **Capabilities surface** narrowed to `core:default`, `shell:allow-open`,
+  `updater:default` via an explicit `capabilities/default.json`.
+
+### Changed
+
+- Restored `pnpm typecheck` script (it was advertised in CLAUDE.md but
+  missing from package scripts) and added `tsc --noEmit` to every package.
+- Connection entity gained intent-named transitions
+  (`markConnecting`, `markConnected`, `markFailed`, `markDisconnected`,
+  `canExecuteQuery`); the legacy `updateConnectionStatus` stays for back-compat.
+- Default ports and Mongo auth db extracted into
+  `domain/constants/database-defaults.ts`.
+- Query history now records the actual database type (was hardcoded to
+  "mongodb" — Redis queries were mislabelled).
+
+### Fixed
+
+- Wired up Redis viewers (key browser, data viewer, slow log) that were
+  shipped in v1.0 as TODO stubs returning empty data.
+- Added missing `jsdom` devDep so `apps/web` tests stop erroring out on
+  module resolution.
+- Completed the web `PlatformAPI` stub so it actually implements the full
+  contract (was missing 16+ v1.0–v1.1 methods, breaking typecheck).
+- Replaced unsafe `document.getElementById("root")!` patterns in both apps.
+
+## [1.1.0] - 2026-04-27
+
 ### Added
 
 - **Database Profiler (Backend)**
@@ -81,6 +118,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Applied prettier formatting to all modified files
   - Fixed ESLint errors (0 errors, warnings only)
   - All quality gates passing (format, lint, build, test)
+
+- **Supabase-inspired UI Redesign**
+  - New design tokens, dark surface palette, emerald accent
+  - Updated all shared components in `packages/ui` to consume tokens
 
 ---
 
