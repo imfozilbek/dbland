@@ -37,11 +37,20 @@ pub async fn execute_query(
         .await
         .map_err(|e| e.to_string())?;
 
-    // Save to query history
+    // Resolve the actual database type from the pool so the history entry
+    // is tagged with the correct language (was hardcoded to "mongodb"
+    // before, which broke history filtering for Redis connections).
+    let language = state
+        .pool
+        .database_type(&connection_id)
+        .await
+        .map(|t| t.as_str().to_string())
+        .unwrap_or_else(|| "unknown".to_string());
+
     let history_entry = NewQueryHistoryEntry {
         connection_id: connection_id.clone(),
         query: query.clone(),
-        language: "mongodb".to_string(), // TODO: detect language
+        language,
         database_name: Some(database_name),
         collection_name,
         execution_time_ms: result.execution_time_ms,

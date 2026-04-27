@@ -155,6 +155,14 @@ impl ConnectionPool {
         guard.keys().cloned().collect()
     }
 
+    /// Get the database type for a stored connection, if known.
+    /// Used by commands that need to label history entries with the
+    /// correct query language (mongodb vs redis) instead of guessing.
+    pub async fn database_type(&self, connection_id: &str) -> Option<DatabaseType> {
+        let guard = self.connections.read().await;
+        guard.get(connection_id).map(|c| c.config.db_type)
+    }
+
     /// Execute an operation on a connection
     pub async fn with_connection<F, T>(&self, connection_id: &str, operation: F) -> Result<T, AdapterError>
     where

@@ -1,3 +1,8 @@
+import {
+    DEFAULT_HOST,
+    DEFAULT_MONGO_AUTH_DATABASE,
+    DEFAULT_PORTS,
+} from "../constants/database-defaults"
 import { DatabaseType } from "./DatabaseType"
 
 /**
@@ -51,28 +56,32 @@ export interface ConnectionConfig {
 }
 
 /**
- * Create a default connection config for a database type
+ * Create a default connection config for a database type.
+ *
+ * Defaults pulled from `domain/constants/database-defaults` — magic numbers
+ * (27017, 6379) and "admin" used to live inline; centralising them keeps
+ * Rust and TS in sync via the shared CLAUDE.md convention.
  */
 export function createDefaultConnectionConfig(type: DatabaseType): ConnectionConfig {
     const defaults: Record<DatabaseType, Partial<ConnectionConfig>> = {
         [DatabaseType.MongoDB]: {
-            host: "localhost",
-            port: 27017,
+            host: DEFAULT_HOST,
+            port: DEFAULT_PORTS[DatabaseType.MongoDB],
             auth: {
-                authDatabase: "admin",
+                authDatabase: DEFAULT_MONGO_AUTH_DATABASE,
             },
         },
         [DatabaseType.Redis]: {
-            host: "localhost",
-            port: 6379,
+            host: DEFAULT_HOST,
+            port: DEFAULT_PORTS[DatabaseType.Redis],
         },
     }
 
     return {
         type,
         name: "",
-        host: defaults[type].host ?? "localhost",
-        port: defaults[type].port ?? 27017,
+        host: defaults[type].host ?? DEFAULT_HOST,
+        port: defaults[type].port ?? DEFAULT_PORTS[type],
         ...defaults[type],
     }
 }

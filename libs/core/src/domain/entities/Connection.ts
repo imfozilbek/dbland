@@ -44,7 +44,11 @@ export function createConnection(config: ConnectionConfig, id?: string): Connect
 }
 
 /**
- * Update connection status
+ * Update connection status.
+ *
+ * Prefer the named transitions below (`markConnecting`, `markConnected`,
+ * `markFailed`, `markDisconnected`) — they encode the intent at the call site
+ * and let consumers express domain behaviour instead of plain status writes.
  */
 export function updateConnectionStatus(
     connection: Connection,
@@ -56,4 +60,42 @@ export function updateConnectionStatus(
         updatedAt: new Date(),
         ...(status === ConnectionStatus.Connected ? { lastConnectedAt: new Date() } : {}),
     }
+}
+
+/**
+ * Transition into "connecting" — request initiated, awaiting server reply.
+ */
+export function markConnecting(connection: Connection): Connection {
+    return updateConnectionStatus(connection, ConnectionStatus.Connecting)
+}
+
+/**
+ * Transition into "connected" — server accepted the handshake.
+ * `lastConnectedAt` is bumped to now.
+ */
+export function markConnected(connection: Connection): Connection {
+    return updateConnectionStatus(connection, ConnectionStatus.Connected)
+}
+
+/**
+ * Transition into "error" — connect/handshake failed. Caller should surface
+ * the underlying error separately; the entity only carries the status flag.
+ */
+export function markFailed(connection: Connection): Connection {
+    return updateConnectionStatus(connection, ConnectionStatus.Error)
+}
+
+/**
+ * Transition into "disconnected" — clean teardown initiated by the user
+ * or by a session-expiry event.
+ */
+export function markDisconnected(connection: Connection): Connection {
+    return updateConnectionStatus(connection, ConnectionStatus.Disconnected)
+}
+
+/**
+ * Whether the connection is in a state that can serve queries.
+ */
+export function canExecuteQuery(connection: Connection): boolean {
+    return connection.status === ConnectionStatus.Connected
 }

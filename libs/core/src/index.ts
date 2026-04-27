@@ -11,6 +11,9 @@ export * from "./domain/value-objects/ConnectionConfig"
 export * from "./domain/value-objects/QueryResult"
 export * from "./domain/value-objects/Credentials"
 
+// Domain - Constants
+export * from "./domain/constants/database-defaults"
+
 // Domain - Events
 export * from "./domain/events/ConnectionEvents"
 export * from "./domain/events/QueryEvents"
