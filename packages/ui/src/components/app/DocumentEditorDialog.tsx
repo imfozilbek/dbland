@@ -1,6 +1,8 @@
 import * as React from "react"
 import { useState } from "react"
+import { toast } from "sonner"
 import { type ResultDocument, usePlatform } from "../../contexts/PlatformContext"
+import { useConfirm } from "../../hooks/use-confirm"
 import { Button } from "../ui/button"
 import {
     Dialog,
@@ -36,6 +38,7 @@ export function DocumentEditorDialog({
     onSaved,
 }: DocumentEditorDialogProps): JSX.Element {
     const platform = usePlatform()
+    const [confirm, confirmDialog] = useConfirm()
     const [document, setDocument] = useState<ResultDocument | null>(null)
     const [jsonContent, setJsonContent] = useState("")
     const [isSaving, setIsSaving] = useState(false)
@@ -103,9 +106,14 @@ export function DocumentEditorDialog({
             })
     }
 
-    const handleDelete = (): void => {
-        // eslint-disable-next-line no-alert
-        if (!confirm("Are you sure you want to delete this document?")) {
+    const handleDelete = async (): Promise<void> => {
+        const confirmed = await confirm({
+            title: "Delete document?",
+            description: `This document will be permanently removed from ${databaseName}.${collectionName}.`,
+            confirmLabel: "Delete",
+            destructive: true,
+        })
+        if (!confirmed) {
             return
         }
 
@@ -113,6 +121,7 @@ export function DocumentEditorDialog({
             .deleteDocument(connectionId, databaseName, collectionName, documentId)
             .then((success) => {
                 if (success) {
+                    toast.success("Document deleted")
                     onOpenChange(false)
                     if (onSaved) {
                         onSaved()
@@ -122,6 +131,9 @@ export function DocumentEditorDialog({
             .catch((err: unknown) => {
                 setError(err instanceof Error ? err.message : "Failed to delete document")
                 console.error("Failed to delete document:", err)
+                toast.error("Failed to delete document", {
+                    description: err instanceof Error ? err.message : "Unknown error",
+                })
             })
     }
 
@@ -199,7 +211,7 @@ export function DocumentEditorDialog({
                 </DialogHeader>
 
                 {error && (
-                    <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950">
+                    <div className="rounded-md border border-[var(--destructive)]/30 bg-[var(--destructive)]/10 p-3 text-sm text-[var(--destructive)]">
                         {error}
                     </div>
                 )}
@@ -234,7 +246,9 @@ export function DocumentEditorDialog({
                     <div className="flex gap-2">
                         <Button
                             variant="destructive"
-                            onClick={handleDelete}
+                            onClick={() => {
+                                void handleDelete()
+                            }}
                             disabled={isSaving || isLoading}
                         >
                             Delete
@@ -272,6 +286,7 @@ export function DocumentEditorDialog({
                     </div>
                 </DialogFooter>
             </DialogContent>
+            {confirmDialog}
         </Dialog>
     )
 }

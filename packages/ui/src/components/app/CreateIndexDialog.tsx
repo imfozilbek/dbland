@@ -162,7 +162,7 @@ export function CreateIndexDialog({
                     </div>
 
                     {error && (
-                        <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950">
+                        <div className="rounded-md border border-[var(--destructive)]/30 bg-[var(--destructive)]/10 p-3 text-sm text-[var(--destructive)]">
                             {error}
                         </div>
                     )}

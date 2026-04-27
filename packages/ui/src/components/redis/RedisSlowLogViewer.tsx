@@ -76,12 +76,12 @@ export function RedisSlowLogViewer({ connectionId }: RedisSlowLogViewerProps): J
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span
-                                        className={`rounded px-2 py-0.5 text-xs font-medium ${
+                                        className={`rounded border px-2 py-0.5 text-xs font-medium ${
                                             entry.duration > 1000000
-                                                ? "bg-red-100 text-red-900 dark:bg-red-900 dark:text-red-100"
+                                                ? "border-[var(--destructive)]/30 bg-[var(--destructive)]/15 text-[var(--destructive)]"
                                                 : entry.duration > 100000
-                                                  ? "bg-yellow-100 text-yellow-900 dark:bg-yellow-900 dark:text-yellow-100"
-                                                  : "bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100"
+                                                  ? "border-[var(--warning)]/30 bg-[var(--warning)]/15 text-[var(--warning)]"
+                                                  : "border-[var(--info)]/30 bg-[var(--info)]/15 text-[var(--info)]"
                                         }`}
                                     >
                                         {formatDuration(entry.duration)}

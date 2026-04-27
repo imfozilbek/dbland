@@ -53,7 +53,8 @@ export function Sidebar({
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-[#8F8F8F] hover:text-white hover:bg-[#262626]"
+                    aria-label="Add connection"
+                    className="h-8 w-8 text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--accent)]"
                     onClick={onAddConnectionClick}
                     title="Add Connection"
                 >

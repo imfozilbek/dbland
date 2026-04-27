@@ -176,7 +176,12 @@ export function ExportDialog({
                                 placeholder="/path/to/export.json"
                                 className="flex-1"
                             />
-                            <Button variant="outline" size="icon" onClick={handleBrowse}>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                aria-label="Browse export destination"
+                                onClick={handleBrowse}
+                            >
                                 <FileDown className="h-4 w-4" />
                             </Button>
                         </div>
@@ -184,10 +189,10 @@ export function ExportDialog({
 
                     {result && (
                         <div
-                            className={`rounded-md p-3 text-sm ${
+                            className={`rounded-md border p-3 text-sm ${
                                 result.success
-                                    ? "bg-green-50 text-green-600 dark:bg-green-950"
-                                    : "bg-red-50 text-red-600 dark:bg-red-950"
+                                    ? "border-[var(--success)]/30 bg-[var(--success)]/10 text-[var(--success)]"
+                                    : "border-[var(--destructive)]/30 bg-[var(--destructive)]/10 text-[var(--destructive)]"
                             }`}
                         >
                             {result.success ? (

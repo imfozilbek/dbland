@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { type QueryHistoryEntry, usePlatform } from "../../contexts/PlatformContext"
+import { useConfirm } from "../../hooks/use-confirm"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
@@ -13,6 +15,7 @@ export interface QueryHistoryProps {
 
 export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): JSX.Element {
     const platform = usePlatform()
+    const [confirm, confirmDialog] = useConfirm()
     const [entries, setEntries] = useState<QueryHistoryEntry[]>([])
     const [searchQuery, setSearchQuery] = useState("")
     const [isLoading, setIsLoading] = useState(false)
@@ -87,14 +90,19 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
             })
     }
 
-    const handleClearAll = (): void => {
+    const handleClearAll = async (): Promise<void> => {
         if (!connectionId) {
             return
         }
 
-        // TODO: Replace with proper confirmation dialog
-        // eslint-disable-next-line no-alert
-        if (!confirm("Clear all query history for this connection?")) {
+        const confirmed = await confirm({
+            title: "Clear query history?",
+            description:
+                "All saved queries for this connection will be removed. This cannot be undone.",
+            confirmLabel: "Clear",
+            destructive: true,
+        })
+        if (!confirmed) {
             return
         }
 
@@ -102,9 +110,13 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
             .clearQueryHistory(connectionId)
             .then(() => {
                 setEntries([])
+                toast.success("Query history cleared")
             })
             .catch((err: unknown) => {
                 console.error("Failed to clear query history:", err)
+                toast.error("Failed to clear history", {
+                    description: err instanceof Error ? err.message : "Unknown error",
+                })
             })
     }
 
@@ -162,7 +174,9 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
                 <Button
                     variant="destructive"
                     size="sm"
-                    onClick={handleClearAll}
+                    onClick={() => {
+                        void handleClearAll()
+                    }}
                     disabled={entries.length === 0}
                 >
                     Clear All
@@ -188,9 +202,15 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
                                 <div className="mb-2 flex items-start justify-between gap-2">
                                     <div className="flex items-center gap-2">
                                         {entry.success ? (
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
+                                            <CheckCircle
+                                                className="h-4 w-4 text-[var(--success)]"
+                                                aria-label="Query succeeded"
+                                            />
                                         ) : (
-                                            <XCircle className="h-4 w-4 text-red-500" />
+                                            <XCircle
+                                                className="h-4 w-4 text-[var(--destructive)]"
+                                                aria-label="Query failed"
+                                            />
                                         )}
                                         <Badge variant="outline">{entry.language}</Badge>
                                         {entry.databaseName && (
@@ -205,6 +225,7 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
                                     <Button
                                         variant="ghost"
                                         size="icon"
+                                        aria-label="Delete this query from history"
                                         className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
                                         onClick={() => {
                                             handleDelete(entry.id)
@@ -229,7 +250,7 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
                                 </button>
 
                                 {entry.error && (
-                                    <div className="mt-2 rounded bg-red-50 px-2 py-1 text-xs text-red-600 dark:bg-red-950">
+                                    <div className="mt-2 rounded border border-[var(--destructive)]/30 bg-[var(--destructive)]/10 px-2 py-1 text-xs text-[var(--destructive)]">
                                         {entry.error}
                                     </div>
                                 )}
@@ -249,6 +270,7 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
                     </div>
                 )}
             </ScrollArea>
+            {confirmDialog}
         </div>
     )
 }

@@ -95,7 +95,12 @@ export function ConnectionStringBuilder({
                         }}
                         className="font-mono text-sm"
                     />
-                    <Button onClick={handleParseConnectionString} variant="outline" size="icon">
+                    <Button
+                        onClick={handleParseConnectionString}
+                        variant="outline"
+                        size="icon"
+                        aria-label="Parse connection string into form fields"
+                    >
                         <ArrowLeftRight className="h-4 w-4" />
                     </Button>
                 </div>

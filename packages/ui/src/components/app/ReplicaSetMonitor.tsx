@@ -67,9 +67,9 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
 
     const getHealthIcon = (health: number): JSX.Element => {
         return health === 1 ? (
-            <CheckCircle className="h-4 w-4 text-green-500" />
+            <CheckCircle className="h-4 w-4 text-[var(--success)]" aria-label="Member healthy" />
         ) : (
-            <XCircle className="h-4 w-4 text-red-500" />
+            <XCircle className="h-4 w-4 text-[var(--destructive)]" aria-label="Member unhealthy" />
         )
     }
 
@@ -150,8 +150,8 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
             {/* Members */}
             <ScrollArea className="flex-1">
                 <div className="space-y-3">
-                    {status.members.map((member, index) => (
-                        <Card key={index} className="p-4">
+                    {status.members.map((member) => (
+                        <Card key={member.name} className="p-4">
                             <div className="space-y-3">
                                 {/* Member Header */}
                                 <div className="flex items-center justify-between">

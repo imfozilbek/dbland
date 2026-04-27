@@ -157,8 +157,8 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
                                             </Badge>
                                             {shard.tags.length > 0 && (
                                                 <div className="flex gap-1">
-                                                    {shard.tags.map((tag, i) => (
-                                                        <Badge key={i} variant="outline">
+                                                    {shard.tags.map((tag) => (
+                                                        <Badge key={tag} variant="outline">
                                                             {tag}
                                                         </Badge>
                                                     ))}

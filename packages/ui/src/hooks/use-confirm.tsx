@@ -37,7 +37,7 @@ export function useConfirm(): readonly [(opts: ConfirmOptions) => Promise<boolea
     const [prompt, setPrompt] = useState<PendingPrompt | null>(null)
     const pendingRef = useRef<PendingPrompt | null>(null)
 
-    const confirm = useCallback((opts: ConfirmOptions): Promise<boolean> => {
+    const confirm = useCallback(async (opts: ConfirmOptions): Promise<boolean> => {
         return new Promise<boolean>((resolve) => {
             const next: PendingPrompt = { ...opts, resolve }
             pendingRef.current = next

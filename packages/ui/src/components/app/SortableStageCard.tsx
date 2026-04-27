@@ -82,7 +82,8 @@ export function SortableStageCard({
                     <Button
                         size="sm"
                         variant="ghost"
-                        className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                        aria-label="Remove stage"
+                        className="h-7 w-7 p-0 text-[var(--destructive)] hover:text-[var(--destructive)]/80"
                         onClick={(e) => {
                             e.stopPropagation()
                             onRemove(index)

@@ -131,7 +131,12 @@ export function ImportDialog({
                                 placeholder="/path/to/file.json"
                                 className="flex-1"
                             />
-                            <Button variant="outline" size="icon" onClick={handleBrowse}>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                aria-label="Browse import source"
+                                onClick={handleBrowse}
+                            >
                                 <FileUp className="h-4 w-4" />
                             </Button>
                         </div>
@@ -163,10 +168,10 @@ export function ImportDialog({
 
                     {result && (
                         <div
-                            className={`rounded-md p-3 text-sm ${
+                            className={`rounded-md border p-3 text-sm ${
                                 result.success
-                                    ? "bg-green-50 text-green-600 dark:bg-green-950"
-                                    : "bg-red-50 text-red-600 dark:bg-red-950"
+                                    ? "border-[var(--success)]/30 bg-[var(--success)]/10 text-[var(--success)]"
+                                    : "border-[var(--destructive)]/30 bg-[var(--destructive)]/10 text-[var(--destructive)]"
                             }`}
                         >
                             {result.success ? (
@@ -180,7 +185,10 @@ export function ImportDialog({
                                     {result.errors.length > 0 && (
                                         <div className="mt-2 space-y-1">
                                             {result.errors.map((err, i) => (
-                                                <div key={i} className="text-xs">
+                                                <div
+                                                    key={`${i}-${err.slice(0, 16)}`}
+                                                    className="text-xs"
+                                                >
                                                     {err}
                                                 </div>
                                             ))}

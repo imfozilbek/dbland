@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { type Index, type IndexStats, usePlatform } from "../../contexts/PlatformContext"
+import { useConfirm } from "../../hooks/use-confirm"
 import { Button } from "../ui/button"
 import { Card } from "../ui/card"
 import { ScrollArea } from "../ui/scroll-area"
@@ -20,6 +22,7 @@ export function IndexManager({
     collectionName,
 }: IndexManagerProps): JSX.Element {
     const platform = usePlatform()
+    const [confirm, confirmDialog] = useConfirm()
     const [indexes, setIndexes] = useState<Index[]>([])
     const [stats, setStats] = useState<IndexStats[]>([])
     const [isLoading, setIsLoading] = useState(false)
@@ -47,9 +50,14 @@ export function IndexManager({
         loadIndexes()
     }, [connectionId, databaseName, collectionName])
 
-    const handleDropIndex = (indexName: string): void => {
-        // eslint-disable-next-line no-alert
-        if (!confirm(`Are you sure you want to drop index "${indexName}"?`)) {
+    const handleDropIndex = async (indexName: string): Promise<void> => {
+        const confirmed = await confirm({
+            title: "Drop index?",
+            description: `"${indexName}" will be dropped from ${databaseName}.${collectionName}. Queries that relied on it may slow down.`,
+            confirmLabel: "Drop",
+            destructive: true,
+        })
+        if (!confirmed) {
             return
         }
 
@@ -57,9 +65,13 @@ export function IndexManager({
             .dropIndex(connectionId, databaseName, collectionName, indexName)
             .then(() => {
                 loadIndexes()
+                toast.success("Index dropped", { description: indexName })
             })
             .catch((err: unknown) => {
                 console.error("Failed to drop index:", err)
+                toast.error("Failed to drop index", {
+                    description: err instanceof Error ? err.message : "Unknown error",
+                })
             })
     }
 
@@ -170,9 +182,10 @@ export function IndexManager({
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="h-8 text-red-600 hover:text-red-700"
+                                                    aria-label={`Drop index ${index.name}`}
+                                                    className="h-8 text-[var(--destructive)] hover:text-[var(--destructive)]/80"
                                                     onClick={() => {
-                                                        handleDropIndex(index.name)
+                                                        void handleDropIndex(index.name)
                                                     }}
                                                     disabled={index.name === "_id_"}
                                                 >
@@ -196,6 +209,7 @@ export function IndexManager({
                 collectionName={collectionName}
                 onCreated={loadIndexes}
             />
+            {confirmDialog}
         </div>
     )
 }

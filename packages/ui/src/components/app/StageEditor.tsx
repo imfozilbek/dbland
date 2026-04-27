@@ -116,7 +116,7 @@ export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element 
                                 />
                             </div>
 
-                            {error && <p className="text-sm text-red-600">{error}</p>}
+                            {error && <p className="text-sm text-[var(--destructive)]">{error}</p>}
 
                             <Button onClick={handleSave} className="w-full">
                                 Apply Changes

@@ -27,7 +27,7 @@ export function StagePreview({ result, onClose }: StagePreviewProps): JSX.Elemen
             <ScrollArea className="flex-1">
                 <div className="p-4">
                     {result.error ? (
-                        <Card className="bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950">
+                        <Card className="border-[var(--destructive)]/30 bg-[var(--destructive)]/10 p-3 text-sm text-[var(--destructive)]">
                             <strong>Error:</strong> {result.error}
                         </Card>
                     ) : (

@@ -289,8 +289,17 @@ export function DatabaseProfiler({
                                 {entries.map((entry, index) => (
                                     <>
                                         <TableRow
-                                            key={index}
+                                            key={`${entry.ts}-${entry.ns}-${index}`}
                                             className="cursor-pointer"
+                                            tabIndex={0}
+                                            role="button"
+                                            aria-expanded={expandedRows.has(index)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") {
+                                                    e.preventDefault()
+                                                    toggleRowExpansion(index)
+                                                }
+                                            }}
                                             onClick={() => {
                                                 toggleRowExpansion(index)
                                             }}

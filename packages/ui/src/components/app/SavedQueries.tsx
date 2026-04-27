@@ -187,6 +187,7 @@ export function SavedQueries({ connectionId, onLoadQuery }: SavedQueriesProps): 
                                     <Button
                                         variant="ghost"
                                         size="icon"
+                                        aria-label="Delete saved query"
                                         className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
                                         onClick={() => {
                                             handleDelete(query.id)

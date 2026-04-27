@@ -36,6 +36,8 @@ import {
     Tabs,
     TabsList,
     TabsTrigger,
+    toast,
+    useConfirm,
     useKeyboardShortcuts,
     usePlatform,
     useQueryStore,
@@ -46,6 +48,7 @@ export function WorkspacePage(): JSX.Element {
     const { connectionId } = useParams()
     const [searchParams] = useSearchParams()
     const platform = usePlatform()
+    const [confirm, confirmDialog] = useConfirm()
 
     // Get database and collection from URL params or use defaults
     const [selectedDatabase, setSelectedDatabase] = useState<string>(
@@ -134,17 +137,23 @@ export function WorkspacePage(): JSX.Element {
             })
     }
 
-    const handleDeleteDocument = (documentId: string): void => {
+    const handleDeleteDocument = async (documentId: string): Promise<void> => {
         if (!connectionId) {
             return
         }
-        // eslint-disable-next-line no-alert
-        if (!confirm("Are you sure you want to delete this document?")) {
+        const confirmed = await confirm({
+            title: "Delete document?",
+            description: `Document will be removed from ${selectedDatabase}.${selectedCollection}.`,
+            confirmLabel: "Delete",
+            destructive: true,
+        })
+        if (!confirmed) {
             return
         }
         platform
             .deleteDocument(connectionId, selectedDatabase, selectedCollection, documentId)
             .then(() => {
+                toast.success("Document deleted")
                 // Re-execute query to refresh results
                 executeQuery(connectionId, selectedDatabase, selectedCollection).catch(
                     (err: unknown) => {
@@ -154,6 +163,9 @@ export function WorkspacePage(): JSX.Element {
             })
             .catch((err: unknown) => {
                 console.error("Failed to delete document:", err)
+                toast.error("Failed to delete document", {
+                    description: err instanceof Error ? err.message : "Unknown error",
+                })
             })
     }
 
@@ -330,7 +342,9 @@ export function WorkspacePage(): JSX.Element {
                                             onViewModeChange={setResultsViewMode}
                                             onEditDocument={handleEditDocument}
                                             onCloneDocument={handleCloneDocument}
-                                            onDeleteDocument={handleDeleteDocument}
+                                            onDeleteDocument={(id) => {
+                                                void handleDeleteDocument(id)
+                                            }}
                                         />
                                     </div>
                                 </div>
@@ -450,6 +464,8 @@ export function WorkspacePage(): JSX.Element {
                 databaseName={selectedDatabase}
                 collectionName={selectedCollection}
             />
+
+            {confirmDialog}
         </div>
     )
 }

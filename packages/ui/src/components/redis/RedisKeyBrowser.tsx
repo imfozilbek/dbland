@@ -55,7 +55,12 @@ export function RedisKeyBrowser({
                         }
                     }}
                 />
-                <Button onClick={() => void handleScan()} disabled={isLoading} size="icon">
+                <Button
+                    onClick={() => void handleScan()}
+                    disabled={isLoading}
+                    size="icon"
+                    aria-label="Scan Redis keys"
+                >
                     {isLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (

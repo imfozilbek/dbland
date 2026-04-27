@@ -183,7 +183,9 @@ export function AggregationBuilder({
                                         </span>
                                     </div>
                                     {result.error && (
-                                        <span className="text-sm text-red-600">{result.error}</span>
+                                        <span className="text-sm text-[var(--destructive)]">
+                                            {result.error}
+                                        </span>
                                     )}
                                 </div>
                             </Card>
