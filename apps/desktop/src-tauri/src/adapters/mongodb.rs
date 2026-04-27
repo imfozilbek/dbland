@@ -363,3 +363,65 @@ impl DatabaseAdapter for MongoDbAdapter {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(q: &str) -> Result<Document, AdapterError> {
+        MongoDbAdapter::parse_find_query(q)
+    }
+
+    #[test]
+    fn parse_find_query_accepts_a_simple_filter() {
+        let doc = parse(r#"{"name": "alice", "age": 30}"#).unwrap();
+        assert_eq!(doc.get_str("name").unwrap(), "alice");
+        assert_eq!(doc.get_i64("age").unwrap(), 30);
+    }
+
+    #[test]
+    fn parse_find_query_accepts_safe_operators() {
+        // $gt, $in, $and etc. should still pass
+        parse(r#"{"age": {"$gt": 18}}"#).unwrap();
+        parse(r#"{"$or": [{"a": 1}, {"b": 2}]}"#).unwrap();
+    }
+
+    #[test]
+    fn parse_find_query_rejects_top_level_dollar_where() {
+        let err = parse(r#"{"$where": "this.x == 1"}"#).unwrap_err();
+        let msg = err.to_string();
+        assert!(msg.contains("$where"), "got: {}", msg);
+    }
+
+    #[test]
+    fn parse_find_query_rejects_nested_dollar_where() {
+        let err = parse(r#"{"$or": [{"a": 1}, {"$where": "true"}]}"#).unwrap_err();
+        assert!(err.to_string().contains("$where"));
+    }
+
+    #[test]
+    fn parse_find_query_rejects_dollar_function() {
+        let err =
+            parse(r#"{"$expr": {"$function": {"body": "function(){}", "args": [], "lang": "js"}}}"#)
+                .unwrap_err();
+        assert!(err.to_string().contains("$function"));
+    }
+
+    #[test]
+    fn parse_find_query_rejects_dollar_accumulator() {
+        let err = parse(r#"{"$accumulator": {"init": "function(){}"}}"#).unwrap_err();
+        assert!(err.to_string().contains("$accumulator"));
+    }
+
+    #[test]
+    fn parse_find_query_rejects_non_object_top_level() {
+        assert!(parse(r#"[1, 2, 3]"#).is_err());
+        assert!(parse(r#""just a string""#).is_err());
+        assert!(parse(r#"42"#).is_err());
+    }
+
+    #[test]
+    fn parse_find_query_rejects_invalid_json() {
+        assert!(parse(r#"{not valid"#).is_err());
+    }
+}
