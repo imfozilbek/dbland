@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react"
 import { Card } from "../ui/card"
 import { Button } from "../ui/button"
-import { RefreshCw } from "lucide-react"
+import { Gauge, RefreshCw } from "lucide-react"
+import { EmptyState } from "../ui/empty-state"
 import { ScrollArea } from "../ui/scroll-area"
 import { type SlowLogEntry, usePlatform } from "../../contexts/PlatformContext"
 
@@ -58,8 +59,12 @@ export function RedisSlowLogViewer({ connectionId }: RedisSlowLogViewerProps): J
             <ScrollArea className="flex-1">
                 <div className="space-y-2">
                     {entries.length === 0 && !isLoading && (
-                        <div className="flex h-full items-center justify-center py-8">
-                            <p className="text-muted-foreground">No slow queries found</p>
+                        <div className="flex items-center justify-center py-8">
+                            <EmptyState
+                                icon={<Gauge className="h-5 w-5" />}
+                                title="No slow queries"
+                                description="Redis hasn't recorded any commands above the slowlog threshold yet. Lower SLOWLOG GET on the server, or wait — this is a good thing."
+                            />
                         </div>
                     )}
 

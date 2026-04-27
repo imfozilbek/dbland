@@ -1,7 +1,8 @@
 import { useState } from "react"
-import { Loader2, Search } from "lucide-react"
+import { Key, Loader2, Search } from "lucide-react"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
+import { EmptyState } from "../ui/empty-state"
 import { ScrollArea } from "../ui/scroll-area"
 import { usePlatform } from "../../contexts/PlatformContext"
 
@@ -72,9 +73,12 @@ export function RedisKeyBrowser({
             <ScrollArea className="flex-1">
                 <div className="space-y-1">
                     {keys.length === 0 && !isLoading && (
-                        <div className="py-4 text-center text-sm text-muted-foreground">
-                            No keys found. Enter a pattern and click search.
-                        </div>
+                        <EmptyState
+                            size="compact"
+                            icon={<Key className="h-4 w-4" />}
+                            title="No keys"
+                            description={`Pattern "${pattern}" matched zero keys. Try a wider glob like "*" or "user:*".`}
+                        />
                     )}
                     {keys.map((key) => (
                         <button
@@ -82,9 +86,13 @@ export function RedisKeyBrowser({
                             onClick={() => {
                                 onKeySelect(key)
                             }}
-                            className={`w-full rounded px-2 py-1 text-left text-sm hover:bg-accent ${
-                                selectedKey === key ? "bg-accent" : ""
+                            className={`w-full truncate rounded px-2 py-1 text-left font-mono text-sm transition-colors duration-150 hover:bg-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] ${
+                                selectedKey === key
+                                    ? "bg-[var(--accent)] text-[var(--foreground)]"
+                                    : "text-[var(--muted-foreground)]"
                             }`}
+                            aria-pressed={selectedKey === key}
+                            title={key}
                         >
                             {key}
                         </button>

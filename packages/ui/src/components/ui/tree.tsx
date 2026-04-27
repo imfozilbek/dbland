@@ -143,6 +143,7 @@ const TreeGroup = React.forwardRef<HTMLDivElement, TreeGroupProps>(
                             "transition-all duration-150",
                             "hover:bg-accent",
                             "cursor-pointer select-none",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                             isActive && ["bg-accent", "border-l-2 border-l-primary"],
                         )}
                         style={{ paddingLeft }}
