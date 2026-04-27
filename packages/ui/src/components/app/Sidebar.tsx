@@ -40,15 +40,20 @@ export function Sidebar({
         )
     }
 
+    const connectionsExpanded = expandedGroups.includes("connections")
+    const settingsActive = activePath === "/settings"
+
     return (
-        <aside className="flex w-64 flex-col bg-[#171717] border-r border-[#262626]">
+        <aside className="flex w-64 flex-col bg-[var(--card)] border-r border-[var(--border)]">
             {/* Header */}
-            <div className="flex h-14 items-center justify-between px-4 border-b border-[#262626]">
+            <div className="flex h-14 items-center justify-between px-4 border-b border-[var(--border)]">
                 <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-md bg-[#3ECF8E]/10">
-                        <Sparkles className="h-4 w-4 text-[#3ECF8E]" />
+                    <div className="p-1.5 rounded-md bg-[var(--primary)]/10">
+                        <Sparkles className="h-4 w-4 text-[var(--primary)]" />
                     </div>
-                    <span className="text-sm font-semibold text-white">Connections</span>
+                    <span className="text-sm font-semibold text-[var(--foreground)]">
+                        Connections
+                    </span>
                 </div>
                 <Button
                     variant="ghost"
@@ -65,39 +70,51 @@ export function Sidebar({
             {/* Connection list */}
             <ScrollArea className="flex-1">
                 <div className="p-3">
-                    {/* Connections group */}
                     <div className="space-y-1">
                         <button
                             onClick={() => {
                                 toggleGroup("connections")
                             }}
+                            aria-expanded={connectionsExpanded}
                             className={cn(
                                 "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium",
-                                "text-[#8F8F8F] hover:text-white hover:bg-[#262626]/50",
-                                "transition-all duration-150",
-                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3ECF8E]",
+                                "text-[var(--muted-foreground)] hover:text-[var(--foreground)]",
+                                "hover:bg-[var(--accent)]/40",
+                                "transition-colors duration-150",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
                             )}
                         >
-                            {expandedGroups.includes("connections") ? (
-                                <ChevronDown className="h-4 w-4 text-[#6B7280]" />
+                            {connectionsExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-[var(--muted-foreground)]" />
                             ) : (
-                                <ChevronRight className="h-4 w-4 text-[#6B7280]" />
+                                <ChevronRight className="h-4 w-4 text-[var(--muted-foreground)]" />
                             )}
                             <FolderTree className="h-4 w-4" />
                             <span className="flex-1 text-left">All Connections</span>
+                            {connections.length > 0 && (
+                                <span className="font-mono text-[10px] text-[var(--muted-foreground)] tabular-nums">
+                                    {connections.length}
+                                </span>
+                            )}
                             {isLoading && (
-                                <div className="h-3 w-3 rounded-full border-2 border-[#3ECF8E] border-t-transparent animate-spin" />
+                                <div
+                                    role="status"
+                                    aria-label="Loading connections"
+                                    className="h-3 w-3 rounded-full border-2 border-[var(--primary)] border-t-transparent animate-spin"
+                                />
                             )}
                         </button>
 
-                        {expandedGroups.includes("connections") && (
+                        {connectionsExpanded && (
                             <div className="mt-1 ml-2 space-y-0.5 animate-fadeIn">
                                 {connections.length === 0 && !isLoading && (
                                     <div className="px-3 py-6 text-center">
-                                        <p className="text-xs text-[#6B7280]">No connections yet</p>
+                                        <p className="text-xs text-[var(--muted-foreground)]">
+                                            No connections yet
+                                        </p>
                                         <button
                                             onClick={onAddConnectionClick}
-                                            className="mt-2 text-xs text-[#3ECF8E] hover:text-[#4AE19A] transition-colors"
+                                            className="mt-2 text-xs text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors"
                                         >
                                             + Add your first connection
                                         </button>
@@ -125,19 +142,17 @@ export function Sidebar({
             </ScrollArea>
 
             {/* Footer */}
-            <div className="border-t border-[#262626] p-3">
+            <div className="border-t border-[var(--border)] p-3">
                 <button
                     onClick={onSettingsClick}
                     className={cn(
                         "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm",
-                        "text-[#8F8F8F] hover:text-white hover:bg-[#262626]/50",
-                        "transition-all duration-150",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3ECF8E]",
-                        activePath === "/settings" && [
-                            "bg-[#262626]",
-                            "text-white",
-                            "border-l-2 border-l-purple-500",
-                        ],
+                        "text-[var(--muted-foreground)] hover:text-[var(--foreground)]",
+                        "hover:bg-[var(--accent)]/40",
+                        "transition-colors duration-150",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
+                        settingsActive &&
+                            "bg-[var(--accent)] text-[var(--foreground)] border-l-2 border-l-[var(--special)]",
                     )}
                 >
                     <Settings className="h-4 w-4" />

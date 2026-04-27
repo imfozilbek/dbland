@@ -16,37 +16,42 @@ export function Toolbar({
     rightContent,
 }: ToolbarProps): JSX.Element {
     return (
-        <header className="flex h-14 items-center justify-between border-b border-[#262626] bg-[#131313] px-4">
+        <header className="flex h-14 items-center justify-between border-b border-[var(--border)] bg-[var(--background)] px-4">
             {/* Logo */}
             <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#1C1C1C] border border-[#262626]">
-                    <Database className="h-5 w-5 text-[#3ECF8E]" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--card)]">
+                    <Database className="h-5 w-5 text-[var(--primary)]" />
                 </div>
-                <span className="text-base font-semibold text-white tracking-tight">{title}</span>
+                <span className="text-base font-semibold tracking-tight text-[var(--foreground)]">
+                    {title}
+                </span>
             </div>
 
-            {/* Center - Connection indicator */}
+            {/* Center — connection indicator */}
             <div className="flex items-center gap-2">
                 {connectionName ? (
-                    <div className="flex items-center gap-2.5 rounded-md bg-[#1C1C1C] border border-[#262626] px-3.5 py-2">
+                    <div className="flex items-center gap-2.5 rounded-md border border-[var(--border)] bg-[var(--card)] px-3.5 py-2">
                         <span
+                            aria-hidden="true"
                             className={cn(
                                 "h-2 w-2 rounded-full",
-                                databaseType === "mongodb" && "bg-[#00ED64]",
-                                databaseType === "redis" && "bg-[#FF6B6B]",
+                                databaseType === "mongodb" && "bg-[var(--mongodb)]",
+                                databaseType === "redis" && "bg-[var(--redis)]",
                             )}
                         />
-                        <span className="text-sm font-medium text-white">{connectionName}</span>
+                        <span className="text-sm font-medium text-[var(--foreground)]">
+                            {connectionName}
+                        </span>
                     </div>
                 ) : (
-                    <div className="flex items-center gap-2 text-sm text-[#525252]">
+                    <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]/70">
                         <Sparkles className="h-4 w-4" />
                         <span>No connection</span>
                     </div>
                 )}
             </div>
 
-            {/* Right - Actions */}
+            {/* Right — actions */}
             <div className="flex items-center gap-2">{rightContent}</div>
         </header>
     )

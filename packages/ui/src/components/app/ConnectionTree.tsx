@@ -105,14 +105,23 @@ export function ConnectionTree({
     // Get status indicator with brand colors
     const getStatusIndicator = (): JSX.Element => {
         const statusStyles: Record<Connection["status"], string> = {
-            connected: "bg-success",
-            connecting: "bg-warning animate-pulse-status",
-            error: "bg-destructive",
-            disconnected: "bg-muted-foreground",
+            connected: "bg-[var(--success)] shadow-[0_0_6px_var(--success)]",
+            connecting: "bg-[var(--warning)] animate-pulse",
+            error: "bg-[var(--destructive)]",
+            disconnected: "bg-muted-foreground/60",
+        }
+
+        const statusLabel: Record<Connection["status"], string> = {
+            connected: "Connected",
+            connecting: "Connecting",
+            error: "Connection error",
+            disconnected: "Disconnected",
         }
 
         return (
             <span
+                role="status"
+                aria-label={statusLabel[connection.status]}
                 className={cn(
                     "ml-auto h-2 w-2 rounded-full transition-colors",
                     statusStyles[connection.status],
