@@ -1,3 +1,4 @@
+import { Check, RotateCcw } from "lucide-react"
 import { useSettingsStore } from "../../stores/settings-store"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog"
 import { Label } from "../ui/label"
@@ -8,6 +9,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 import { Button } from "../ui/button"
 import { ScrollArea } from "../ui/scroll-area"
 import { Card } from "../ui/card"
+
+/**
+ * Build-time version string for the About tab. Bumped on every release —
+ * the previous static "0.8.0" was stale by five minor versions and made
+ * the dialog actively misleading.
+ *
+ * TODO: wire this through Vite's `import.meta.env` so the value is read
+ * from package.json at build time instead of being hand-edited.
+ */
+const APP_VERSION = "1.1.0"
+
+const FEATURES: { label: string; group: string }[] = [
+    { group: "MongoDB", label: "Query editor with Monaco" },
+    { group: "MongoDB", label: "Document CRUD with form & JSON modes" },
+    { group: "MongoDB", label: "Aggregation pipeline builder (10+ stages)" },
+    { group: "MongoDB", label: "Index manager with usage stats" },
+    { group: "MongoDB", label: "GridFS file browser" },
+    { group: "MongoDB", label: "Replica set monitor with replication lag" },
+    { group: "MongoDB", label: "Sharding dashboard" },
+    { group: "MongoDB", label: "Geospatial query builder" },
+    { group: "MongoDB", label: "Database profiler" },
+    { group: "MongoDB", label: "Collection statistics" },
+    { group: "Redis", label: "Key browser with pattern search" },
+    { group: "Redis", label: "Data viewers (string, list, set, hash, zset)" },
+    { group: "Redis", label: "TTL viewer & editor" },
+    { group: "Redis", label: "Slow log monitor" },
+    { group: "Connectivity", label: "SSH tunneling (password, key, agent)" },
+    { group: "Connectivity", label: "SSL/TLS support" },
+    { group: "Connectivity", label: "AES-256-GCM credentials, master key in OS keychain" },
+]
 
 export interface SettingsDialogProps {
     open: boolean
@@ -157,37 +188,38 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX
                         </TabsContent>
 
                         <TabsContent value="about" className="space-y-4">
-                            <Card className="p-4 space-y-4">
-                                <div>
-                                    <h3 className="text-lg font-semibold">DBLand</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        NoSQL Database Agnostic GUI/WEB Client
+                            <Card className="space-y-4 p-4">
+                                <div className="space-y-1">
+                                    <h3 className="text-lg font-semibold text-[var(--foreground)]">
+                                        DBLand
+                                    </h3>
+                                    <p className="text-sm text-[var(--muted-foreground)]">
+                                        NoSQL database client for MongoDB and Redis.
                                     </p>
-                                    <p className="text-sm text-muted-foreground mt-2">
-                                        Version: 0.8.0
+                                    <p className="pt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--muted-foreground)]/70">
+                                        Version {APP_VERSION}
                                     </p>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <h4 className="text-sm font-semibold">Features</h4>
-                                    <ul className="text-sm text-muted-foreground space-y-1">
-                                        <li>✅ MongoDB Support</li>
-                                        <li>✅ Query Editor with Syntax Highlighting</li>
-                                        <li>✅ Document CRUD Operations</li>
-                                        <li>✅ Import/Export (JSON)</li>
-                                        <li>✅ Aggregation Pipeline Builder</li>
-                                        <li>✅ Index Management</li>
-                                    </ul>
+                                <div className="space-y-3">
+                                    <h4 className="text-sm font-semibold text-[var(--foreground)]">
+                                        What's inside
+                                    </h4>
+                                    <FeatureList />
                                 </div>
 
-                                <div className="pt-4">
+                                <div className="border-t border-[var(--border)] pt-4">
                                     <Button
                                         variant="outline"
                                         onClick={resetSettings}
                                         className="w-full"
                                     >
-                                        Reset to Defaults
+                                        <RotateCcw className="mr-2 h-4 w-4" />
+                                        Reset to defaults
                                     </Button>
+                                    <p className="mt-2 text-center text-[11px] text-[var(--muted-foreground)]/70">
+                                        Resets preferences only — saved connections stay.
+                                    </p>
                                 </div>
                             </Card>
                         </TabsContent>
@@ -195,5 +227,40 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX
                 </Tabs>
             </DialogContent>
         </Dialog>
+    )
+}
+
+/**
+ * Group the feature list by area (MongoDB / Redis / Connectivity) so the
+ * About tab reads as a feature manifest instead of a flat ✅ checklist.
+ */
+function FeatureList(): JSX.Element {
+    const groups = FEATURES.reduce<Record<string, string[]>>((acc, item) => {
+        acc[item.group] = acc[item.group] ?? []
+        acc[item.group].push(item.label)
+        return acc
+    }, {})
+
+    return (
+        <div className="space-y-3">
+            {Object.entries(groups).map(([group, labels]) => (
+                <div key={group} className="space-y-1.5">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--muted-foreground)]/70">
+                        {group}
+                    </p>
+                    <ul className="space-y-1">
+                        {labels.map((label) => (
+                            <li
+                                key={label}
+                                className="flex items-start gap-2 text-sm text-[var(--muted-foreground)]"
+                            >
+                                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--success)]" />
+                                <span>{label}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            ))}
+        </div>
     )
 }
