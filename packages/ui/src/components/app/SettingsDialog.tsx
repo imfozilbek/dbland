@@ -67,7 +67,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="en">English</SelectItem>
-                                            <SelectItem value="ru">Русский</SelectItem>
+                                            <SelectItem value="ru">Russian</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

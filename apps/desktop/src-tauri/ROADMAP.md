@@ -1,19 +1,23 @@
 # Tauri Backend Roadmap
 
+> Crate version: **1.1.0**. All milestones below have shipped through
+> v1.0.0 + v1.1.0. Forward-looking work is tracked in the top-level
+> [ROADMAP.md](../../../ROADMAP.md).
+
 ## v0.1.0 - Setup
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
 - [x] Tauri 2.0 config
 - [x] Window setup
 - [x] IPC commands structure
-- [x] Build and test
+- [x] Build pipeline
 
 ---
 
 ## v0.2.0 - MongoDB Commands
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
 - [x] connect_mongodb
 - [x] disconnect
@@ -26,7 +30,7 @@
 
 ## v0.3.0 - Redis Commands
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
 - [x] connect_redis
 - [x] get_keys
@@ -39,33 +43,45 @@
 
 ## v0.4.0 - Connection Storage
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
 - [x] SQLite setup
 - [x] save_connection
 - [x] get_connections
 - [x] delete_connection
-- [x] Encryption (AES-256)
+- [x] AES-256-GCM encryption (master key migrated to OS keychain in v1.1.0)
 
 ---
 
 ## v0.5.0 - SSH Tunnel
 
-**Статус:** 📋 Planned
+**Status:** ✅ Completed
 
-- [ ] russh integration
-- [ ] Password auth
-- [ ] Key file auth
-- [ ] Agent auth
+- [x] `ssh2` integration (we ended up on `ssh2` rather than `russh`)
+- [x] Password authentication
+- [x] Key-file authentication (with optional passphrase)
+- [x] SSH-agent authentication
+- [x] Structured (non-leaking) error logging
 
 ---
 
 ## v0.6.0 - Import/Export
 
-**Статус:** 📋 Planned
+**Status:** ✅ Completed
 
-- [ ] import_json
-- [ ] export_json
-- [ ] import_csv
-- [ ] export_csv
-- [ ] Stream large files
+- [x] import_json
+- [x] export_json
+- [x] import_csv
+- [x] export_csv
+- [x] Streamed processing for large files (chunked, 100 docs/batch)
+
+---
+
+## v1.1.0 — additions
+
+- [x] Profiler / collection-stats / geospatial / GridFS / replica-set /
+      sharding command groups
+- [x] Strict CSP and explicit `capabilities/default.json`
+- [x] MongoDB query operator whitelist (`$where` / `$function` / `$accumulator`
+      rejected recursively, covered by Rust unit tests)
+- [x] Master-key hex codec with round-trip + invalid-input tests

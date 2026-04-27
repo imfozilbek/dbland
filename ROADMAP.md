@@ -2,54 +2,54 @@
 
 ## Vision
 
-Стать #1 GUI/WEB клиентом для NoSQL баз данных.
+Become the #1 GUI/web client for NoSQL databases.
 
 ---
 
 ## v0.1.0 - Foundation
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
-**Цели:**
-- [x] Monorepo инфраструктура
-- [x] Базовые UI компоненты
+**Goals:**
+- [x] Monorepo infrastructure
+- [x] Base UI components
 - [x] Tauri desktop shell
-- [x] Web приложение
+- [x] Web application
 - [x] CI/CD pipeline
 
 **Deliverables:**
-- Working monorepo с pnpm
-- 24+ UI компонентов (Radix UI + Tailwind)
-- Tauri приложение с React
-- Web приложение с React + Vite
+- Working monorepo with pnpm
+- 24+ UI components (Radix UI + Tailwind)
+- Tauri application with React
+- Web application with React + Vite
 - GitHub Actions CI/CD
 
 ---
 
 ## v0.2.0 - Core Connectivity
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
-**Цели:**
+**Goals:**
 - [x] MongoDB adapter (Rust)
 - [x] Redis adapter (Rust)
 - [x] Connection management
 - [x] Encrypted credentials storage
 
 **Deliverables:**
-- Подключение к MongoDB/Redis
-- Сохранение подключений (SQLite)
-- Test connection функция
-- AES-256 шифрование credentials
+- MongoDB / Redis connectivity
+- Persistent connection list (SQLite)
+- Test connection action
+- AES-256 credential encryption
 - Zustand state management
 
 ---
 
 ## v0.3.0 - Basic UI
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
-**Цели:**
+**Goals:**
 - [x] App layout (sidebar, editor, results)
 - [x] Connection manager UI
 - [x] Schema browser (tree)
@@ -58,19 +58,19 @@
 - [x] Basic results viewer
 
 **Deliverables:**
-- Полноценный UI shell
-- Просмотр схемы БД (Tree view)
-- Общие компоненты для desktop и web
-- Monaco editor с syntax highlighting
+- Full UI shell
+- Schema browser (tree view)
+- Components shared between desktop and web
+- Monaco editor with syntax highlighting
 - Results viewer (Table, JSON, Tree modes)
 
 ---
 
 ## v0.4.0 - Query Features
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
-**Цели:**
+**Goals:**
 - [x] Query history
 - [x] Saved queries (snippets)
 - [x] Autocomplete (collections, fields)
@@ -78,19 +78,19 @@
 - [x] Query explain
 
 **Deliverables:**
-- История запросов с поиском
-- Сохранённые запросы с тегами
-- Автодополнение в редакторе
-- Форматирование запросов
-- Профилирование запросов (explain plan)
+- Searchable query history
+- Tagged saved queries
+- Editor autocomplete
+- Query formatter
+- Query profiling (explain plan)
 
 ---
 
 ## v0.5.0 - Document Editing
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
-**Цели:**
+**Goals:**
 - [x] Document editor (form + JSON)
 - [x] Inline editing in results
 - [x] Clone document
@@ -98,39 +98,39 @@
 - [x] Array manipulation
 
 **Deliverables:**
-- Редактирование документов (Form/JSON режимы)
-- CRUD операции через UI
-- Поддержка вложенных объектов
-- Манипуляции с массивами
-- Валидация данных
+- Document editor (Form / JSON modes)
+- CRUD operations from the UI
+- Nested object support
+- Array manipulation
+- Field validation
 
 ---
 
 ## v0.6.0 - Import/Export
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
-**Цели:**
+**Goals:**
 - [x] JSON import/export
-- [x] CSV import/export (с field mapping)
+- [x] CSV import/export (with field mapping)
 - [x] BSON import/export
-- [x] Field mapping для CSV
+- [x] Field mapping for CSV
 - [x] Progress indicator
 
 **Deliverables:**
-- Импорт данных с маппингом полей
-- Экспорт с фильтрами (query-based)
+- Import with field mapping
+- Export with query-based filters
 - Chunked processing (100 docs/batch)
 - Real-time progress tracking
-- Поддержка больших файлов
+- Large-file support
 
 ---
 
 ## v0.7.0 - Aggregation Builder
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
-**Цели:**
+**Goals:**
 - [x] Visual pipeline builder
 - [x] Drag & drop stages
 - [x] Stage preview
@@ -138,28 +138,28 @@
 - [x] Bidirectional sync (visual ↔ code)
 
 **Deliverables:**
-- Визуальный построитель aggregation pipeline
-- 10+ поддерживаемых stages ($match, $group, $project, $sort, $limit, $skip, $lookup, $unwind, $addFields, $count)
-- Drag-and-drop с @dnd-kit
-- Preview intermediate results
-- Генерация кода из визуального pipeline
+- Visual aggregation pipeline builder
+- 10+ supported stages ($match, $group, $project, $sort, $limit, $skip, $lookup, $unwind, $addFields, $count)
+- Drag-and-drop with @dnd-kit
+- Intermediate-result preview
+- Code generation from the visual pipeline
 
 ---
 
 ## v0.8.0 - Index Manager
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
-**Цели:**
+**Goals:**
 - [x] View indexes
 - [x] Create indexes (simple, compound, unique, TTL)
 - [x] Index usage stats
 - [x] Drop/rebuild indexes
 
 **Deliverables:**
-- Полное управление индексами
-- Статистика использования индексов
-- Поддержка всех типов индексов MongoDB
+- Full index management
+- Index-usage statistics
+- Support for every MongoDB index type
 - Background index creation
 - Index performance monitoring
 
@@ -167,9 +167,9 @@
 
 ## v0.9.0 - SSH & Advanced Connectivity
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
-**Цели:**
+**Goals:**
 - [x] SSH tunnel (password)
 - [x] SSH tunnel (key file)
 - [x] SSH tunnel (agent)
@@ -177,9 +177,9 @@
 - [x] Connection string builder
 
 **Deliverables:**
-- SSH туннелирование с 3 методами аутентификации
-- SSL/TLS поддержка с сертификатами
-- Connection String Builder (parse/build URI)
+- SSH tunneling with three auth methods
+- SSL/TLS support with certificates
+- Connection-string builder (parse/build URI)
 - Encrypted SSH config storage
 - Tabbed connection manager UI
 - Automatic tunnel management
@@ -188,30 +188,33 @@
 
 ## v0.10.0 - Redis Features
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
-**Цели:**
-- [x] Key browser с pattern search
+**Goals:**
+- [x] Key browser with pattern search
 - [x] TTL management
 - [x] Data type viewers (String, List, Set, Hash, ZSet)
-- [x] Pub/Sub monitor
+- [ ] Pub/Sub monitor (deferred to v1.2.0)
 - [x] Slow log viewer
 
 **Deliverables:**
-- Полная поддержка Redis
+- Redis support
 - Pattern-based key search (SCAN)
-- Просмотрщики для всех типов данных
+- Viewers for every data type
 - TTL viewer/editor
-- Slow log с performance metrics
+- Slow log with performance metrics
 - Type auto-detection
+
+> Pub/Sub real-time monitor was originally planned here but did not ship in v0.10.0;
+> it is tracked in v1.2.0 instead.
 
 ---
 
 ## v1.0.0 - Production Release 🎉
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
-**Цели:**
+**Goals:**
 - [x] Keyboard shortcuts (platform-aware)
 - [x] Dark/Light themes (with system preference)
 - [x] Settings UI
@@ -222,98 +225,113 @@
 
 **Deliverables:**
 - Production-ready release
-- Cross-platform installers для macOS, Windows, Linux
-- Auto-updater с GitHub releases
+- Cross-platform installers for macOS, Windows, Linux
+- Auto-updater wired into GitHub Releases
 - Comprehensive documentation
 - Automated CI/CD pipeline
-- Code signing для всех платформ
-
----
-
-## 📊 Статистика v1.0.0
-
-### Реализованные Фичи
-
-**MongoDB Support (100%):**
-- ✅ Query Editor с Monaco
-- ✅ Query History (auto-save, search)
-- ✅ Saved Queries (tags, descriptions)
-- ✅ Results Viewer (Table, JSON, Tree)
-- ✅ Document CRUD (Create, Read, Update, Delete, Clone)
-- ✅ Import/Export (JSON, CSV, BSON)
-- ✅ Aggregation Pipeline Builder (10+ stages)
-- ✅ Index Management (create, drop, stats)
-- ✅ Autocomplete & Formatting
-- ✅ Query Explain Plan
-
-**Redis Support (100%):**
-- ✅ Key Browser (pattern search)
-- ✅ Data Viewers (String, List, Set, Hash, ZSet)
-- ✅ TTL Management
-- ✅ Slow Log Viewer
-- ✅ Type Auto-Detection
-
-**Connectivity:**
-- ✅ SSH Tunneling (password, key, agent)
-- ✅ SSL/TLS Support
-- ✅ Connection String Builder
-- ✅ AES-256-GCM Encryption
-
-**User Experience:**
-- ✅ Dark/Light Themes
-- ✅ Keyboard Shortcuts
-- ✅ Settings Management
-- ✅ Auto-Save
-- ✅ Platform-Aware UI
-
-**Infrastructure:**
-- ✅ Auto-Updater
-- ✅ Multi-Platform Builds
-- ✅ Code Signing
-- ✅ CI/CD Pipeline
-- ✅ Comprehensive Docs
-
-### Технические Метрики
-
-- **Commits:** 15 production commits
-- **Lines of Code:** 8,500+
-- **Files Changed:** 60+
-- **Components:** 40+
-- **Test Coverage:** 80%+
-- **Security:** AES-256-GCM encryption, code signing
-- **Architecture:** Clean Architecture + DDD
-
-### Platform Support
-
-- ✅ macOS (Universal Binary - Apple Silicon + Intel)
-- ✅ Windows (NSIS Installer)
-- ✅ Linux (DEB Package + AppImage)
+- Code signing across all platforms
 
 ---
 
 ## v1.1.0 - Enhanced MongoDB Features
 
-**Статус:** ✅ Completed
+**Status:** ✅ Completed
 
-**Цели:**
-- [x] Database profiler (system.profile, level/threshold control)
+**Goals:**
+- [x] Database profiler (system.profile, level / threshold control)
 - [x] Collection statistics (count, size, indexes, validation, sharding)
 - [x] Geospatial query support ($near, $geoWithin, $geoIntersects)
 - [x] GridFS file browser (list, metadata, download, delete)
-- [x] Replica set monitoring (members, health, lag, config)
+- [x] Replica set monitoring (members, health, replication lag, config)
 - [x] Sharding visualization (shards, sharded collections, chunks)
 
 **Deliverables:**
 - 6 new Tauri commands in `apps/desktop/src-tauri/src/commands/`
 - 6 new React components in `packages/ui/src/components/app/`
 - Web platform stub completed for the full v1.1.0 surface
-- Supabase-inspired UI redesign across all shared components
+- Brand-aligned UI redesign (Inter, JetBrains Mono, GitHub-dark palette)
 
 **Hardening (post-merge):**
-- Strict CSP enabled, encryption key moved to OS keychain
-- MongoDB query operator whitelist (no server-side eval)
-- Restored `pnpm typecheck`, lint warnings 113 → 5
-- Connection entity given real domain behaviour, magic numbers extracted
+- Strict CSP in `tauri.conf.json` (was `null`)
+- Master AES-256-GCM key migrated to OS keychain (legacy `.key` file deleted on first launch)
+- MongoDB query operator whitelist rejects `$where` / `$function` / `$accumulator`
+- SSH tunnel logs scrubbed: only error variant kind, never auth payload
+- Capabilities surface narrowed to `core` / `shell:allow-open` / `updater`
+- `pnpm typecheck` script restored, lint warnings driven from 113 → 0
+- Connection entity given intent-named transitions
+  (`markConnecting` / `markConnected` / `markFailed` / `markDisconnected`)
+- Default ports / auth db / query limit extracted into
+  `domain/constants/database-defaults.ts`
+- Web `PlatformAPI` stub completed (was missing 16+ v1.0–v1.1 methods)
+- Redis viewers wired through to the platform API (were TODO stubs)
+- `alert()` / `confirm()` replaced with sonner toasts + Radix `<AlertDialog>`
+- `aria-label` on every icon-only button; keyboard nav on expandable rows
+- 4 high-complexity functions and one over-long arrow split into named
+  sub-components / factories
+- libs/core test count: 18 → 73; src-tauri Rust tests: 5 → 17
+- Coverage: domain entities 98.3%, value-objects 89.8%, use-cases 84.7%
+
+---
+
+## v1.0.0 Feature Summary
+
+**MongoDB:**
+- Query Editor with Monaco
+- Query History (auto-save, search)
+- Saved Queries (tags, descriptions)
+- Results Viewer (Table, JSON, Tree)
+- Document CRUD (Create, Read, Update, Delete, Clone)
+- Import/Export (JSON, CSV, BSON)
+- Aggregation Pipeline Builder (10+ stages)
+- Index Management (create, drop, stats)
+- Autocomplete & formatting
+- Query explain plan
+
+**Redis:**
+- Key Browser (pattern search)
+- Data Viewers (String, List, Set, Hash, ZSet)
+- TTL Management
+- Slow Log Viewer
+- Type auto-detection
+
+**Connectivity:**
+- SSH Tunneling (password, key, agent)
+- SSL/TLS support
+- Connection String Builder
+- AES-256-GCM credential encryption
+
+**User Experience:**
+- Dark/Light themes
+- Keyboard shortcuts
+- Settings management
+- Auto-save
+- Platform-aware UI
+
+**Infrastructure:**
+- Auto-updater
+- Multi-platform builds
+- Code signing
+- CI/CD pipeline
+- Comprehensive docs
+
+### Technical Metrics (post-v1.1.0)
+
+| Metric | Value |
+|--------|-------|
+| Production commits since v1.0.0 | 14 |
+| Lines of code | 8,500+ |
+| Components | 40+ |
+| TypeScript tests (`libs/core`) | 73 |
+| Rust unit tests (`src-tauri`) | 17 |
+| Domain coverage | ≈ 98% statements |
+| Architecture | Clean Architecture + DDD |
+| Encryption | AES-256-GCM with OS-keychain master key |
+
+### Platform Support
+
+- ✅ macOS (Universal Binary — Apple Silicon + Intel)
+- ✅ Windows (NSIS Installer)
+- ✅ Linux (DEB Package + AppImage)
 
 ---
 
@@ -321,7 +339,7 @@
 
 ### v1.2.0 - Enhanced Redis Features
 
-**Планируется:**
+**Planned:**
 - [ ] Pub/Sub real-time monitoring
 - [ ] Redis Cluster support
 - [ ] Redis Sentinel support
@@ -331,7 +349,7 @@
 
 ### v1.3.0 - Web Version
 
-**Планируется:**
+**Planned:**
 - [ ] Browser-based client
 - [ ] WebSocket proxy server
 - [ ] Progressive Web App (PWA)
@@ -340,7 +358,7 @@
 
 ### v2.0.0 - More NoSQL Databases
 
-**Планируется:**
+**Planned:**
 - [ ] Elasticsearch adapter
 - [ ] Cassandra adapter
 - [ ] CouchDB adapter
@@ -352,10 +370,10 @@
 
 ### Enterprise Features
 
-**Рассматривается:**
+**Under consideration:**
 - [ ] Cloud sync (optional)
 - [ ] Team collaboration features
-- [ ] Plugin system для расширений
+- [ ] Plugin system for extensions
 - [ ] Query performance recommendations
 - [ ] Automated backups
 - [ ] Audit logs
@@ -368,7 +386,7 @@
 
 ### SLC (Simple, Lovable, Complete)
 
-DBLand следует принципу **SLC, NOT MVP**:
+DBLand follows **SLC, NOT MVP**:
 
 - **Simple** — Easy to use, no unnecessary complexity
 - **Lovable** — Delightful UX, polished design, feels premium
@@ -409,7 +427,7 @@ Every commit must pass:
 ✅ **All planned features implemented**
 ✅ **Production-ready quality**
 ✅ **Full MongoDB support**
-✅ **Full Redis support**
+✅ **Full Redis support (except Pub/Sub — v1.2.0)**
 ✅ **Cross-platform support**
 ✅ **Comprehensive documentation**
 ✅ **Automated releases**
@@ -427,9 +445,11 @@ Every commit must pass:
 ### Security Checklist
 
 - [x] AES-256-GCM encryption for credentials
+- [x] Master encryption key in OS keychain (no plaintext on disk)
+- [x] Strict Content-Security-Policy in Tauri WebView
 - [x] No secrets in logs
 - [x] Input validation on all inputs
-- [x] NoSQL injection prevention
+- [x] NoSQL injection prevention (operator whitelist)
 - [x] SSH keys never sent to frontend
 - [x] SSL certificate validation
 - [x] Code signing for releases
@@ -443,4 +463,4 @@ See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for development guidelines.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](LICENSE) for details.
