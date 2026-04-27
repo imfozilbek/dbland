@@ -184,4 +184,21 @@ export default tseslint.config(
             "@typescript-eslint/promise-function-async": "off",
         },
     },
+    {
+        // Test files: stubs and fixtures legitimately use async without await
+        // (mocking interfaces that return Promise). The describe() block of a
+        // multi-case test naturally runs long — the line cap is meant for
+        // production code, not test scaffolding. vi.fn().mock.calls returns
+        // any[] by design, so unsafe-assignment / member-access fire false
+        // positives in test assertions.
+        files: ["**/*.test.ts", "**/*.test.tsx", "**/test-helpers.ts"],
+        rules: {
+            "@typescript-eslint/require-await": "off",
+            "@typescript-eslint/no-unsafe-assignment": "off",
+            "@typescript-eslint/no-unsafe-member-access": "off",
+            "@typescript-eslint/no-unsafe-call": "off",
+            "@typescript-eslint/no-unsafe-argument": "off",
+            "max-lines-per-function": "off",
+        },
+    },
 )
