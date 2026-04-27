@@ -32,26 +32,27 @@ interface ConnectionState {
     clearError: () => void
 }
 
-export const useConnectionStore = create<ConnectionState>((set, get) => ({
-    // Initial state
-    connections: [],
-    activeConnectionId: null,
-    isLoading: false,
-    error: null,
-    _api: null,
+type Get = () => ConnectionState
+type Set = (
+    partial:
+        | ConnectionState
+        | Partial<ConnectionState>
+        | ((state: ConnectionState) => ConnectionState | Partial<ConnectionState>),
+) => void
 
-    // Set platform API
-    setApi: (api: PlatformAPI): void => {
-        set({ _api: api })
-    },
+/**
+ * Each action lives in its own factory so the zustand `create(...)` call
+ * doesn't end up as a 147-line arrow (the original tripped the
+ * max-lines-per-function rule). Pure functions of (get, set) — easy
+ * to test in isolation later.
+ */
 
-    // Load all connections
-    loadConnections: async (): Promise<void> => {
+function createLoadConnections(get: Get, set: Set): () => Promise<void> {
+    return async () => {
         const { _api } = get()
         if (!_api) {
             return
         }
-
         set({ isLoading: true, error: null })
         try {
             const connections = await _api.getConnections()
@@ -59,20 +60,22 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
         } catch (error) {
             set({ error: String(error), isLoading: false })
         }
-    },
+    }
+}
 
-    // Save connection
-    saveConnection: async (config: ConnectionConfig): Promise<Connection> => {
+function createSaveConnection(
+    get: Get,
+    set: Set,
+): (config: ConnectionConfig) => Promise<Connection> {
+    return async (config) => {
         const { _api } = get()
         if (!_api) {
             throw new Error("Platform API not initialized")
         }
-
         set({ isLoading: true, error: null })
         try {
             const connection = await _api.saveConnection(config)
             const { connections } = get()
-
             const existingIndex = connections.findIndex((c) => c.id === connection.id)
             if (existingIndex >= 0) {
                 const updated = [...connections]
@@ -81,26 +84,24 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
             } else {
                 set({ connections: [...connections, connection], isLoading: false })
             }
-
             return connection
         } catch (error) {
             set({ error: String(error), isLoading: false })
             throw error
         }
-    },
+    }
+}
 
-    // Delete connection
-    deleteConnection: async (id: string): Promise<void> => {
+function createDeleteConnection(get: Get, set: Set): (id: string) => Promise<void> {
+    return async (id) => {
         const { _api } = get()
         if (!_api) {
             throw new Error("Platform API not initialized")
         }
-
         set({ isLoading: true, error: null })
         try {
             await _api.deleteConnection(id)
             const { connections, activeConnectionId } = get()
-
             set({
                 connections: connections.filter((c) => c.id !== id),
                 activeConnectionId: activeConnectionId === id ? null : activeConnectionId,
@@ -110,46 +111,44 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
             set({ error: String(error), isLoading: false })
             throw error
         }
-    },
+    }
+}
 
-    // Test connection
-    testConnection: async (config: ConnectionConfig): Promise<TestConnectionResult> => {
+function createTestConnection(
+    get: Get,
+): (config: ConnectionConfig) => Promise<TestConnectionResult> {
+    return async (config) => {
         const { _api } = get()
         if (!_api) {
             return { success: false, message: "Platform API not initialized" }
         }
-
         try {
             return await _api.testConnection(config)
         } catch (error) {
             return { success: false, message: String(error) }
         }
-    },
+    }
+}
 
-    // Connect
-    connect: async (id: string): Promise<void> => {
+function createConnect(get: Get, set: Set): (id: string) => Promise<void> {
+    return async (id) => {
         const { _api, connections } = get()
         if (!_api) {
             throw new Error("Platform API not initialized")
         }
-
         const connection = connections.find((c) => c.id === id)
         if (!connection) {
             throw new Error("Connection not found")
         }
-
-        // Update status to connecting
         set({
             connections: connections.map((c) =>
                 c.id === id ? { ...c, status: "connecting" as const } : c,
             ),
             error: null,
         })
-
         try {
             await _api.connect(id)
-
-            const updatedConnections = get().connections.map((c) =>
+            const updated = get().connections.map((c) =>
                 c.id === id
                     ? {
                           ...c,
@@ -158,11 +157,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
                       }
                     : c,
             )
-
-            set({
-                connections: updatedConnections,
-                activeConnectionId: id,
-            })
+            set({ connections: updated, activeConnectionId: id })
         } catch (error) {
             set({
                 connections: get().connections.map((c) =>
@@ -172,20 +167,18 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
             })
             throw error
         }
-    },
+    }
+}
 
-    // Disconnect
-    disconnect: async (id: string): Promise<void> => {
+function createDisconnect(get: Get, set: Set): (id: string) => Promise<void> {
+    return async (id) => {
         const { _api } = get()
         if (!_api) {
             throw new Error("Platform API not initialized")
         }
-
         try {
             await _api.disconnect(id)
-
             const { connections, activeConnectionId } = get()
-
             set({
                 connections: connections.map((c) =>
                     c.id === id ? { ...c, status: "disconnected" as const } : c,
@@ -196,23 +189,35 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
             set({ error: String(error) })
             throw error
         }
-    },
+    }
+}
 
-    // Set active connection
-    setActiveConnection: (id: string | null): void => {
+export const useConnectionStore = create<ConnectionState>((set, get) => ({
+    connections: [],
+    activeConnectionId: null,
+    isLoading: false,
+    error: null,
+    _api: null,
+
+    setApi: (api) => {
+        set({ _api: api })
+    },
+    loadConnections: createLoadConnections(get, set),
+    saveConnection: createSaveConnection(get, set),
+    deleteConnection: createDeleteConnection(get, set),
+    testConnection: createTestConnection(get),
+    connect: createConnect(get, set),
+    disconnect: createDisconnect(get, set),
+    setActiveConnection: (id) => {
         set({ activeConnectionId: id })
     },
-
-    // Update connection status
-    updateConnectionStatus: (id: string, status: ConnectionStatus): void => {
+    updateConnectionStatus: (id, status) => {
         const { connections } = get()
         set({
             connections: connections.map((c) => (c.id === id ? { ...c, status } : c)),
         })
     },
-
-    // Clear error
-    clearError: (): void => {
+    clearError: () => {
         set({ error: null })
     },
 }))

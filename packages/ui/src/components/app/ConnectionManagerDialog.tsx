@@ -31,30 +31,48 @@ interface FormErrors {
 
 const DEFAULT_MONGODB_PORT = 27017
 const DEFAULT_REDIS_PORT = 6379
+const DEFAULT_SSH_PORT = 22
+const MAX_NAME_LENGTH = 50
+const MIN_PORT = 1
+const MAX_PORT = 65535
 
+const DEFAULT_SSH = {
+    enabled: false,
+    host: "",
+    port: DEFAULT_SSH_PORT,
+    username: "",
+    authMethod: "password",
+} as const
+
+const DEFAULT_SSL = {
+    enabled: false,
+    rejectUnauthorized: true,
+} as const
+
+/**
+ * Build the initial form state. Each field has an obvious default,
+ * so we lean on a single spread of the connection plus per-field
+ * fallbacks instead of long ?? chains (the original was complexity 22).
+ */
 function getInitialFormData(connection?: Connection): ConnectionConfig {
+    if (!connection) {
+        return {
+            name: "",
+            type: "mongodb",
+            host: "localhost",
+            port: DEFAULT_MONGODB_PORT,
+            password: "",
+            tls: false,
+            ssh: { ...DEFAULT_SSH },
+            ssl: { ...DEFAULT_SSL },
+        }
+    }
     return {
-        id: connection?.id,
-        name: connection?.name ?? "",
-        type: connection?.type ?? "mongodb",
-        host: connection?.host ?? "localhost",
-        port: connection?.port ?? DEFAULT_MONGODB_PORT,
-        username: connection?.username ?? "",
+        ...connection,
+        // password is never sent back from the backend — start blank
         password: "",
-        database: connection?.database ?? "",
-        authDatabase: connection?.authDatabase ?? "",
-        tls: connection?.tls ?? false,
-        ssh: connection?.ssh ?? {
-            enabled: false,
-            host: "",
-            port: 22,
-            username: "",
-            authMethod: "password",
-        },
-        ssl: connection?.ssl ?? {
-            enabled: false,
-            rejectUnauthorized: true,
-        },
+        ssh: connection.ssh ?? { ...DEFAULT_SSH },
+        ssl: connection.ssl ?? { ...DEFAULT_SSL },
     }
 }
 
@@ -63,19 +81,195 @@ function validateForm(config: ConnectionConfig): FormErrors {
 
     if (!config.name.trim()) {
         errors.name = "Connection name is required"
-    } else if (config.name.length > 50) {
-        errors.name = "Name must be 50 characters or less"
+    } else if (config.name.length > MAX_NAME_LENGTH) {
+        errors.name = `Name must be ${MAX_NAME_LENGTH} characters or less`
     }
 
     if (!config.host.trim()) {
         errors.host = "Host is required"
     }
 
-    if (config.port < 1 || config.port > 65535) {
-        errors.port = "Port must be between 1 and 65535"
+    if (config.port < MIN_PORT || config.port > MAX_PORT) {
+        errors.port = `Port must be between ${MIN_PORT} and ${MAX_PORT}`
     }
 
     return errors
+}
+
+/**
+ * Reusable label + input row. Centralises the 4-column grid that the
+ * basic-fields tab uses repeatedly so the parent component stays at a
+ * sane complexity.
+ */
+function FormRow({
+    htmlFor,
+    label,
+    error,
+    children,
+}: {
+    htmlFor: string
+    label: string
+    error?: string
+    children: React.ReactNode
+}): JSX.Element {
+    return (
+        <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor={htmlFor} className="text-right text-[13px]">
+                {label}
+            </Label>
+            <div className="col-span-3">
+                {children}
+                {error && <span className="text-xs text-destructive">{error}</span>}
+            </div>
+        </div>
+    )
+}
+
+interface BasicFieldsProps {
+    formData: ConnectionConfig
+    errors: FormErrors
+    isEditMode: boolean
+    onTypeChange: (type: "mongodb" | "redis") => void
+    updateField: <K extends keyof ConnectionConfig>(field: K, value: ConnectionConfig[K]) => void
+}
+
+/**
+ * Type / name / host / port / credentials form. Lives in its own component
+ * so ConnectionManagerDialog itself stays under the complexity cap.
+ */
+function BasicFields({
+    formData,
+    errors,
+    isEditMode,
+    onTypeChange,
+    updateField,
+}: BasicFieldsProps): JSX.Element {
+    const portPlaceholder = formData.type === "mongodb" ? DEFAULT_MONGODB_PORT : DEFAULT_REDIS_PORT
+    return (
+        <div className="grid gap-4 py-4">
+            <FormRow htmlFor="type" label="Type">
+                <Select
+                    value={formData.type}
+                    onValueChange={(value: "mongodb" | "redis") => {
+                        onTypeChange(value)
+                    }}
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select database type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="mongodb">MongoDB</SelectItem>
+                        <SelectItem value="redis">Redis</SelectItem>
+                    </SelectContent>
+                </Select>
+            </FormRow>
+
+            <FormRow htmlFor="name" label="Name" error={errors.name}>
+                <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => {
+                        updateField("name", e.target.value)
+                    }}
+                    placeholder="My Connection"
+                />
+            </FormRow>
+
+            <FormRow htmlFor="host" label="Host" error={errors.host}>
+                <Input
+                    id="host"
+                    value={formData.host}
+                    onChange={(e) => {
+                        updateField("host", e.target.value)
+                    }}
+                    placeholder="localhost"
+                />
+            </FormRow>
+
+            <FormRow htmlFor="port" label="Port" error={errors.port}>
+                <Input
+                    id="port"
+                    type="number"
+                    value={formData.port}
+                    onChange={(e) => {
+                        updateField("port", parseInt(e.target.value, 10) || 0)
+                    }}
+                    placeholder={String(portPlaceholder)}
+                />
+            </FormRow>
+
+            <FormRow htmlFor="username" label="Username">
+                <Input
+                    id="username"
+                    value={formData.username ?? ""}
+                    onChange={(e) => {
+                        updateField("username", e.target.value || undefined)
+                    }}
+                    placeholder="Optional"
+                />
+            </FormRow>
+
+            <FormRow htmlFor="password" label="Password">
+                <Input
+                    id="password"
+                    type="password"
+                    value={formData.password ?? ""}
+                    onChange={(e) => {
+                        updateField("password", e.target.value || undefined)
+                    }}
+                    placeholder={isEditMode ? "Leave empty to keep current" : "Optional"}
+                />
+            </FormRow>
+
+            {formData.type === "mongodb" && (
+                <FormRow htmlFor="authDatabase" label="Auth DB">
+                    <Input
+                        id="authDatabase"
+                        value={formData.authDatabase ?? ""}
+                        onChange={(e) => {
+                            updateField("authDatabase", e.target.value || undefined)
+                        }}
+                        placeholder="admin"
+                    />
+                </FormRow>
+            )}
+
+            {formData.type === "redis" && (
+                <FormRow htmlFor="database" label="Database">
+                    <Input
+                        id="database"
+                        type="number"
+                        min={0}
+                        max={15}
+                        value={formData.database ?? "0"}
+                        onChange={(e) => {
+                            updateField("database", e.target.value || undefined)
+                        }}
+                        placeholder="0"
+                    />
+                </FormRow>
+            )}
+        </div>
+    )
+}
+
+function TestResultAlert({ result }: { result: TestConnectionResult }): JSX.Element {
+    return (
+        <Alert variant={result.success ? "default" : "destructive"} className="mt-4">
+            <AlertTitle>
+                {result.success ? "Connection successful" : "Connection failed"}
+            </AlertTitle>
+            <AlertDescription>
+                {result.message}
+                {result.success && result.latencyMs !== undefined && (
+                    <span className="block text-xs text-muted-foreground">
+                        Latency: {result.latencyMs}ms
+                        {result.serverVersion && ` | Server: ${result.serverVersion}`}
+                    </span>
+                )}
+            </AlertDescription>
+        </Alert>
+    )
 }
 
 export function ConnectionManagerDialog({
@@ -94,7 +288,6 @@ export function ConnectionManagerDialog({
 
     const isEditMode = !!connection
 
-    // Reset form when dialog opens/closes or connection changes
     useEffect(() => {
         if (open) {
             setFormData(getInitialFormData(connection))
@@ -178,13 +371,13 @@ export function ConnectionManagerDialog({
         >
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                 <div
-                    className="relative max-h-[90vh] w-full max-w-[500px] overflow-y-auto rounded-xl border border-[#27272A] bg-[#18181B] p-6 shadow-2xl animate-fadeInScale"
+                    className="relative max-h-[90vh] w-full max-w-[500px] animate-fadeInScale overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-2xl"
                     onClick={(e) => {
                         e.stopPropagation()
                     }}
                 >
-                    {/* Close button */}
                     <button
+                        aria-label="Close dialog"
                         onClick={() => {
                             onOpenChange(false)
                         }}
@@ -193,7 +386,6 @@ export function ConnectionManagerDialog({
                         <X className="h-4 w-4" />
                     </button>
 
-                    {/* Header */}
                     <div className="mb-4">
                         <h2 className="text-lg font-semibold">
                             {isEditMode ? "Edit Connection" : "New Connection"}
@@ -205,7 +397,6 @@ export function ConnectionManagerDialog({
                         </p>
                     </div>
 
-                    {/* Form with Tabs */}
                     <Tabs defaultValue="basic" className="w-full">
                         <TabsList className="grid w-full grid-cols-4">
                             <TabsTrigger value="basic">Basic</TabsTrigger>
@@ -215,210 +406,19 @@ export function ConnectionManagerDialog({
                         </TabsList>
 
                         <TabsContent value="basic" className="mt-4">
-                            <div className="grid gap-4 py-4">
-                                {/* Connection Type */}
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="type" className="text-right text-[13px]">
-                                        Type
-                                    </Label>
-                                    <div className="col-span-3">
-                                        <Select
-                                            value={formData.type}
-                                            onValueChange={(value: "mongodb" | "redis") => {
-                                                handleTypeChange(value)
-                                            }}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select database type" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="mongodb">MongoDB</SelectItem>
-                                                <SelectItem value="redis">Redis</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-
-                                {/* Connection Name */}
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="name" className="text-right text-[13px]">
-                                        Name
-                                    </Label>
-                                    <div className="col-span-3">
-                                        <Input
-                                            id="name"
-                                            value={formData.name}
-                                            onChange={(e) => {
-                                                updateField("name", e.target.value)
-                                            }}
-                                            placeholder="My Connection"
-                                        />
-                                        {errors.name && (
-                                            <span className="text-xs text-destructive">
-                                                {errors.name}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Host */}
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="host" className="text-right text-[13px]">
-                                        Host
-                                    </Label>
-                                    <div className="col-span-3">
-                                        <Input
-                                            id="host"
-                                            value={formData.host}
-                                            onChange={(e) => {
-                                                updateField("host", e.target.value)
-                                            }}
-                                            placeholder="localhost"
-                                        />
-                                        {errors.host && (
-                                            <span className="text-xs text-destructive">
-                                                {errors.host}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Port */}
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="port" className="text-right text-[13px]">
-                                        Port
-                                    </Label>
-                                    <div className="col-span-3">
-                                        <Input
-                                            id="port"
-                                            type="number"
-                                            value={formData.port}
-                                            onChange={(e) => {
-                                                updateField(
-                                                    "port",
-                                                    parseInt(e.target.value, 10) || 0,
-                                                )
-                                            }}
-                                            placeholder={String(
-                                                formData.type === "mongodb"
-                                                    ? DEFAULT_MONGODB_PORT
-                                                    : DEFAULT_REDIS_PORT,
-                                            )}
-                                        />
-                                        {errors.port && (
-                                            <span className="text-xs text-destructive">
-                                                {errors.port}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Username */}
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="username" className="text-right text-[13px]">
-                                        Username
-                                    </Label>
-                                    <div className="col-span-3">
-                                        <Input
-                                            id="username"
-                                            value={formData.username ?? ""}
-                                            onChange={(e) => {
-                                                updateField("username", e.target.value || undefined)
-                                            }}
-                                            placeholder="Optional"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Password */}
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="password" className="text-right text-[13px]">
-                                        Password
-                                    </Label>
-                                    <div className="col-span-3">
-                                        <Input
-                                            id="password"
-                                            type="password"
-                                            value={formData.password ?? ""}
-                                            onChange={(e) => {
-                                                updateField("password", e.target.value || undefined)
-                                            }}
-                                            placeholder={
-                                                isEditMode
-                                                    ? "Leave empty to keep current"
-                                                    : "Optional"
-                                            }
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* MongoDB: Auth Database */}
-                                {formData.type === "mongodb" && (
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                        <Label
-                                            htmlFor="authDatabase"
-                                            className="text-right text-[13px]"
-                                        >
-                                            Auth DB
-                                        </Label>
-                                        <div className="col-span-3">
-                                            <Input
-                                                id="authDatabase"
-                                                value={formData.authDatabase ?? ""}
-                                                onChange={(e) => {
-                                                    updateField(
-                                                        "authDatabase",
-                                                        e.target.value || undefined,
-                                                    )
-                                                }}
-                                                placeholder="admin"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Redis: Database Index */}
-                                {formData.type === "redis" && (
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                        <Label
-                                            htmlFor="database"
-                                            className="text-right text-[13px]"
-                                        >
-                                            Database
-                                        </Label>
-                                        <div className="col-span-3">
-                                            <Input
-                                                id="database"
-                                                type="number"
-                                                min={0}
-                                                max={15}
-                                                value={formData.database ?? "0"}
-                                                onChange={(e) => {
-                                                    updateField(
-                                                        "database",
-                                                        e.target.value || undefined,
-                                                    )
-                                                }}
-                                                placeholder="0"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                            <BasicFields
+                                formData={formData}
+                                errors={errors}
+                                isEditMode={isEditMode}
+                                onTypeChange={handleTypeChange}
+                                updateField={updateField}
+                            />
                         </TabsContent>
 
                         <TabsContent value="ssh" className="mt-4">
                             <div className="grid gap-4 py-4">
                                 <SSHTunnelConfig
-                                    value={
-                                        formData.ssh ?? {
-                                            enabled: false,
-                                            host: "",
-                                            port: 22,
-                                            username: "",
-                                            authMethod: "password",
-                                        }
-                                    }
+                                    value={formData.ssh ?? { ...DEFAULT_SSH }}
                                     onChange={(ssh) => {
                                         updateField("ssh", ssh)
                                     }}
@@ -429,12 +429,7 @@ export function ConnectionManagerDialog({
                         <TabsContent value="ssl" className="mt-4">
                             <div className="grid gap-4 py-4">
                                 <SSLTLSConfig
-                                    value={
-                                        formData.ssl ?? {
-                                            enabled: false,
-                                            rejectUnauthorized: true,
-                                        }
-                                    }
+                                    value={formData.ssl ?? { ...DEFAULT_SSL }}
                                     onChange={(ssl) => {
                                         updateField("ssl", ssl)
                                     }}
@@ -453,41 +448,15 @@ export function ConnectionManagerDialog({
                                     database={formData.database}
                                     authDatabase={formData.authDatabase}
                                     onParse={(parsed) => {
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            ...parsed,
-                                        }))
+                                        setFormData((prev) => ({ ...prev, ...parsed }))
                                     }}
                                 />
                             </div>
                         </TabsContent>
 
-                        {/* Test Result */}
-                        {testResult && (
-                            <Alert
-                                variant={testResult.success ? "default" : "destructive"}
-                                className="mt-4"
-                            >
-                                <AlertTitle>
-                                    {testResult.success
-                                        ? "Connection successful"
-                                        : "Connection failed"}
-                                </AlertTitle>
-                                <AlertDescription>
-                                    {testResult.message}
-                                    {testResult.success && testResult.latencyMs !== undefined && (
-                                        <span className="block text-xs text-muted-foreground">
-                                            Latency: {testResult.latencyMs}ms
-                                            {testResult.serverVersion &&
-                                                ` | Server: ${testResult.serverVersion}`}
-                                        </span>
-                                    )}
-                                </AlertDescription>
-                            </Alert>
-                        )}
+                        {testResult && <TestResultAlert result={testResult} />}
                     </Tabs>
 
-                    {/* Footer */}
                     <div className="mt-4 flex justify-end gap-2">
                         <Button
                             variant="outline"
