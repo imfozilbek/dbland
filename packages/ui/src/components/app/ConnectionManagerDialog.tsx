@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react"
-import { X } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert"
 import { Button } from "../ui/button"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "../ui/dialog"
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
@@ -277,7 +284,7 @@ export function ConnectionManagerDialog({
     onOpenChange,
     connection,
     onSaved,
-}: ConnectionManagerDialogProps): JSX.Element | null {
+}: ConnectionManagerDialogProps): JSX.Element {
     const { testConnection, saveConnection } = useConnectionStore()
 
     const [formData, setFormData] = useState<ConnectionConfig>(() => getInitialFormData(connection))
@@ -358,135 +365,107 @@ export function ConnectionManagerDialog({
 
     const isLoading = isTesting || isSaving
 
-    if (!open) {
-        return null
-    }
-
     return (
-        <div
-            className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
-            onClick={() => {
-                onOpenChange(false)
-            }}
-        >
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                <div
-                    className="relative max-h-[90vh] w-full max-w-[500px] animate-fadeInScale overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-2xl"
-                    onClick={(e) => {
-                        e.stopPropagation()
-                    }}
-                >
-                    <button
-                        aria-label="Close dialog"
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[520px]">
+                <DialogHeader>
+                    <DialogTitle>{isEditMode ? "Edit Connection" : "New Connection"}</DialogTitle>
+                    <DialogDescription>
+                        {isEditMode
+                            ? "Update your database connection settings."
+                            : "Configure a new database connection."}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <Tabs defaultValue="basic" className="w-full">
+                    <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="basic">Basic</TabsTrigger>
+                        <TabsTrigger value="ssh">SSH</TabsTrigger>
+                        <TabsTrigger value="ssl">SSL/TLS</TabsTrigger>
+                        <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="basic" className="mt-4">
+                        <BasicFields
+                            formData={formData}
+                            errors={errors}
+                            isEditMode={isEditMode}
+                            onTypeChange={handleTypeChange}
+                            updateField={updateField}
+                        />
+                    </TabsContent>
+
+                    <TabsContent value="ssh" className="mt-4">
+                        <div className="grid gap-4 py-4">
+                            <SSHTunnelConfig
+                                value={formData.ssh ?? { ...DEFAULT_SSH }}
+                                onChange={(ssh) => {
+                                    updateField("ssh", ssh)
+                                }}
+                            />
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="ssl" className="mt-4">
+                        <div className="grid gap-4 py-4">
+                            <SSLTLSConfig
+                                value={formData.ssl ?? { ...DEFAULT_SSL }}
+                                onChange={(ssl) => {
+                                    updateField("ssl", ssl)
+                                }}
+                            />
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="advanced" className="mt-4">
+                        <div className="grid gap-4 py-4">
+                            <ConnectionStringBuilder
+                                databaseType={formData.type}
+                                host={formData.host}
+                                port={formData.port}
+                                username={formData.username}
+                                password={formData.password}
+                                database={formData.database}
+                                authDatabase={formData.authDatabase}
+                                onParse={(parsed) => {
+                                    setFormData((prev) => ({ ...prev, ...parsed }))
+                                }}
+                            />
+                        </div>
+                    </TabsContent>
+
+                    {testResult && <TestResultAlert result={testResult} />}
+                </Tabs>
+
+                <DialogFooter>
+                    <Button
+                        variant="outline"
                         onClick={() => {
                             onOpenChange(false)
                         }}
-                        className="absolute right-4 top-4 p-1 opacity-70 hover:opacity-100"
+                        disabled={isLoading}
                     >
-                        <X className="h-4 w-4" />
-                    </button>
-
-                    <div className="mb-4">
-                        <h2 className="text-lg font-semibold">
-                            {isEditMode ? "Edit Connection" : "New Connection"}
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                            {isEditMode
-                                ? "Update your database connection settings."
-                                : "Configure a new database connection."}
-                        </p>
-                    </div>
-
-                    <Tabs defaultValue="basic" className="w-full">
-                        <TabsList className="grid w-full grid-cols-4">
-                            <TabsTrigger value="basic">Basic</TabsTrigger>
-                            <TabsTrigger value="ssh">SSH</TabsTrigger>
-                            <TabsTrigger value="ssl">SSL/TLS</TabsTrigger>
-                            <TabsTrigger value="advanced">Advanced</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="basic" className="mt-4">
-                            <BasicFields
-                                formData={formData}
-                                errors={errors}
-                                isEditMode={isEditMode}
-                                onTypeChange={handleTypeChange}
-                                updateField={updateField}
-                            />
-                        </TabsContent>
-
-                        <TabsContent value="ssh" className="mt-4">
-                            <div className="grid gap-4 py-4">
-                                <SSHTunnelConfig
-                                    value={formData.ssh ?? { ...DEFAULT_SSH }}
-                                    onChange={(ssh) => {
-                                        updateField("ssh", ssh)
-                                    }}
-                                />
-                            </div>
-                        </TabsContent>
-
-                        <TabsContent value="ssl" className="mt-4">
-                            <div className="grid gap-4 py-4">
-                                <SSLTLSConfig
-                                    value={formData.ssl ?? { ...DEFAULT_SSL }}
-                                    onChange={(ssl) => {
-                                        updateField("ssl", ssl)
-                                    }}
-                                />
-                            </div>
-                        </TabsContent>
-
-                        <TabsContent value="advanced" className="mt-4">
-                            <div className="grid gap-4 py-4">
-                                <ConnectionStringBuilder
-                                    databaseType={formData.type}
-                                    host={formData.host}
-                                    port={formData.port}
-                                    username={formData.username}
-                                    password={formData.password}
-                                    database={formData.database}
-                                    authDatabase={formData.authDatabase}
-                                    onParse={(parsed) => {
-                                        setFormData((prev) => ({ ...prev, ...parsed }))
-                                    }}
-                                />
-                            </div>
-                        </TabsContent>
-
-                        {testResult && <TestResultAlert result={testResult} />}
-                    </Tabs>
-
-                    <div className="mt-4 flex justify-end gap-2">
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                onOpenChange(false)
-                            }}
-                            disabled={isLoading}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            onClick={() => {
-                                void handleTest()
-                            }}
-                            disabled={isLoading}
-                        >
-                            {isTesting ? "Testing…" : "Test Connection"}
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                void handleSave()
-                            }}
-                            disabled={isLoading}
-                        >
-                            {isSaving ? "Saving…" : "Save"}
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        </div>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        onClick={() => {
+                            void handleTest()
+                        }}
+                        disabled={isLoading}
+                    >
+                        {isTesting ? "Testing…" : "Test Connection"}
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            void handleSave()
+                        }}
+                        disabled={isLoading}
+                    >
+                        {isSaving ? "Saving…" : "Save"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     )
 }
