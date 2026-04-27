@@ -6,8 +6,14 @@ mod tunnel;
 
 use state::ConnectionPool;
 use storage::{ConnectionStorage, Crypto, QueryHistoryStorage, SavedQueriesStorage};
+use std::path::Path;
 use std::sync::Arc;
 use tauri::Manager;
+
+/// Keychain identifiers — kept stable to preserve the migrated key across
+/// app restarts. Service is the bundle id, account name labels the secret.
+const KEYRING_SERVICE: &str = "com.dbland.app";
+const KEYRING_ACCOUNT: &str = "master-key";
 
 /// Application state shared across commands
 pub struct AppState {
@@ -17,8 +23,80 @@ pub struct AppState {
     pub saved_queries: SavedQueriesStorage,
 }
 
+/// Load or create the master encryption key.
+///
+/// Priority: OS keychain → legacy `.key` file (one-shot migration) → freshly generated.
+/// After a successful migration the legacy file is wiped so the key never sits on disk again.
+fn load_or_create_master_key(app_data_dir: &Path) -> [u8; 32] {
+    let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_ACCOUNT)
+        .expect("Failed to construct keyring entry");
+
+    // 1. Already in keychain — decode and return.
+    if let Ok(stored) = entry.get_password() {
+        if let Some(key) = decode_master_key(&stored) {
+            return key;
+        }
+        log::warn!("master key in keychain has invalid format; regenerating");
+    }
+
+    // 2. Legacy file from pre-1.1.0 builds — migrate then delete.
+    let legacy_path = app_data_dir.join(".key");
+    if legacy_path.exists() {
+        if let Ok(data) = std::fs::read(&legacy_path) {
+            if data.len() >= 32 {
+                let mut key = [0u8; 32];
+                key.copy_from_slice(&data[..32]);
+                if entry
+                    .set_password(&encode_master_key(&key))
+                    .is_ok()
+                {
+                    let _ = std::fs::remove_file(&legacy_path);
+                    log::info!("master key migrated from legacy file to OS keychain");
+                    return key;
+                }
+                log::error!("failed to write master key to keychain — keeping legacy file");
+                return key;
+            }
+        }
+    }
+
+    // 3. Fresh install — generate and persist.
+    let key = Crypto::generate_key();
+    entry
+        .set_password(&encode_master_key(&key))
+        .expect("Failed to store master key in OS keychain");
+    log::info!("generated new master key and stored in OS keychain");
+    key
+}
+
+/// Encode a 32-byte key as a hex string for keychain storage.
+fn encode_master_key(key: &[u8; 32]) -> String {
+    let mut s = String::with_capacity(64);
+    for byte in key {
+        s.push_str(&format!("{:02x}", byte));
+    }
+    s
+}
+
+/// Decode a hex string back into a 32-byte key. Returns `None` on any malformation.
+fn decode_master_key(s: &str) -> Option<[u8; 32]> {
+    if s.len() != 64 {
+        return None;
+    }
+    let mut key = [0u8; 32];
+    for (i, byte) in key.iter_mut().enumerate() {
+        let chunk = &s[i * 2..i * 2 + 2];
+        *byte = u8::from_str_radix(chunk, 16).ok()?;
+    }
+    Some(key)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Initialise structured logging — silent unless RUST_LOG is set,
+    // so production releases don't spew to stderr.
+    let _ = env_logger::try_init();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -32,18 +110,8 @@ pub fn run() {
             // Create directory if it doesn't exist
             std::fs::create_dir_all(&app_data_dir).expect("Failed to create app data directory");
 
-            // Generate or load encryption key
-            let key_path = app_data_dir.join(".key");
-            let key = if key_path.exists() {
-                let key_data = std::fs::read(&key_path).expect("Failed to read encryption key");
-                let mut key = [0u8; 32];
-                key.copy_from_slice(&key_data[..32]);
-                key
-            } else {
-                let key = Crypto::generate_key();
-                std::fs::write(&key_path, &key).expect("Failed to save encryption key");
-                key
-            };
+            // Master key now lives in the OS keychain (migrated from `.key` if present).
+            let key = load_or_create_master_key(&app_data_dir);
 
             // Initialize storage
             let db_path = app_data_dir.join("connections.db");

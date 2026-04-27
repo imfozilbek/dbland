@@ -1,1 +1,1 @@
-{}
+{"default":{"identifier":"default","description":"Default capabilities for DBLand desktop app — minimal surface required for shell open and updater dialog","local":true,"windows":["main"],"permissions":["core:default","shell:allow-open","updater:default"]}}

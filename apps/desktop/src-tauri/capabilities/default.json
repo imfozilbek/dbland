@@ -1,0 +1,11 @@
+{
+    "$schema": "../gen/schemas/desktop-schema.json",
+    "identifier": "default",
+    "description": "Default capabilities for DBLand desktop app — minimal surface required for shell open and updater dialog",
+    "windows": ["main"],
+    "permissions": [
+        "core:default",
+        "shell:allow-open",
+        "updater:default"
+    ]
+}

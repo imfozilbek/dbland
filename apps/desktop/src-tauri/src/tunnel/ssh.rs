@@ -6,6 +6,18 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use thiserror::Error;
 
+/// Map an SSH tunnel error to a non-sensitive label so the variant kind
+/// can be logged without leaking host, user, or auth details.
+fn error_kind(err: &SSHTunnelError) -> &'static str {
+    match err {
+        SSHTunnelError::ConnectionFailed(_) => "connection_failed",
+        SSHTunnelError::AuthenticationFailed(_) => "authentication_failed",
+        SSHTunnelError::TunnelCreationFailed(_) => "tunnel_creation_failed",
+        SSHTunnelError::IoError(_) => "io_error",
+        SSHTunnelError::SshError(_) => "ssh_error",
+    }
+}
+
 #[derive(Error, Debug)]
 pub enum SSHTunnelError {
     #[error("SSH connection failed: {0}")]
@@ -99,7 +111,9 @@ impl SSHTunnel {
                 remote_port,
                 Arc::clone(&active),
             ) {
-                eprintln!("SSH tunnel error: {}", e);
+                // Log only the error variant name, never the full payload
+                // (it may contain host/user details that are sensitive in shared logs).
+                log::warn!("ssh tunnel terminated: {}", error_kind(&e));
                 *active.lock().unwrap() = false;
             }
         });

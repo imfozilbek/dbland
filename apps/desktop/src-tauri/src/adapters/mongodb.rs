@@ -97,15 +97,52 @@ impl MongoDbAdapter {
         guard.clone().ok_or(AdapterError::NotConnected)
     }
 
-    /// Parse a simple find query from string
+    /// Parse a simple find query from string and reject server-side eval operators.
+    ///
+    /// Top-level must be a JSON object. We deny `$where`, `$function`, `$accumulator`
+    /// anywhere in the tree — they execute JS on the server and turn a query
+    /// into an injection vector when user input flows in unsanitised.
     fn parse_find_query(query: &str) -> Result<Document, AdapterError> {
-        // Try to parse as JSON/BSON document
-        serde_json::from_str::<serde_json::Value>(query)
-            .map_err(|e| AdapterError::QueryFailed(format!("Invalid query JSON: {}", e)))
-            .and_then(|v| {
-                mongodb::bson::to_document(&v)
-                    .map_err(|e| AdapterError::QueryFailed(format!("Invalid BSON: {}", e)))
-            })
+        let value: serde_json::Value = serde_json::from_str(query)
+            .map_err(|e| AdapterError::QueryFailed(format!("Invalid query JSON: {}", e)))?;
+
+        if !value.is_object() {
+            return Err(AdapterError::QueryFailed(
+                "Top-level query must be a JSON object".to_string(),
+            ));
+        }
+
+        Self::reject_unsafe_operators(&value)?;
+
+        mongodb::bson::to_document(&value)
+            .map_err(|e| AdapterError::QueryFailed(format!("Invalid BSON: {}", e)))
+    }
+
+    /// Recursively walk the query tree and reject blacklisted operators.
+    fn reject_unsafe_operators(value: &serde_json::Value) -> Result<(), AdapterError> {
+        const DENY_LIST: &[&str] = &["$where", "$function", "$accumulator", "$expr.$function"];
+
+        match value {
+            serde_json::Value::Object(map) => {
+                for (key, child) in map {
+                    if DENY_LIST.iter().any(|d| *d == key.as_str()) {
+                        return Err(AdapterError::QueryFailed(format!(
+                            "Operator '{}' is not allowed (server-side JS execution)",
+                            key
+                        )));
+                    }
+                    Self::reject_unsafe_operators(child)?;
+                }
+                Ok(())
+            }
+            serde_json::Value::Array(items) => {
+                for item in items {
+                    Self::reject_unsafe_operators(item)?;
+                }
+                Ok(())
+            }
+            _ => Ok(()),
+        }
     }
 }
 

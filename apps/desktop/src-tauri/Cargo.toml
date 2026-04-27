@@ -41,6 +41,12 @@ chrono = { version = "0.4", features = ["serde"] }
 ssh2 = "0.9"
 # Base64 encoding/decoding for GridFS
 base64 = "0.22"
+# OS keychain — encryption key never touches disk
+keyring = "3"
+# Structured logging facade (no-op when no subscriber is initialised)
+log = "0.4"
+# Logger backend — environment-driven; only emits when RUST_LOG is set
+env_logger = "0.11"
 
 [features]
 default = ["custom-protocol"]
