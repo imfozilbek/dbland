@@ -34,11 +34,17 @@ export function SortableStageCard({
         opacity: isDragging ? 0.5 : 1,
     }
 
+    const isEmpty = Object.keys(stage.stageData).length === 0
+
     return (
         <Card
             ref={setNodeRef}
             style={style}
-            className={`p-3 ${isSelected ? "ring-2 ring-primary" : ""} ${isDragging ? "z-50" : ""}`}
+            className={`group relative cursor-pointer p-3 transition-all duration-150 hover:border-[var(--primary)]/40 ${
+                isSelected
+                    ? "border-[var(--primary)] ring-1 ring-[var(--primary)]/40 ring-offset-1 ring-offset-[var(--background)]"
+                    : ""
+            } ${isDragging ? "z-50 shadow-lg" : ""}`}
             onClick={() => {
                 onSelect(index)
             }}
@@ -46,31 +52,39 @@ export function SortableStageCard({
             <div className="flex items-center gap-2">
                 <button
                     type="button"
-                    className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
+                    aria-label={`Drag to reorder stage ${index + 1}`}
+                    className="cursor-grab touch-none rounded text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
                     {...attributes}
                     {...listeners}
                 >
                     <GripVertical className="h-5 w-5" />
                 </button>
 
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                        <span className="rounded bg-primary/10 px-2 py-1 text-xs font-mono font-semibold">
+                        <span className="rounded bg-[var(--primary)]/10 px-2 py-0.5 font-mono text-xs font-semibold tabular-nums text-[var(--primary)]">
                             {index + 1}
                         </span>
-                        <span className="text-sm font-mono font-semibold">${stage.stageType}</span>
+                        <span className="font-mono text-sm font-semibold text-[var(--foreground)]">
+                            ${stage.stageType}
+                        </span>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate font-mono">
-                        {Object.keys(stage.stageData).length > 0
-                            ? JSON.stringify(stage.stageData)
-                            : "Empty stage"}
+                    <p
+                        className={`truncate font-mono text-xs ${
+                            isEmpty
+                                ? "italic text-[var(--muted-foreground)]/60"
+                                : "text-[var(--muted-foreground)]"
+                        }`}
+                    >
+                        {isEmpty ? "Empty — click to configure" : JSON.stringify(stage.stageData)}
                     </p>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 opacity-60 transition-opacity duration-150 group-hover:opacity-100">
                     <Button
                         size="sm"
                         variant="ghost"
+                        aria-label={`Preview stage ${index + 1}`}
                         className="h-7 w-7 p-0"
                         onClick={(e) => {
                             e.stopPropagation()
@@ -82,7 +96,7 @@ export function SortableStageCard({
                     <Button
                         size="sm"
                         variant="ghost"
-                        aria-label="Remove stage"
+                        aria-label={`Remove stage ${index + 1}`}
                         className="h-7 w-7 p-0 text-[var(--destructive)] hover:text-[var(--destructive)]/80"
                         onClick={(e) => {
                             e.stopPropagation()

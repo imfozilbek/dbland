@@ -160,7 +160,7 @@ export function SavedQueries({ connectionId, onLoadQuery }: SavedQueriesProps): 
             <ScrollArea className="flex-1">
                 {isLoading ? (
                     <div className="flex items-center justify-center p-8 text-muted-foreground">
-                        Loading...
+                        Loading…
                     </div>
                 ) : queries.length === 0 ? (
                     <div className="flex items-center justify-center p-8 text-muted-foreground">

@@ -95,7 +95,25 @@ function App(): JSX.Element {
                         </Route>
                     </Routes>
                 </BrowserRouter>
-                <Toaster theme="dark" position="bottom-right" richColors closeButton />
+                <Toaster
+                    theme="dark"
+                    position="bottom-right"
+                    richColors
+                    closeButton
+                    toastOptions={{
+                        // Pull sonner's default cards into the brand token surface so
+                        // toasts read as part of the workspace, not as a third-party
+                        // overlay.
+                        classNames: {
+                            toast: "border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] shadow-lg",
+                            description: "text-[var(--muted-foreground)]",
+                            actionButton:
+                                "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90",
+                            cancelButton:
+                                "bg-[var(--muted)] text-[var(--muted-foreground)] hover:bg-[var(--accent)]",
+                        },
+                    }}
+                />
             </PlatformProvider>
         </ThemeProvider>
     )

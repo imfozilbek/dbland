@@ -7,7 +7,8 @@ import {
 import { Button } from "../ui/button"
 import { Card } from "../ui/card"
 import { ScrollArea } from "../ui/scroll-area"
-import { Code2, Play } from "lucide-react"
+import { Code2, Play, SlidersHorizontal } from "lucide-react"
+import { EmptyState } from "../ui/empty-state"
 import { PipelineCanvas } from "./PipelineCanvas"
 import { StageLibrary } from "./StageLibrary"
 import { StageEditor } from "./StageEditor"
@@ -140,7 +141,7 @@ export function AggregationBuilder({
                         disabled={isExecuting || pipeline.length === 0}
                     >
                         <Play className="h-4 w-4" />
-                        {isExecuting ? "Running..." : "Run Pipeline"}
+                        {isExecuting ? "Running…" : "Run Pipeline"}
                     </Button>
                 </div>
             </div>
@@ -197,13 +198,25 @@ export function AggregationBuilder({
 
                 <ResizablePanel defaultSize={30} minSize={20} maxSize={40}>
                     <div className="flex h-full flex-col">
-                        {selectedStageIndex !== null && pipeline[selectedStageIndex] && (
+                        {selectedStageIndex !== null && pipeline[selectedStageIndex] ? (
                             <StageEditor
                                 stage={pipeline[selectedStageIndex]}
                                 onUpdate={(updated) => {
                                     handleUpdateStage(selectedStageIndex, updated)
                                 }}
                             />
+                        ) : (
+                            <div className="flex flex-1 items-center justify-center">
+                                <EmptyState
+                                    icon={<SlidersHorizontal className="h-5 w-5" />}
+                                    title="No stage selected"
+                                    description={
+                                        pipeline.length === 0
+                                            ? "Add a stage from the library, then click it to configure its parameters here."
+                                            : "Click any stage in the canvas to edit its parameters."
+                                    }
+                                />
+                            </div>
                         )}
 
                         {previewResult && (

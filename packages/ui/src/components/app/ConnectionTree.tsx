@@ -146,7 +146,7 @@ export function ConnectionTree({
                 onLabelClick={handleConnectionLabelClick}
             >
                 {/* Loading state */}
-                {isConnecting && <TreeEmpty level={1}>Connecting...</TreeEmpty>}
+                {isConnecting && <TreeEmpty level={1}>Connecting…</TreeEmpty>}
 
                 {/* Error state */}
                 {connection.status === "error" && (

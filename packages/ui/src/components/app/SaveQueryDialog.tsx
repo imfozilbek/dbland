@@ -143,7 +143,7 @@ export function SaveQueryDialog({
                         Cancel
                     </Button>
                     <Button onClick={handleSave} disabled={!name.trim() || isSaving}>
-                        {isSaving ? "Saving..." : "Save Query"}
+                        {isSaving ? "Saving…" : "Save Query"}
                     </Button>
                 </DialogFooter>
             </DialogContent>

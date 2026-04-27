@@ -217,7 +217,9 @@ export function DocumentEditorDialog({
                 )}
 
                 {isLoading ? (
-                    <div className="flex items-center justify-center p-8">Loading...</div>
+                    <div className="flex items-center justify-center p-8 text-[var(--muted-foreground)]">
+                        Loading…
+                    </div>
                 ) : (
                     <Tabs defaultValue="form" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
@@ -281,7 +283,7 @@ export function DocumentEditorDialog({
                             }}
                             disabled={isSaving || isLoading}
                         >
-                            {isSaving ? "Saving..." : "Save"}
+                            {isSaving ? "Saving…" : "Save"}
                         </Button>
                     </div>
                 </DialogFooter>

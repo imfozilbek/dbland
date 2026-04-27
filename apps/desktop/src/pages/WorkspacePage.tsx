@@ -86,7 +86,7 @@ function QueryToolbar({
                     disabled={isExecuting || !hasQuery}
                 >
                     <Play className="h-4 w-4" />
-                    {isExecuting ? "Running..." : "Run"}
+                    {isExecuting ? "Running…" : "Run"}
                 </Button>
                 <Button
                     size="sm"

@@ -54,7 +54,7 @@ export function RedisDataViewer({ connectionId, selectedKey }: RedisDataViewerPr
     if (isLoading) {
         return (
             <div className="flex h-full items-center justify-center">
-                <p className="text-muted-foreground">Loading...</p>
+                <p className="text-muted-foreground">Loading…</p>
             </div>
         )
     }

@@ -474,7 +474,7 @@ export function ConnectionManagerDialog({
                             }}
                             disabled={isLoading}
                         >
-                            {isTesting ? "Testing..." : "Test Connection"}
+                            {isTesting ? "Testing…" : "Test Connection"}
                         </Button>
                         <Button
                             onClick={() => {
@@ -482,7 +482,7 @@ export function ConnectionManagerDialog({
                             }}
                             disabled={isLoading}
                         >
-                            {isSaving ? "Saving..." : "Save"}
+                            {isSaving ? "Saving…" : "Save"}
                         </Button>
                     </div>
                 </div>

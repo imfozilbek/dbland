@@ -14,8 +14,10 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { SortableStageCard } from "./SortableStageCard"
+import { EmptyState } from "../ui/empty-state"
 import { ScrollArea } from "../ui/scroll-area"
 import type { AggregationPipelineStage } from "../../contexts/PlatformContext"
+import { Workflow } from "lucide-react"
 
 export interface PipelineCanvasProps {
     pipeline: AggregationPipelineStage[]
@@ -56,15 +58,12 @@ export function PipelineCanvas({
 
     if (pipeline.length === 0) {
         return (
-            <div className="flex h-full items-center justify-center p-8 text-center">
-                <div>
-                    <p className="text-lg font-semibold text-muted-foreground">
-                        No stages in pipeline
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                        Click a stage from the library to add it
-                    </p>
-                </div>
+            <div className="flex h-full items-center justify-center">
+                <EmptyState
+                    icon={<Workflow className="h-5 w-5" />}
+                    title="Empty pipeline"
+                    description="Pick a stage from the library on the left — $match, $group, $project, $sort and friends — and drop it here to begin building."
+                />
             </div>
         )
     }
