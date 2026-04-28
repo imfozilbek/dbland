@@ -7,6 +7,7 @@ import { Input } from "../ui/input"
 import { ScrollArea } from "../ui/scroll-area"
 import { Skeleton } from "../ui/skeleton"
 import { Clock, Database, Search, Tag, Trash2 } from "lucide-react"
+import { useT } from "../../i18n"
 
 export interface SavedQueriesProps {
     connectionId: string | null
@@ -24,6 +25,7 @@ export function SavedQueries({
     onLoadQuery,
     refreshKey,
 }: SavedQueriesProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [queries, setQueries] = useState<SavedQuery[]>([])
     const [searchQuery, setSearchQuery] = useState("")
@@ -91,8 +93,8 @@ export function SavedQueries({
             })
             .catch((err: unknown) => {
                 console.error("Failed to delete saved query:", err)
-                toast.error("Couldn't delete saved query", {
-                    description: err instanceof Error ? err.message : "Unknown error",
+                toast.error(t("savedQueries.deleteFailed"), {
+                    description: err instanceof Error ? err.message : t("common.unknownError"),
                 })
             })
     }
@@ -137,7 +139,7 @@ export function SavedQueries({
             <div className="flex items-center gap-2 border-b p-4">
                 <div className="flex flex-1 items-center gap-2">
                     <Input
-                        placeholder="Search saved queries..."
+                        placeholder={t("savedQueries.searchPlaceholder")}
                         value={searchQuery}
                         onChange={(e) => {
                             setSearchQuery(e.target.value)
@@ -151,7 +153,7 @@ export function SavedQueries({
                     />
                     {(searchQuery || selectedTag) && (
                         <Button variant="ghost" size="sm" onClick={handleClearSearch}>
-                            Clear
+                            {t("savedQueries.clear")}
                         </Button>
                     )}
                     <Button
@@ -168,7 +170,9 @@ export function SavedQueries({
             {selectedTag && (
                 <div className="flex items-center gap-2 border-b bg-muted/30 px-4 py-2">
                     <Tag className="h-3 w-3" />
-                    <span className="text-sm">Filtered by tag: {selectedTag}</span>
+                    <span className="text-sm">
+                        {t("savedQueries.filteredByTag", { tag: selectedTag })}
+                    </span>
                 </div>
             )}
 
@@ -182,8 +186,8 @@ export function SavedQueries({
                 ) : queries.length === 0 ? (
                     <div className="flex items-center justify-center p-8 text-muted-foreground">
                         {searchQuery || selectedTag
-                            ? "No matching queries found"
-                            : "No saved queries"}
+                            ? t("savedQueries.emptyNoMatch")
+                            : t("savedQueries.emptyAll")}
                     </div>
                 ) : (
                     <div className="space-y-2 p-4">
@@ -204,7 +208,7 @@ export function SavedQueries({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        aria-label="Delete saved query"
+                                        aria-label={t("savedQueries.deleteAria")}
                                         className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
                                         onClick={() => {
                                             handleDelete(query.id)

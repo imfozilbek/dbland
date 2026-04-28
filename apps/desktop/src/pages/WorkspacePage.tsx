@@ -41,6 +41,7 @@ import {
     useKeyboardShortcuts,
     usePlatform,
     useQueryStore,
+    useT,
 } from "@dbland/ui"
 import { useEffect, useState } from "react"
 
@@ -76,6 +77,7 @@ function QueryToolbar({
     onImport,
     onExport,
 }: QueryToolbarProps): JSX.Element {
+    const t = useT()
     return (
         <div className="flex items-center justify-between border-b px-2 py-1">
             <div className="flex items-center gap-2">
@@ -86,7 +88,7 @@ function QueryToolbar({
                     disabled={isExecuting || !hasQuery}
                 >
                     <Play className="h-4 w-4" />
-                    {isExecuting ? "Running…" : "Run"}
+                    {isExecuting ? t("workspace.toolbar.running") : t("workspace.toolbar.run")}
                 </Button>
                 <Button
                     size="sm"
@@ -96,7 +98,7 @@ function QueryToolbar({
                     disabled={isExecuting || !hasQuery}
                 >
                     <Code2 className="h-4 w-4" />
-                    Format
+                    {t("workspace.toolbar.format")}
                 </Button>
                 <Button
                     size="sm"
@@ -106,7 +108,7 @@ function QueryToolbar({
                     disabled={!hasQuery}
                 >
                     <Save className="h-4 w-4" />
-                    Save
+                    {t("workspace.toolbar.save")}
                 </Button>
             </div>
             <div className="flex items-center gap-2">
@@ -117,7 +119,7 @@ function QueryToolbar({
                     onClick={onToggleHistory}
                 >
                     <History className="h-4 w-4" />
-                    History
+                    {t("workspace.toolbar.history")}
                 </Button>
                 <Button
                     size="sm"
@@ -126,15 +128,15 @@ function QueryToolbar({
                     onClick={onToggleSaved}
                 >
                     <BookMarked className="h-4 w-4" />
-                    Saved
+                    {t("workspace.toolbar.saved")}
                 </Button>
                 <Button size="sm" variant="outline" className="gap-2" onClick={onImport}>
                     <FileUp className="h-4 w-4" />
-                    Import
+                    {t("workspace.toolbar.import")}
                 </Button>
                 <Button size="sm" variant="outline" className="gap-2" onClick={onExport}>
                     <FileDown className="h-4 w-4" />
-                    Export
+                    {t("workspace.toolbar.export")}
                 </Button>
             </div>
         </div>
@@ -243,6 +245,7 @@ function QueriesTab(props: QueriesTabProps): JSX.Element {
 }
 
 export function WorkspacePage(): JSX.Element {
+    const t = useT()
     const { connectionId } = useParams()
     const [searchParams] = useSearchParams()
     const platform = usePlatform()
@@ -343,9 +346,12 @@ export function WorkspacePage(): JSX.Element {
             return
         }
         const confirmed = await confirm({
-            title: "Delete document?",
-            description: `Document will be removed from ${selectedDatabase}.${selectedCollection}.`,
-            confirmLabel: "Delete",
+            title: t("workspace.deleteDocConfirmTitle"),
+            description: t("workspace.deleteDocConfirmDescription", {
+                db: selectedDatabase,
+                coll: selectedCollection,
+            }),
+            confirmLabel: t("common.delete"),
             destructive: true,
         })
         if (!confirmed) {
@@ -354,7 +360,7 @@ export function WorkspacePage(): JSX.Element {
         platform
             .deleteDocument(connectionId, selectedDatabase, selectedCollection, documentId)
             .then(() => {
-                toast.success("Document deleted")
+                toast.success(t("workspace.deleteDocSuccess"))
                 // Re-execute query to refresh results
                 executeQuery(connectionId, selectedDatabase, selectedCollection).catch(
                     (err: unknown) => {
@@ -364,8 +370,8 @@ export function WorkspacePage(): JSX.Element {
             })
             .catch((err: unknown) => {
                 console.error("Failed to delete document:", err)
-                toast.error("Failed to delete document", {
-                    description: err instanceof Error ? err.message : "Unknown error",
+                toast.error(t("workspace.deleteDocFailed"), {
+                    description: err instanceof Error ? err.message : t("common.unknownError"),
                 })
             })
     }
@@ -401,15 +407,15 @@ export function WorkspacePage(): JSX.Element {
                     <TabsList className="h-12">
                         <TabsTrigger value="queries" className="gap-2">
                             <FileCode className="h-4 w-4" />
-                            Queries
+                            {t("workspace.tabs.queries")}
                         </TabsTrigger>
                         <TabsTrigger value="aggregation" className="gap-2">
                             <GitMerge className="h-4 w-4" />
-                            Aggregation
+                            {t("workspace.tabs.aggregation")}
                         </TabsTrigger>
                         <TabsTrigger value="indexes" className="gap-2">
                             <List className="h-4 w-4" />
-                            Indexes
+                            {t("workspace.tabs.indexes")}
                         </TabsTrigger>
                     </TabsList>
                 </Tabs>
@@ -417,10 +423,10 @@ export function WorkspacePage(): JSX.Element {
                 {/* Database/Collection selector */}
                 <div className="flex items-center gap-2 px-4 py-2 text-sm border-t bg-muted/20">
                     <Database className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Database:</span>
+                    <span className="text-muted-foreground">{t("workspace.databaseLabel")}</span>
                     <span className="font-medium">{selectedDatabase}</span>
                     <span className="text-muted-foreground mx-2">•</span>
-                    <span className="text-muted-foreground">Collection:</span>
+                    <span className="text-muted-foreground">{t("workspace.collectionLabel")}</span>
                     <span className="font-medium">{selectedCollection}</span>
                 </div>
             </div>
