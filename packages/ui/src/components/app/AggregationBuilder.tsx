@@ -15,6 +15,7 @@ import { StageLibrary } from "./StageLibrary"
 import { StageEditor } from "./StageEditor"
 import { StagePreview } from "./StagePreview"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../ui/resizable"
+import { useT } from "../../i18n"
 
 export interface AggregationBuilderProps {
     connectionId: string
@@ -27,6 +28,7 @@ export function AggregationBuilder({
     databaseName,
     collectionName,
 }: AggregationBuilderProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [pipeline, setPipeline] = useState<AggregationPipelineStage[]>([])
     const [selectedStageIndex, setSelectedStageIndex] = useState<number | null>(null)
@@ -81,7 +83,10 @@ export function AggregationBuilder({
                     documents: [],
                     executionTimeMs: 0,
                     documentsReturned: 0,
-                    error: err instanceof Error ? err.message : "Execution failed",
+                    error:
+                        err instanceof Error
+                            ? err.message
+                            : t("aggregationBuilder.executionFailed"),
                 })
             })
             .finally(() => {
@@ -107,8 +112,8 @@ export function AggregationBuilder({
                 // stage (or against an unreachable database) looked
                 // identical to a slow request — the user just waited.
                 console.error("Failed to preview stage:", err)
-                toast.error("Couldn't preview stage", {
-                    description: err instanceof Error ? err.message : "Unknown error",
+                toast.error(t("aggregationBuilder.previewFailed"), {
+                    description: err instanceof Error ? err.message : t("common.unknownError"),
                 })
             })
     }
@@ -124,7 +129,7 @@ export function AggregationBuilder({
         <div className="flex h-full flex-col">
             <div className="flex items-center justify-between border-b p-2">
                 <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-semibold">Aggregation Pipeline Builder</h2>
+                    <h2 className="text-lg font-semibold">{t("aggregationBuilder.title")}</h2>
                     <span className="text-sm text-muted-foreground">
                         {databaseName}.{collectionName}
                     </span>
@@ -139,7 +144,9 @@ export function AggregationBuilder({
                         }}
                     >
                         <Code2 className="h-4 w-4" />
-                        {showCode ? "Hide Code" : "Show Code"}
+                        {showCode
+                            ? t("aggregationBuilder.hideCode")
+                            : t("aggregationBuilder.showCode")}
                     </Button>
                     <Button
                         size="sm"
@@ -148,7 +155,9 @@ export function AggregationBuilder({
                         disabled={isExecuting || pipeline.length === 0}
                     >
                         <Play className="h-4 w-4" />
-                        {isExecuting ? "Running…" : "Run Pipeline"}
+                        {isExecuting
+                            ? t("aggregationBuilder.running")
+                            : t("aggregationBuilder.runPipeline")}
                     </Button>
                 </div>
             </div>
@@ -184,10 +193,14 @@ export function AggregationBuilder({
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm font-semibold">
-                                            Results: {result.documentsReturned} documents
+                                            {t("aggregationBuilder.resultsHeading", {
+                                                count: result.documentsReturned,
+                                            })}
                                         </span>
                                         <span className="text-xs text-muted-foreground">
-                                            ({result.executionTimeMs}ms)
+                                            {t("aggregationBuilder.executionTime", {
+                                                ms: result.executionTimeMs,
+                                            })}
                                         </span>
                                     </div>
                                     {result.error && (
@@ -216,11 +229,11 @@ export function AggregationBuilder({
                             <div className="flex flex-1 items-center justify-center">
                                 <EmptyState
                                     icon={<SlidersHorizontal className="h-5 w-5" />}
-                                    title="No stage selected"
+                                    title={t("aggregationBuilder.emptySelectionTitle")}
                                     description={
                                         pipeline.length === 0
-                                            ? "Add a stage from the library, then click it to configure its parameters here."
-                                            : "Click any stage in the canvas to edit its parameters."
+                                            ? t("aggregationBuilder.emptySelectionAddFirst")
+                                            : t("aggregationBuilder.emptySelectionPickOne")
                                     }
                                 />
                             </div>

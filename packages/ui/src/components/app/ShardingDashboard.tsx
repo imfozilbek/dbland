@@ -13,12 +13,14 @@ import { ScrollArea } from "../ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 import { Grid, RefreshCw, Server } from "lucide-react"
+import { useT } from "../../i18n"
 
 export interface ShardingDashboardProps {
     connectionId: string | null
 }
 
 export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [shards, setShards] = useState<ShardInfo[]>([])
     const [collections, setCollections] = useState<ShardedCollection[]>([])
@@ -56,7 +58,7 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
             })
             .catch((err: unknown) => {
                 console.error("Failed to load sharding data:", err)
-                setError(err instanceof Error ? err.message : "Failed to load sharding data")
+                setError(err instanceof Error ? err.message : t("sharding.loadFailed"))
             })
             .finally(() => {
                 setIsLoading(false)
@@ -87,7 +89,7 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
             .catch((err: unknown) => {
                 console.error("Failed to load chunk distribution:", err)
                 toast.error(`Couldn't load chunk distribution for ${namespace}`, {
-                    description: err instanceof Error ? err.message : "Unknown error",
+                    description: err instanceof Error ? err.message : t("common.unknownError"),
                 })
             })
             .finally(() => {
@@ -99,7 +101,7 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
         return (
             <div className="flex h-full items-center justify-center text-muted-foreground">
                 <Grid className="mr-2 h-5 w-5" />
-                Select a connection to view sharding status
+                {t("sharding.selectPrompt")}
             </div>
         )
     }
@@ -110,7 +112,7 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
                 <div className="text-destructive">{error}</div>
                 <Button onClick={loadData} variant="outline">
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Retry
+                    {t("sharding.retry")}
                 </Button>
             </div>
         )
@@ -119,7 +121,7 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
     if (isLoading && shards.length === 0) {
         return (
             <div className="flex h-full items-center justify-center text-muted-foreground">
-                Loading sharding information...
+                {t("sharding.loading")}
             </div>
         )
     }
@@ -130,20 +132,22 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Server className="h-5 w-5" />
-                    <h2 className="text-lg font-semibold">Sharding Dashboard</h2>
-                    <Badge variant="secondary">{shards.length} Shards</Badge>
+                    <h2 className="text-lg font-semibold">{t("sharding.title")}</h2>
+                    <Badge variant="secondary">
+                        {t("sharding.shardsBadge", { count: shards.length })}
+                    </Badge>
                 </div>
                 <Button onClick={loadData} variant="outline" size="sm" disabled={isLoading}>
                     <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-                    Refresh
+                    {t("sharding.refresh")}
                 </Button>
             </div>
 
             {/* Tabs */}
             <Tabs defaultValue="shards" className="flex-1 flex flex-col">
                 <TabsList>
-                    <TabsTrigger value="shards">Shards</TabsTrigger>
-                    <TabsTrigger value="collections">Sharded Collections</TabsTrigger>
+                    <TabsTrigger value="shards">{t("sharding.tabs.shards")}</TabsTrigger>
+                    <TabsTrigger value="collections">{t("sharding.tabs.collections")}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="shards" className="flex-1 overflow-hidden">
@@ -166,7 +170,9 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
                                                     shard.state === 1 ? "default" : "destructive"
                                                 }
                                             >
-                                                {shard.state === 1 ? "Active" : "Inactive"}
+                                                {shard.state === 1
+                                                    ? t("sharding.active")
+                                                    : t("sharding.inactive")}
                                             </Badge>
                                             {shard.tags.length > 0 && (
                                                 <div className="flex gap-1">
@@ -193,9 +199,11 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Collection</TableHead>
-                                            <TableHead>Shard Key</TableHead>
-                                            <TableHead>Options</TableHead>
+                                            <TableHead>
+                                                {t("sharding.columns.collection")}
+                                            </TableHead>
+                                            <TableHead>{t("sharding.columns.shardKey")}</TableHead>
+                                            <TableHead>{t("sharding.columns.options")}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -227,11 +235,13 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
                                                 <TableCell>
                                                     <div className="flex gap-1">
                                                         {coll.unique && (
-                                                            <Badge variant="outline">Unique</Badge>
+                                                            <Badge variant="outline">
+                                                                {t("sharding.unique")}
+                                                            </Badge>
                                                         )}
                                                         {coll.balancing && (
                                                             <Badge variant="secondary">
-                                                                Balancing
+                                                                {t("sharding.balancing")}
                                                             </Badge>
                                                         )}
                                                     </div>
@@ -250,11 +260,11 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
                                     <h3 className="mb-4 font-semibold">{selectedCollection}</h3>
                                     {isLoadingChunks ? (
                                         <div className="flex h-32 items-center justify-center text-muted-foreground">
-                                            Loading distribution...
+                                            {t("sharding.chunkLoading")}
                                         </div>
                                     ) : chunkDist.length === 0 ? (
                                         <div className="flex h-32 items-center justify-center text-muted-foreground">
-                                            No chunks reported for this collection.
+                                            {t("sharding.chunkEmpty")}
                                         </div>
                                     ) : (
                                         <div className="space-y-2">
@@ -267,7 +277,9 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
                                                         {dist.shardId}
                                                     </div>
                                                     <Badge variant="default">
-                                                        {dist.chunkCount.toLocaleString()} chunks
+                                                        {t("sharding.chunksBadge", {
+                                                            count: dist.chunkCount,
+                                                        })}
                                                     </Badge>
                                                 </div>
                                             ))}
@@ -276,7 +288,7 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
                                 </div>
                             ) : (
                                 <div className="flex h-full items-center justify-center text-muted-foreground">
-                                    Select a collection to view chunk distribution
+                                    {t("sharding.selectCollection")}
                                 </div>
                             )}
                         </div>
