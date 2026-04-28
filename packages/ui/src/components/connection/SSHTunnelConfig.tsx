@@ -2,6 +2,7 @@ import { Label } from "../ui/label"
 import { Input } from "../ui/input"
 import { Switch } from "../ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { useT } from "../../i18n"
 
 interface SSHTunnelValue {
     enabled: boolean
@@ -30,6 +31,7 @@ const DEFAULT_SSH_PORT = 22
  * wouldn't propagate to the visible inputs.
  */
 export function SSHTunnelConfig({ value, onChange }: SSHTunnelConfigProps): JSX.Element {
+    const t = useT()
     const update = (patch: Partial<SSHTunnelValue>): void => {
         onChange({ ...value, ...patch })
     }
@@ -37,7 +39,7 @@ export function SSHTunnelConfig({ value, onChange }: SSHTunnelConfigProps): JSX.
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <Label htmlFor="ssh-enabled">Enable SSH Tunnel</Label>
+                <Label htmlFor="ssh-enabled">{t("sshTunnel.enable")}</Label>
                 <Switch
                     id="ssh-enabled"
                     checked={value.enabled}
@@ -50,10 +52,10 @@ export function SSHTunnelConfig({ value, onChange }: SSHTunnelConfigProps): JSX.
             {value.enabled && (
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="ssh-host">SSH Host</Label>
+                        <Label htmlFor="ssh-host">{t("sshTunnel.host")}</Label>
                         <Input
                             id="ssh-host"
-                            placeholder="ssh.example.com"
+                            placeholder={t("sshTunnel.hostPlaceholder")}
                             value={value.host}
                             onChange={(e) => {
                                 update({ host: e.target.value })
@@ -62,7 +64,7 @@ export function SSHTunnelConfig({ value, onChange }: SSHTunnelConfigProps): JSX.
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="ssh-port">SSH Port</Label>
+                        <Label htmlFor="ssh-port">{t("sshTunnel.port")}</Label>
                         <Input
                             id="ssh-port"
                             type="number"
@@ -78,10 +80,10 @@ export function SSHTunnelConfig({ value, onChange }: SSHTunnelConfigProps): JSX.
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="ssh-username">SSH Username</Label>
+                        <Label htmlFor="ssh-username">{t("sshTunnel.username")}</Label>
                         <Input
                             id="ssh-username"
-                            placeholder="user"
+                            placeholder={t("sshTunnel.usernamePlaceholder")}
                             value={value.username}
                             onChange={(e) => {
                                 update({ username: e.target.value })
@@ -90,7 +92,7 @@ export function SSHTunnelConfig({ value, onChange }: SSHTunnelConfigProps): JSX.
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="ssh-auth-method">Authentication Method</Label>
+                        <Label htmlFor="ssh-auth-method">{t("sshTunnel.authMethod")}</Label>
                         <Select
                             value={value.authMethod}
                             onValueChange={(newMethod: SSHTunnelValue["authMethod"]) => {
@@ -101,20 +103,22 @@ export function SSHTunnelConfig({ value, onChange }: SSHTunnelConfigProps): JSX.
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="password">Password</SelectItem>
-                                <SelectItem value="key">Private Key</SelectItem>
-                                <SelectItem value="agent">SSH Agent</SelectItem>
+                                <SelectItem value="password">
+                                    {t("sshTunnel.authPassword")}
+                                </SelectItem>
+                                <SelectItem value="key">{t("sshTunnel.authKey")}</SelectItem>
+                                <SelectItem value="agent">{t("sshTunnel.authAgent")}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     {value.authMethod === "password" && (
                         <div className="space-y-2">
-                            <Label htmlFor="ssh-password">SSH Password</Label>
+                            <Label htmlFor="ssh-password">{t("sshTunnel.password")}</Label>
                             <Input
                                 id="ssh-password"
                                 type="password"
-                                placeholder="••••••••"
+                                placeholder={t("sshTunnel.passwordPlaceholder")}
                                 value={value.password ?? ""}
                                 onChange={(e) => {
                                     update({ password: e.target.value })
@@ -126,10 +130,12 @@ export function SSHTunnelConfig({ value, onChange }: SSHTunnelConfigProps): JSX.
                     {value.authMethod === "key" && (
                         <>
                             <div className="space-y-2">
-                                <Label htmlFor="ssh-key-path">Private Key Path</Label>
+                                <Label htmlFor="ssh-key-path">
+                                    {t("sshTunnel.privateKeyPath")}
+                                </Label>
                                 <Input
                                     id="ssh-key-path"
-                                    placeholder="/path/to/private/key"
+                                    placeholder={t("sshTunnel.privateKeyPathPlaceholder")}
                                     value={value.privateKeyPath ?? ""}
                                     onChange={(e) => {
                                         update({ privateKeyPath: e.target.value })
@@ -138,11 +144,11 @@ export function SSHTunnelConfig({ value, onChange }: SSHTunnelConfigProps): JSX.
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="ssh-passphrase">Passphrase (optional)</Label>
+                                <Label htmlFor="ssh-passphrase">{t("sshTunnel.passphrase")}</Label>
                                 <Input
                                     id="ssh-passphrase"
                                     type="password"
-                                    placeholder="••••••••"
+                                    placeholder={t("sshTunnel.passphrasePlaceholder")}
                                     value={value.passphrase ?? ""}
                                     onChange={(e) => {
                                         update({ passphrase: e.target.value })
@@ -154,10 +160,9 @@ export function SSHTunnelConfig({ value, onChange }: SSHTunnelConfigProps): JSX.
 
                     {value.authMethod === "agent" && (
                         <p className="rounded-md border border-[var(--border)] bg-[var(--card)] p-3 text-xs text-[var(--muted-foreground)]">
-                            Using the local SSH agent — make sure it's running with the right key
-                            loaded (e.g.{" "}
+                            {t("sshTunnel.agentHintPrefix")}
                             <code className="font-mono">ssh-add ~/.ssh/id_ed25519</code>
-                            ).
+                            {t("sshTunnel.agentHintSuffix")}
                         </p>
                     )}
                 </div>

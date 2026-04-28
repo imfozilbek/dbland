@@ -1,6 +1,7 @@
 import { Label } from "../ui/label"
 import { Input } from "../ui/input"
 import { Switch } from "../ui/switch"
+import { useT } from "../../i18n"
 
 interface SSLTLSValue {
     enabled: boolean
@@ -21,6 +22,7 @@ interface SSLTLSConfigProps {
  * connection dialog re-opening with a different connection) flows through.
  */
 export function SSLTLSConfig({ value, onChange }: SSLTLSConfigProps): JSX.Element {
+    const t = useT()
     const update = (patch: Partial<SSLTLSValue>): void => {
         onChange({ ...value, ...patch })
     }
@@ -28,7 +30,7 @@ export function SSLTLSConfig({ value, onChange }: SSLTLSConfigProps): JSX.Elemen
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <Label htmlFor="ssl-enabled">Enable SSL/TLS</Label>
+                <Label htmlFor="ssl-enabled">{t("sslTls.enable")}</Label>
                 <Switch
                     id="ssl-enabled"
                     checked={value.enabled}
@@ -42,7 +44,7 @@ export function SSLTLSConfig({ value, onChange }: SSLTLSConfigProps): JSX.Elemen
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <Label htmlFor="ssl-reject-unauthorized">
-                            Reject Unauthorized Certificates
+                            {t("sslTls.rejectUnauthorized")}
                         </Label>
                         <Switch
                             id="ssl-reject-unauthorized"
@@ -54,10 +56,10 @@ export function SSLTLSConfig({ value, onChange }: SSLTLSConfigProps): JSX.Elemen
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="ca-path">CA Certificate Path (optional)</Label>
+                        <Label htmlFor="ca-path">{t("sslTls.caPath")}</Label>
                         <Input
                             id="ca-path"
-                            placeholder="/path/to/ca.pem"
+                            placeholder={t("sslTls.caPathPlaceholder")}
                             value={value.caPath ?? ""}
                             onChange={(e) => {
                                 update({ caPath: e.target.value || undefined })
@@ -66,10 +68,10 @@ export function SSLTLSConfig({ value, onChange }: SSLTLSConfigProps): JSX.Elemen
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="cert-path">Client Certificate Path (optional)</Label>
+                        <Label htmlFor="cert-path">{t("sslTls.certPath")}</Label>
                         <Input
                             id="cert-path"
-                            placeholder="/path/to/client-cert.pem"
+                            placeholder={t("sslTls.certPathPlaceholder")}
                             value={value.certPath ?? ""}
                             onChange={(e) => {
                                 update({ certPath: e.target.value || undefined })
@@ -78,10 +80,10 @@ export function SSLTLSConfig({ value, onChange }: SSLTLSConfigProps): JSX.Elemen
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="key-path">Client Key Path (optional)</Label>
+                        <Label htmlFor="key-path">{t("sslTls.keyPath")}</Label>
                         <Input
                             id="key-path"
-                            placeholder="/path/to/client-key.pem"
+                            placeholder={t("sslTls.keyPathPlaceholder")}
                             value={value.keyPath ?? ""}
                             onChange={(e) => {
                                 update({ keyPath: e.target.value || undefined })
