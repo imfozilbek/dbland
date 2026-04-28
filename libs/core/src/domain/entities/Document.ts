@@ -35,7 +35,20 @@ export interface Document {
 }
 
 /**
- * Infer the type of a value
+ * Infer the type of a value.
+ *
+ * Trusts the BSON-style envelope tags (`$oid`, `$date`, `$binary`) the
+ * Rust adapters emit. Does **not** look inside plain strings to guess
+ * "this 24-hex-character thing is probably an ObjectId" — that
+ * classifier was a leaky anti-corruption layer: a perfectly normal
+ * username like `"deadbeefdeadbeefdeadbeef"` got rendered as an
+ * ObjectId, and any ISO-shaped log line mid-string ended up coloured
+ * as a Date. The domain layer should reflect what the adapter
+ * promised, nothing more.
+ *
+ * If a future adapter actually emits a bare 24-hex string and means
+ * "ObjectId," the right place to fix it is the adapter envelope, not
+ * here.
  */
 export function inferFieldType(value: unknown): FieldType {
     if (value === null) {
@@ -45,14 +58,6 @@ export function inferFieldType(value: unknown): FieldType {
         return FieldType.Undefined
     }
     if (typeof value === "string") {
-        // Check for ObjectId format (24 hex chars)
-        if (/^[a-f\d]{24}$/i.test(value)) {
-            return FieldType.ObjectId
-        }
-        // Check for ISO date format
-        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
-            return FieldType.Date
-        }
         return FieldType.String
     }
     if (typeof value === "number") {
@@ -68,21 +73,60 @@ export function inferFieldType(value: unknown): FieldType {
         return FieldType.Array
     }
     if (typeof value === "object") {
-        // Check for MongoDB ObjectId-like object
+        // BSON envelopes from the Rust adapters carry their own type
+        // tags; trust them rather than guessing by shape.
         if ("$oid" in value) {
             return FieldType.ObjectId
         }
-        // Check for MongoDB Date-like object
         if ("$date" in value) {
             return FieldType.Date
         }
-        // Check for Binary
         if ("$binary" in value) {
             return FieldType.Binary
         }
         return FieldType.Object
     }
     return FieldType.String
+}
+
+/**
+ * Look up a single field by dotted path. Returns the typed `DocumentField`
+ * or `undefined` when the path doesn't resolve. The previous version of
+ * the codebase forced callers to flatten the whole document and `find`
+ * by string match — quadratic when iterating, brittle when paths shared
+ * prefixes (`"user.name"` vs `"user"` accidentally returned the
+ * top-level Object instead of the Object's child).
+ *
+ * Walks one segment at a time so we keep the actual path-component
+ * boundaries intact: `data.field` stops at the period, `arr.0.label`
+ * indexes into an array, and missing intermediate segments short-circuit
+ * to `undefined` instead of throwing.
+ */
+export function findField(data: Record<string, unknown>, path: string): DocumentField | undefined {
+    if (!path) {
+        return undefined
+    }
+    const segments = path.split(".")
+    let current: unknown = data
+    for (const segment of segments) {
+        if (current === null || current === undefined) {
+            return undefined
+        }
+        if (typeof current !== "object") {
+            return undefined
+        }
+        current = (current as Record<string, unknown>)[segment]
+    }
+    if (current === undefined) {
+        return undefined
+    }
+    const lastSegment = segments[segments.length - 1] ?? path
+    return {
+        key: lastSegment,
+        value: current,
+        type: inferFieldType(current),
+        path,
+    }
 }
 
 /**

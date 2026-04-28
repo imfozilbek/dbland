@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest"
-import { createQuery, createQueryHistoryEntry, getQueryLanguage, QueryLanguage } from "./Query"
+import {
+    canRunAgainst,
+    createQuery,
+    createQueryHistoryEntry,
+    DEFAULT_SLOW_QUERY_THRESHOLD_MS,
+    getQueryLanguage,
+    isSlow,
+    QueryLanguage,
+} from "./Query"
 import { DatabaseType } from "../value-objects/DatabaseType"
 
 describe("Query.getQueryLanguage", () => {
@@ -58,5 +66,48 @@ describe("Query.createQueryHistoryEntry", () => {
         expect(entry.resultCount).toBe(0)
         expect(entry.error).toBe("syntax error")
         expect(entry.success).toBe(false)
+    })
+})
+
+describe("Query.canRunAgainst", () => {
+    it("accepts a MongoDB query against a MongoDB connection", () => {
+        const q = createQuery("{}", QueryLanguage.MongoDB)
+        expect(canRunAgainst(q, DatabaseType.MongoDB)).toBe(true)
+    })
+
+    it("accepts a Redis CLI query against a Redis connection", () => {
+        const q = createQuery("KEYS *", QueryLanguage.RedisCLI)
+        expect(canRunAgainst(q, DatabaseType.Redis)).toBe(true)
+    })
+
+    it("rejects a MongoDB query against a Redis connection", () => {
+        const q = createQuery("{}", QueryLanguage.MongoDB)
+        expect(canRunAgainst(q, DatabaseType.Redis)).toBe(false)
+    })
+
+    it("rejects a Redis query against a MongoDB connection", () => {
+        const q = createQuery("KEYS *", QueryLanguage.RedisCLI)
+        expect(canRunAgainst(q, DatabaseType.MongoDB)).toBe(false)
+    })
+})
+
+describe("Query.isSlow", () => {
+    it("uses the default threshold (1000ms) when none is provided", () => {
+        expect(DEFAULT_SLOW_QUERY_THRESHOLD_MS).toBe(1000)
+        expect(isSlow(createQueryHistoryEntry("{}", QueryLanguage.MongoDB, 999, true))).toBe(false)
+        expect(isSlow(createQueryHistoryEntry("{}", QueryLanguage.MongoDB, 1000, true))).toBe(true)
+        expect(isSlow(createQueryHistoryEntry("{}", QueryLanguage.MongoDB, 5000, true))).toBe(true)
+    })
+
+    it("respects an explicit lower threshold (e.g. profiler panel set to 100ms)", () => {
+        const entry = createQueryHistoryEntry("{}", QueryLanguage.MongoDB, 250, true)
+        expect(isSlow(entry, 100)).toBe(true)
+        expect(isSlow(entry, 500)).toBe(false)
+    })
+
+    it("treats a zero-millisecond execution as not slow", () => {
+        // Edge: instant queries (cached, no-op) shouldn't trigger the
+        // "slow" badge regardless of the threshold the caller picked.
+        expect(isSlow(createQueryHistoryEntry("{}", QueryLanguage.MongoDB, 0, true), 1)).toBe(false)
     })
 })
