@@ -327,6 +327,7 @@ export function WorkspacePage(): JSX.Element {
         platform
             .cloneDocument(connectionId, selectedDatabase, selectedCollection, documentId)
             .then(() => {
+                toast.success(t("workspace.cloneDocSuccess"))
                 // Re-execute query to refresh results
                 executeQuery(connectionId, selectedDatabase, selectedCollection).catch(
                     (err: unknown) => {
@@ -336,6 +337,9 @@ export function WorkspacePage(): JSX.Element {
             })
             .catch((err: unknown) => {
                 console.error("Failed to clone document:", err)
+                toast.error(t("workspace.cloneDocFailed"), {
+                    description: err instanceof Error ? err.message : t("common.unknownError"),
+                })
             })
     }
 

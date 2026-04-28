@@ -326,6 +326,8 @@ export const en = {
         deleteDocConfirmDescription: "Document will be removed from {{db}}.{{coll}}.",
         deleteDocSuccess: "Document deleted",
         deleteDocFailed: "Failed to delete document",
+        cloneDocSuccess: "Document cloned",
+        cloneDocFailed: "Failed to clone document",
     },
     redis: {
         page: {

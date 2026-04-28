@@ -324,6 +324,8 @@ export const ru: Translations = {
         deleteDocConfirmDescription: "Документ будет удалён из {{db}}.{{coll}}.",
         deleteDocSuccess: "Документ удалён",
         deleteDocFailed: "Не удалось удалить документ",
+        cloneDocSuccess: "Документ клонирован",
+        cloneDocFailed: "Не удалось клонировать документ",
     },
     redis: {
         page: {
