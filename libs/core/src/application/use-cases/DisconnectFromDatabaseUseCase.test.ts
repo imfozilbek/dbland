@@ -111,6 +111,27 @@ describe("DisconnectFromDatabaseUseCase", () => {
         expect(out.events[0].type).toBe("connection.status_changed")
     })
 
+    it("returns idempotent success without touching registry or storage when already Disconnected", async () => {
+        const release = vi.fn().mockResolvedValue(undefined)
+        const transition = vi.fn().mockResolvedValue(undefined)
+        const useCase = new DisconnectFromDatabaseUseCase(
+            makeStorage({
+                getConnection: async () =>
+                    makeConnection({ status: ConnectionStatus.Disconnected }),
+                persistConnectionTransition: transition,
+            }),
+            makeRegistry({ release }),
+        )
+
+        const out = await useCase.execute({ connectionId: "c1" })
+
+        expect(out.success).toBe(true)
+        expect(out.connection?.status).toBe(ConnectionStatus.Disconnected)
+        expect(out.events).toHaveLength(0)
+        expect(release).not.toHaveBeenCalled()
+        expect(transition).not.toHaveBeenCalled()
+    })
+
     it("releases the adapter even if persistence is slow — order: release first, then persist", async () => {
         const calls: string[] = []
         const release = vi.fn().mockImplementation(async () => {

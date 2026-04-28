@@ -79,6 +79,18 @@ export class DisconnectFromDatabaseUseCase {
             previousStatus,
         })
 
+        // Already disconnected — return idempotently. Re-running the
+        // teardown would call registry.release on an entry that isn't
+        // there (a no-op, but the storage write still happens) and emit
+        // a Disconnected → Disconnected status_changed event that adds
+        // nothing for the UI. The clean shortcut is to do nothing.
+        if (connection.status === ConnectionStatus.Disconnected) {
+            this.logger.info("Already disconnected — idempotent return", {
+                connectionId: connection.id,
+            })
+            return { success: true, connection, events }
+        }
+
         // Step 2: tear down the live driver / SSH tunnel. The registry
         // implementation already swallows adapter-side disconnect
         // errors (the local intent is to be disconnected regardless),
