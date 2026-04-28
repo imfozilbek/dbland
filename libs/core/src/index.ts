@@ -8,6 +8,7 @@ export * from "./domain/entities/Query"
 // Domain - Value Objects
 export * from "./domain/value-objects/DatabaseType"
 export * from "./domain/value-objects/ConnectionConfig"
+export * from "./domain/value-objects/ConnectionString"
 export * from "./domain/value-objects/QueryResult"
 export * from "./domain/value-objects/Credentials"
 
@@ -25,9 +26,13 @@ export * from "./domain/errors"
 export * from "./application/ports/DatabaseAdapterPort"
 export * from "./application/ports/ConnectionStoragePort"
 export * from "./application/ports/LoggerPort"
+export * from "./application/ports/AdapterRegistryPort"
 
 // Infrastructure - Logging
 export * from "./infrastructure/logging/ConsoleLogger"
+
+// Infrastructure - Adapters
+export * from "./infrastructure/adapters/InMemoryAdapterRegistry"
 
 // Application - Use Cases
 export * from "./application/use-cases/ConnectToDatabaseUseCase"

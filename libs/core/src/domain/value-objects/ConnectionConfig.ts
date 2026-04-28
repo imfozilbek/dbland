@@ -3,6 +3,7 @@ import {
     DEFAULT_MONGO_AUTH_DATABASE,
     DEFAULT_PORTS,
 } from "../constants/database-defaults"
+import { ConnectionString } from "./ConnectionString"
 import { DatabaseType } from "./DatabaseType"
 
 /**
@@ -87,9 +88,28 @@ export function createDefaultConnectionConfig(type: DatabaseType): ConnectionCon
 }
 
 /**
- * Build a connection string from config
+ * Build the connection URI for a config and wrap it in a `ConnectionString`
+ * value object. The wrapper redacts the password on `toString()` /
+ * `toJSON()` and only exposes the plaintext URI through an explicit
+ * `.reveal()` call, so a careless `logger.info("config", { uri })` can no
+ * longer leak credentials into a logging pipeline.
+ *
+ * Drivers / adapters that actually need to dial the server should call
+ * `.reveal()` at the connect site and nowhere else — the call sites
+ * stay small, greppable, and auditable.
  */
-export function buildConnectionString(config: ConnectionConfig): string {
+export function buildConnectionString(config: ConnectionConfig): ConnectionString {
+    return ConnectionString.from(buildRawConnectionString(config))
+}
+
+/**
+ * The plaintext URI builder. Kept as a separate internal function so
+ * `ConnectionString.from(buildRawConnectionString(...))` stays the only
+ * place credentials get string-concatenated. Tests call this directly
+ * to assert URI shape; production code should always go through
+ * `buildConnectionString`.
+ */
+function buildRawConnectionString(config: ConnectionConfig): string {
     if (config.connectionString) {
         return config.connectionString
     }
@@ -109,7 +129,7 @@ export function buildConnectionString(config: ConnectionConfig): string {
         case DatabaseType.Redis: {
             let uri = "redis://"
             if (config.auth?.password) {
-                uri += `:${config.auth.password}@`
+                uri += `:${encodeURIComponent(config.auth.password)}@`
             }
             uri += `${config.host}:${config.port}`
             return uri

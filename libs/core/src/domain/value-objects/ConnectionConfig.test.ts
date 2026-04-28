@@ -36,7 +36,7 @@ describe("ConnectionConfig", () => {
                 connectionString: "mongodb://custom-string",
             }
 
-            expect(buildConnectionString(config)).toBe("mongodb://custom-string")
+            expect(buildConnectionString(config).reveal()).toBe("mongodb://custom-string")
         })
 
         it("should build MongoDB connection string without auth", () => {
@@ -47,7 +47,7 @@ describe("ConnectionConfig", () => {
                 port: 27017,
             }
 
-            expect(buildConnectionString(config)).toBe("mongodb://localhost:27017")
+            expect(buildConnectionString(config).reveal()).toBe("mongodb://localhost:27017")
         })
 
         it("should build MongoDB connection string with auth", () => {
@@ -63,7 +63,7 @@ describe("ConnectionConfig", () => {
                 },
             }
 
-            expect(buildConnectionString(config)).toBe(
+            expect(buildConnectionString(config).reveal()).toBe(
                 "mongodb://admin:secret@localhost:27017/admin",
             )
         })
@@ -80,7 +80,7 @@ describe("ConnectionConfig", () => {
                 },
             }
 
-            expect(buildConnectionString(config)).toBe(
+            expect(buildConnectionString(config).reveal()).toBe(
                 "mongodb://user%40domain:pass%3Aword@localhost:27017",
             )
         })
@@ -93,7 +93,7 @@ describe("ConnectionConfig", () => {
                 port: 6379,
             }
 
-            expect(buildConnectionString(config)).toBe("redis://localhost:6379")
+            expect(buildConnectionString(config).reveal()).toBe("redis://localhost:6379")
         })
 
         it("should build Redis connection string with password", () => {
@@ -107,7 +107,64 @@ describe("ConnectionConfig", () => {
                 },
             }
 
-            expect(buildConnectionString(config)).toBe("redis://:secret@localhost:6379")
+            expect(buildConnectionString(config).reveal()).toBe("redis://:secret@localhost:6379")
+        })
+
+        it("should encode special characters in Redis password", () => {
+            const config: ConnectionConfig = {
+                type: DatabaseType.Redis,
+                name: "test",
+                host: "localhost",
+                port: 6379,
+                auth: {
+                    password: "p@ss:word",
+                },
+            }
+
+            expect(buildConnectionString(config).reveal()).toBe(
+                "redis://:p%40ss%3Aword@localhost:6379",
+            )
+        })
+
+        it("redacts the password in toString", () => {
+            const config: ConnectionConfig = {
+                type: DatabaseType.MongoDB,
+                name: "test",
+                host: "localhost",
+                port: 27017,
+                auth: { username: "admin", password: "secret" },
+            }
+
+            const cs = buildConnectionString(config)
+            expect(cs.toString()).toBe("mongodb://admin:[REDACTED]@localhost:27017")
+        })
+
+        it("JSON.stringify also redacts the password", () => {
+            const config: ConnectionConfig = {
+                type: DatabaseType.MongoDB,
+                name: "test",
+                host: "localhost",
+                port: 27017,
+                auth: { username: "admin", password: "secret" },
+            }
+
+            const cs = buildConnectionString(config)
+            expect(JSON.stringify({ uri: cs })).toBe(
+                '{"uri":"mongodb://admin:[REDACTED]@localhost:27017"}',
+            )
+        })
+
+        it("template-string interpolation goes through toString and redacts", () => {
+            const config: ConnectionConfig = {
+                type: DatabaseType.Redis,
+                name: "test",
+                host: "localhost",
+                port: 6379,
+                auth: { password: "secret" },
+            }
+
+            const cs = buildConnectionString(config)
+            expect(String(cs)).toBe("redis://:[REDACTED]@localhost:6379")
         })
     })
 })
