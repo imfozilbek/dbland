@@ -1,5 +1,5 @@
 use parking_lot::Mutex;
-use rusqlite::{Connection, Result as SqliteResult};
+use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use thiserror::Error;

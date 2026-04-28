@@ -32,14 +32,23 @@ pub struct AppState {
 ///
 /// Priority: OS keychain → legacy `.key` file (one-shot migration) → freshly generated.
 /// After a successful migration the legacy file is wiped so the key never sits on disk again.
-fn load_or_create_master_key(app_data_dir: &Path) -> [u8; 32] {
+///
+/// Returns `Err` if the OS keychain is unreachable (locked Linux Secret Service,
+/// missing keychain on headless CI, etc.). The caller should surface this through
+/// Tauri's setup-error path rather than panic — without the master key we cannot
+/// decrypt stored credentials, so refusing to start is the only safe outcome.
+fn load_or_create_master_key(
+    app_data_dir: &Path,
+) -> Result<[u8; 32], Box<dyn std::error::Error>> {
     let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_ACCOUNT)
-        .expect("Failed to construct keyring entry");
+        .map_err(|e| -> Box<dyn std::error::Error> {
+            Box::from(format!("failed to construct OS keychain entry: {e}"))
+        })?;
 
     // 1. Already in keychain — decode and return.
     if let Ok(stored) = entry.get_password() {
         if let Some(key) = decode_master_key(&stored) {
-            return key;
+            return Ok(key);
         }
         log::warn!("master key in keychain has invalid format; regenerating");
     }
@@ -51,16 +60,13 @@ fn load_or_create_master_key(app_data_dir: &Path) -> [u8; 32] {
             if data.len() >= 32 {
                 let mut key = [0u8; 32];
                 key.copy_from_slice(&data[..32]);
-                if entry
-                    .set_password(&encode_master_key(&key))
-                    .is_ok()
-                {
+                if entry.set_password(&encode_master_key(&key)).is_ok() {
                     let _ = std::fs::remove_file(&legacy_path);
                     log::info!("master key migrated from legacy file to OS keychain");
-                    return key;
+                    return Ok(key);
                 }
                 log::error!("failed to write master key to keychain — keeping legacy file");
-                return key;
+                return Ok(key);
             }
         }
     }
@@ -69,9 +75,11 @@ fn load_or_create_master_key(app_data_dir: &Path) -> [u8; 32] {
     let key = Crypto::generate_key();
     entry
         .set_password(&encode_master_key(&key))
-        .expect("Failed to store master key in OS keychain");
+        .map_err(|e| -> Box<dyn std::error::Error> {
+            Box::from(format!("failed to store master key in OS keychain: {e}"))
+        })?;
     log::info!("generated new master key and stored in OS keychain");
-    key
+    Ok(key)
 }
 
 /// Encode a 32-byte key as a hex string for keychain storage.
@@ -173,7 +181,13 @@ pub fn run() {
             })?;
 
             // Master key now lives in the OS keychain (migrated from `.key` if present).
-            let key = load_or_create_master_key(&app_data_dir);
+            // If the keychain is unreachable (locked Secret Service on Linux, headless
+            // CI, etc.) we refuse to start — without the key we cannot decrypt saved
+            // credentials, and continuing with a fresh key would silently lose them.
+            let key = load_or_create_master_key(&app_data_dir)
+                .map_err(|e| -> Box<dyn std::error::Error> {
+                    Box::from(format!("Failed to load master encryption key: {e}"))
+                })?;
 
             // Initialize storage
             let db_path = app_data_dir.join("connections.db");
