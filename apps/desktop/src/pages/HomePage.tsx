@@ -1,13 +1,19 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { ArrowRight, Database, Plus } from "lucide-react"
 import { ConnectionManagerDialog, useConnectionStore, useT } from "@dbland/ui"
 
 export function HomePage(): JSX.Element {
     const t = useT()
+    const navigate = useNavigate()
     const [dialogOpen, setDialogOpen] = useState(false)
     const { connections, loadConnections } = useConnectionStore()
 
     const recent = connections.slice(0, 5)
+
+    const handleOpenConnection = (id: string, type: "mongodb" | "redis"): void => {
+        navigate(type === "redis" ? `/redis/${id}` : `/workspace/${id}`)
+    }
 
     return (
         <div className="relative flex h-full items-center justify-center overflow-hidden p-8">
@@ -94,7 +100,10 @@ export function HomePage(): JSX.Element {
                                 <li key={c.id}>
                                     <button
                                         type="button"
-                                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--popover)]"
+                                        onClick={() => {
+                                            handleOpenConnection(c.id, c.type)
+                                        }}
+                                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--popover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
                                     >
                                         <span
                                             aria-hidden="true"
