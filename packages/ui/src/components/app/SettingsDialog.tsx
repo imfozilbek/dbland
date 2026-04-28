@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 import { Button } from "../ui/button"
 import { ScrollArea } from "../ui/scroll-area"
 import { Card } from "../ui/card"
+import { useT } from "../../i18n"
 
 /**
  * Build-time version string for the About tab. Bumped on every release —
@@ -47,28 +48,29 @@ export interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX.Element {
+    const t = useT()
     const { settings, updateSettings, updateEditorSettings, resetSettings } = useSettingsStore()
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
-                    <DialogTitle>Settings</DialogTitle>
-                    <DialogDescription>Configure your DBLand preferences</DialogDescription>
+                    <DialogTitle>{t("settings.title")}</DialogTitle>
+                    <DialogDescription>{t("settings.description")}</DialogDescription>
                 </DialogHeader>
 
                 <Tabs defaultValue="general" className="w-full">
                     <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="general">General</TabsTrigger>
-                        <TabsTrigger value="editor">Editor</TabsTrigger>
-                        <TabsTrigger value="about">About</TabsTrigger>
+                        <TabsTrigger value="general">{t("settings.tabs.general")}</TabsTrigger>
+                        <TabsTrigger value="editor">{t("settings.tabs.editor")}</TabsTrigger>
+                        <TabsTrigger value="about">{t("settings.tabs.about")}</TabsTrigger>
                     </TabsList>
 
                     <ScrollArea className="h-[400px] pr-4">
                         <TabsContent value="general" className="space-y-4">
                             <Card className="p-4 space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="theme">Theme</Label>
+                                    <Label htmlFor="theme">{t("settings.general.theme")}</Label>
                                     <Select
                                         value={settings.theme}
                                         onValueChange={(value: "light" | "dark" | "system") => {
@@ -79,15 +81,23 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="light">Light</SelectItem>
-                                            <SelectItem value="dark">Dark</SelectItem>
-                                            <SelectItem value="system">System</SelectItem>
+                                            <SelectItem value="light">
+                                                {t("settings.general.themeLight")}
+                                            </SelectItem>
+                                            <SelectItem value="dark">
+                                                {t("settings.general.themeDark")}
+                                            </SelectItem>
+                                            <SelectItem value="system">
+                                                {t("settings.general.themeSystem")}
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="language">Language</Label>
+                                    <Label htmlFor="language">
+                                        {t("settings.general.language")}
+                                    </Label>
                                     <Select
                                         value={settings.language}
                                         onValueChange={(value: "en" | "ru") => {
@@ -98,14 +108,20 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="en">English</SelectItem>
-                                            <SelectItem value="ru">Russian</SelectItem>
+                                            <SelectItem value="en">
+                                                {t("settings.general.languageEnglish")}
+                                            </SelectItem>
+                                            <SelectItem value="ru">
+                                                {t("settings.general.languageRussian")}
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
 
                                 <div className="flex items-center justify-between">
-                                    <Label htmlFor="auto-save">Auto-save queries</Label>
+                                    <Label htmlFor="auto-save">
+                                        {t("settings.general.autoSave")}
+                                    </Label>
                                     <Switch
                                         id="auto-save"
                                         checked={settings.autoSave}
@@ -116,7 +132,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX
                                 </div>
 
                                 <div className="flex items-center justify-between">
-                                    <Label htmlFor="confirm-delete">Confirm before delete</Label>
+                                    <Label htmlFor="confirm-delete">
+                                        {t("settings.general.confirmDelete")}
+                                    </Label>
                                     <Switch
                                         id="confirm-delete"
                                         checked={settings.confirmDelete}
@@ -131,7 +149,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX
                         <TabsContent value="editor" className="space-y-4">
                             <Card className="p-4 space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="font-size">Font Size</Label>
+                                    <Label htmlFor="font-size">
+                                        {t("settings.editor.fontSize")}
+                                    </Label>
                                     <Input
                                         id="font-size"
                                         type="number"
@@ -148,7 +168,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="tab-size">Tab Size</Label>
+                                    <Label htmlFor="tab-size">{t("settings.editor.tabSize")}</Label>
                                     <Input
                                         id="tab-size"
                                         type="number"
@@ -165,7 +185,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX
                                 </div>
 
                                 <div className="flex items-center justify-between">
-                                    <Label htmlFor="word-wrap">Word Wrap</Label>
+                                    <Label htmlFor="word-wrap">
+                                        {t("settings.editor.wordWrap")}
+                                    </Label>
                                     <Switch
                                         id="word-wrap"
                                         checked={settings.editor.wordWrap}
@@ -176,7 +198,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX
                                 </div>
 
                                 <div className="flex items-center justify-between">
-                                    <Label htmlFor="minimap">Show Minimap</Label>
+                                    <Label htmlFor="minimap">
+                                        {t("settings.editor.showMinimap")}
+                                    </Label>
                                     <Switch
                                         id="minimap"
                                         checked={settings.editor.minimap}
@@ -195,16 +219,16 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX
                                         DBLand
                                     </h3>
                                     <p className="text-sm text-[var(--muted-foreground)]">
-                                        NoSQL database client for MongoDB and Redis.
+                                        {t("settings.about.tagline")}
                                     </p>
                                     <p className="pt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--muted-foreground)]/70">
-                                        Version {APP_VERSION}
+                                        {t("settings.about.version", { version: APP_VERSION })}
                                     </p>
                                 </div>
 
                                 <div className="space-y-3">
                                     <h4 className="text-sm font-semibold text-[var(--foreground)]">
-                                        What's inside
+                                        {t("settings.about.features")}
                                     </h4>
                                     <FeatureList />
                                 </div>
@@ -216,10 +240,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX
                                         className="w-full"
                                     >
                                         <RotateCcw className="mr-2 h-4 w-4" />
-                                        Reset to defaults
+                                        {t("settings.about.reset")}
                                     </Button>
                                     <p className="mt-2 text-center text-[11px] text-[var(--muted-foreground)]/70">
-                                        Resets preferences only — saved connections stay.
+                                        {t("settings.about.resetCaveat")}
                                     </p>
                                 </div>
                             </Card>

@@ -18,6 +18,7 @@ import {
     selectDatabases,
     useSchemaStore,
 } from "../../stores/schema-store"
+import { useT } from "../../i18n"
 
 export interface ConnectionTreeProps {
     connection: Connection
@@ -35,6 +36,7 @@ export function ConnectionTree({
     onCollectionSelect,
     onEditConnection,
 }: ConnectionTreeProps): JSX.Element {
+    const t = useT()
     const [confirm, confirmDialog] = useConfirm()
     const [isOpen, setIsOpen] = useState(false)
     const [expandedDatabases, setExpandedDatabases] = useState<Set<string>>(new Set())
@@ -64,18 +66,24 @@ export function ConnectionTree({
                         // Store mutates connection.status → "error" so the dot
                         // turns red, but the user also needs to know *why* —
                         // surface the error message as a toast.
-                        toast.error(`Couldn't connect to ${connection.name}`, {
-                            description: err instanceof Error ? err.message : String(err),
-                        })
+                        toast.error(
+                            t("connectionTree.couldNotConnect", { name: connection.name }),
+                            {
+                                description: err instanceof Error ? err.message : String(err),
+                            },
+                        )
                     }
                 } else if (isConnected && databases.length === 0) {
                     // Already connected but no databases loaded
                     try {
                         await loadDatabases(connection.id)
                     } catch (err: unknown) {
-                        toast.error(`Couldn't load databases for ${connection.name}`, {
-                            description: err instanceof Error ? err.message : String(err),
-                        })
+                        toast.error(
+                            t("connectionTree.couldNotLoadDatabases", { name: connection.name }),
+                            {
+                                description: err instanceof Error ? err.message : String(err),
+                            },
+                        )
                     }
                 }
             }
@@ -88,6 +96,7 @@ export function ConnectionTree({
             databases.length,
             connect,
             loadDatabases,
+            t,
         ],
     )
 
@@ -101,7 +110,7 @@ export function ConnectionTree({
                 try {
                     await loadCollections(connection.id, dbName)
                 } catch (err: unknown) {
-                    toast.error(`Couldn't load collections for ${dbName}`, {
+                    toast.error(t("connectionTree.couldNotLoadCollections", { db: dbName }), {
                         description: err instanceof Error ? err.message : String(err),
                     })
                 }
@@ -110,7 +119,7 @@ export function ConnectionTree({
             }
             setExpandedDatabases(newExpanded)
         },
-        [connection.id, expandedDatabases, loadCollections],
+        [connection.id, expandedDatabases, loadCollections, t],
     )
 
     // Handle collection click
@@ -142,10 +151,10 @@ export function ConnectionTree({
         }
 
         const statusLabel: Record<Connection["status"], string> = {
-            connected: "Connected",
-            connecting: "Connecting",
-            error: "Connection error",
-            disconnected: "Disconnected",
+            connected: t("connectionTree.statusConnected"),
+            connecting: t("connectionTree.statusConnecting"),
+            error: t("connectionTree.statusError"),
+            disconnected: t("connectionTree.statusDisconnected"),
         }
 
         return (
@@ -164,7 +173,7 @@ export function ConnectionTree({
         try {
             await disconnect(connection.id)
         } catch (err: unknown) {
-            toast.error(`Couldn't disconnect ${connection.name}`, {
+            toast.error(t("connectionTree.couldNotDisconnect", { name: connection.name }), {
                 description: err instanceof Error ? err.message : String(err),
             })
         }
@@ -172,10 +181,9 @@ export function ConnectionTree({
 
     const handleDelete = async (): Promise<void> => {
         const confirmed = await confirm({
-            title: `Delete connection "${connection.name}"?`,
-            description:
-                "The connection definition and its stored credentials will be removed from this machine. The remote database is not touched.",
-            confirmLabel: "Delete",
+            title: t("connectionTree.deleteConfirmTitle", { name: connection.name }),
+            description: t("connectionTree.deleteConfirmDescription"),
+            confirmLabel: t("common.delete"),
             destructive: true,
         })
         if (!confirmed) {
@@ -183,9 +191,9 @@ export function ConnectionTree({
         }
         try {
             await deleteConnection(connection.id)
-            toast.success(`Connection "${connection.name}" deleted`)
+            toast.success(t("connectionTree.deleted", { name: connection.name }))
         } catch (err: unknown) {
-            toast.error(`Couldn't delete ${connection.name}`, {
+            toast.error(t("connectionTree.couldNotDelete", { name: connection.name }), {
                 description: err instanceof Error ? err.message : String(err),
             })
         }
@@ -211,23 +219,33 @@ export function ConnectionTree({
                                 onLabelClick={handleConnectionLabelClick}
                             >
                                 {/* Loading state */}
-                                {isConnecting && <TreeEmpty level={1}>Connecting…</TreeEmpty>}
+                                {isConnecting && (
+                                    <TreeEmpty level={1}>
+                                        {t("connectionTree.connecting")}
+                                    </TreeEmpty>
+                                )}
 
                                 {/* Error state */}
                                 {connection.status === "error" && (
                                     <TreeEmpty level={1}>
-                                        <span className="text-destructive">Connection failed</span>
+                                        <span className="text-destructive">
+                                            {t("connectionTree.connectionFailed")}
+                                        </span>
                                     </TreeEmpty>
                                 )}
 
                                 {/* Connected but loading databases */}
                                 {isConnected && schemaLoading && databases.length === 0 && (
-                                    <TreeEmpty level={1}>Loading databases…</TreeEmpty>
+                                    <TreeEmpty level={1}>
+                                        {t("connectionTree.loadingDatabases")}
+                                    </TreeEmpty>
                                 )}
 
                                 {/* Connected with no databases */}
                                 {isConnected && !schemaLoading && databases.length === 0 && (
-                                    <TreeEmpty level={1}>No databases found</TreeEmpty>
+                                    <TreeEmpty level={1}>
+                                        {t("connectionTree.noDatabases")}
+                                    </TreeEmpty>
                                 )}
 
                                 {/* Database list */}
@@ -263,7 +281,7 @@ export function ConnectionTree({
                             }}
                         >
                             <Pencil className="h-4 w-4" />
-                            Edit connection
+                            {t("connectionTree.editConnection")}
                         </ContextMenuItem>
                     )}
                     {isConnected ? (
@@ -273,7 +291,7 @@ export function ConnectionTree({
                             }}
                         >
                             <Plug className="h-4 w-4" />
-                            Disconnect
+                            {t("connectionTree.disconnect")}
                         </ContextMenuItem>
                     ) : (
                         <ContextMenuItem
@@ -283,7 +301,7 @@ export function ConnectionTree({
                             disabled={isConnecting}
                         >
                             <PlugZap className="h-4 w-4" />
-                            Connect
+                            {t("connectionTree.connect")}
                         </ContextMenuItem>
                     )}
                     <ContextMenuSeparator />
@@ -294,7 +312,7 @@ export function ConnectionTree({
                         className="text-[var(--destructive)] focus:text-[var(--destructive)]"
                     >
                         <Trash2 className="h-4 w-4" />
-                        Delete connection
+                        {t("connectionTree.deleteConnection")}
                     </ContextMenuItem>
                 </ContextMenuContent>
             </ContextMenu>
@@ -322,6 +340,7 @@ function DatabaseNode({
     onOpenChange,
     onCollectionClick,
 }: DatabaseNodeProps): JSX.Element {
+    const t = useT()
     const collections = useSchemaStore(selectCollections(connectionId, database.name))
     const { isLoading } = useSchemaStore()
 
@@ -337,12 +356,12 @@ function DatabaseNode({
         >
             {/* Loading state */}
             {isLoading && collections.length === 0 && (
-                <TreeEmpty level={2}>Loading collections...</TreeEmpty>
+                <TreeEmpty level={2}>{t("connectionTree.loadingCollections")}</TreeEmpty>
             )}
 
             {/* No collections */}
             {!isLoading && collections.length === 0 && (
-                <TreeEmpty level={2}>No collections</TreeEmpty>
+                <TreeEmpty level={2}>{t("connectionTree.noCollections")}</TreeEmpty>
             )}
 
             {/* Collection list */}
