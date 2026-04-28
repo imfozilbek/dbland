@@ -5,6 +5,7 @@ import { Gauge, RefreshCw } from "lucide-react"
 import { EmptyState } from "../ui/empty-state"
 import { ScrollArea } from "../ui/scroll-area"
 import { type SlowLogEntry, usePlatform } from "../../contexts/PlatformContext"
+import { useT } from "../../i18n"
 
 interface RedisSlowLogViewerProps {
     connectionId: string
@@ -13,6 +14,7 @@ interface RedisSlowLogViewerProps {
 const SLOW_LOG_LIMIT = 50
 
 export function RedisSlowLogViewer({ connectionId }: RedisSlowLogViewerProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [entries, setEntries] = useState<SlowLogEntry[]>([])
     const [isLoading, setIsLoading] = useState(false)
@@ -50,7 +52,7 @@ export function RedisSlowLogViewer({ connectionId }: RedisSlowLogViewerProps): J
     return (
         <div className="flex h-full flex-col gap-4 p-4">
             <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Slow Log</h3>
+                <h3 className="font-semibold">{t("redisSlowLog.title")}</h3>
                 <Button onClick={() => void loadSlowLog()} size="sm" variant="outline">
                     <RefreshCw className="h-4 w-4" />
                 </Button>
@@ -62,8 +64,8 @@ export function RedisSlowLogViewer({ connectionId }: RedisSlowLogViewerProps): J
                         <div className="flex items-center justify-center py-8">
                             <EmptyState
                                 icon={<Gauge className="h-5 w-5" />}
-                                title="No slow queries"
-                                description="Redis hasn't recorded any commands above the slowlog threshold yet. Lower SLOWLOG GET on the server, or wait — this is a good thing."
+                                title={t("redisSlowLog.emptyTitle")}
+                                description={t("redisSlowLog.emptyDescription")}
                             />
                         </div>
                     )}
@@ -73,7 +75,7 @@ export function RedisSlowLogViewer({ connectionId }: RedisSlowLogViewerProps): J
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs text-muted-foreground">
-                                        ID: {entry.id}
+                                        {t("redisSlowLog.idPrefix", { id: entry.id })}
                                     </span>
                                     <span className="text-xs text-muted-foreground">
                                         {formatTimestamp(entry.timestamp)}

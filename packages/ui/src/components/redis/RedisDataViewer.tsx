@@ -7,6 +7,7 @@ import { Skeleton } from "../ui/skeleton"
 import { ScrollArea } from "../ui/scroll-area"
 import { Clock } from "lucide-react"
 import { type RedisValue, usePlatform } from "../../contexts/PlatformContext"
+import { useT } from "../../i18n"
 
 interface RedisDataViewerProps {
     connectionId: string
@@ -14,6 +15,7 @@ interface RedisDataViewerProps {
 }
 
 export function RedisDataViewer({ connectionId, selectedKey }: RedisDataViewerProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [value, setValue] = useState<RedisValue>({ type: "none" })
     const [ttl, setTTL] = useState<number | null>(null)
@@ -72,29 +74,37 @@ export function RedisDataViewer({ connectionId, selectedKey }: RedisDataViewerPr
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="font-semibold">{selectedKey}</h3>
-                    <p className="text-sm text-muted-foreground">Type: {value.type}</p>
+                    <p className="text-sm text-muted-foreground">
+                        {t("redisDataViewer.typeLabel")} {value.type}
+                    </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     {/* Redis TTL: null = couldn't read, -1 = no expiry set,
                         -2 = key doesn't exist, >=0 = seconds until expiry. */}
                     {ttl === null || ttl === -1 ? (
-                        <span className="text-sm text-muted-foreground">No expiration</span>
+                        <span className="text-sm text-muted-foreground">
+                            {t("redisDataViewer.noExpiration")}
+                        </span>
                     ) : ttl === -2 ? (
-                        <span className="text-sm text-[var(--destructive)]">Key not found</span>
+                        <span className="text-sm text-[var(--destructive)]">
+                            {t("redisDataViewer.keyNotFound")}
+                        </span>
                     ) : (
-                        <span className="text-sm text-muted-foreground">{ttl}s</span>
+                        <span className="text-sm text-muted-foreground">
+                            {t("redisDataViewer.ttlSeconds", { seconds: ttl })}
+                        </span>
                     )}
                 </div>
             </div>
 
             <Card className="p-4">
-                <Label>Set TTL (seconds)</Label>
+                <Label>{t("redisDataViewer.setTtlLabel")}</Label>
                 <div className="mt-2 flex gap-2">
                     <Input
                         type="number"
                         min={1}
-                        placeholder="3600"
+                        placeholder={t("redisDataViewer.setTtlPlaceholder")}
                         value={newTTL}
                         onChange={(e) => {
                             setNewTTL(e.target.value)
@@ -104,7 +114,7 @@ export function RedisDataViewer({ connectionId, selectedKey }: RedisDataViewerPr
                         onClick={() => void handleSetTTL()}
                         disabled={!newTTL.trim() || parseInt(newTTL, 10) <= 0}
                     >
-                        Set
+                        {t("redisDataViewer.setButton")}
                     </Button>
                 </div>
             </Card>
@@ -158,11 +168,15 @@ export function RedisDataViewer({ connectionId, selectedKey }: RedisDataViewerPr
                             <Card key={index} className="p-3">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <Label className="text-xs">Field</Label>
+                                        <Label className="text-xs">
+                                            {t("redisDataViewer.fieldLabel")}
+                                        </Label>
                                         <p className="text-sm">{field}</p>
                                     </div>
                                     <div>
-                                        <Label className="text-xs">Value</Label>
+                                        <Label className="text-xs">
+                                            {t("redisDataViewer.valueLabel")}
+                                        </Label>
                                         <p className="text-sm">{fieldValue}</p>
                                     </div>
                                 </div>
@@ -173,7 +187,7 @@ export function RedisDataViewer({ connectionId, selectedKey }: RedisDataViewerPr
 
                 {value.type === "none" && (
                     <div className="flex h-full items-center justify-center">
-                        <p className="text-muted-foreground">Key not found or has no value</p>
+                        <p className="text-muted-foreground">{t("redisDataViewer.emptyValue")}</p>
                     </div>
                 )}
             </ScrollArea>

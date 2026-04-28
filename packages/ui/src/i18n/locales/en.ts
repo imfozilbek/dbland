@@ -347,6 +347,25 @@ export const en = {
                 'Pattern "{{pattern}}" matched zero keys. Try a wider glob like "*" or "user:*".',
         },
     },
+    redisDataViewer: {
+        typeLabel: "Type:",
+        noExpiration: "No expiration",
+        keyNotFound: "Key not found",
+        ttlSeconds: "{{seconds}}s",
+        setTtlLabel: "Set TTL (seconds)",
+        setTtlPlaceholder: "3600",
+        setButton: "Set",
+        fieldLabel: "Field",
+        valueLabel: "Value",
+        emptyValue: "Key not found or has no value",
+    },
+    redisSlowLog: {
+        title: "Slow Log",
+        emptyTitle: "No slow queries",
+        emptyDescription:
+            "Redis hasn't recorded any commands above the slowlog threshold yet. Lower SLOWLOG GET on the server, or wait — this is a good thing.",
+        idPrefix: "ID: {{id}}",
+    },
     settings: {
         title: "Settings",
         description: "Configure your DBLand preferences",

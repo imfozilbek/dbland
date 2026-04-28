@@ -345,6 +345,25 @@ export const ru: Translations = {
                 'Шаблон "{{pattern}}" не совпал ни с одним ключом. Попробуйте более широкий шаблон, например "*" или "user:*".',
         },
     },
+    redisDataViewer: {
+        typeLabel: "Тип:",
+        noExpiration: "Без срока",
+        keyNotFound: "Ключ не найден",
+        ttlSeconds: "{{seconds}} с",
+        setTtlLabel: "Установить TTL (секунды)",
+        setTtlPlaceholder: "3600",
+        setButton: "Установить",
+        fieldLabel: "Поле",
+        valueLabel: "Значение",
+        emptyValue: "Ключ не найден или не имеет значения",
+    },
+    redisSlowLog: {
+        title: "Slow Log",
+        emptyTitle: "Медленных запросов нет",
+        emptyDescription:
+            "Redis ещё не записал ни одной команды, превысившей порог slowlog. Понизьте порог через SLOWLOG GET на сервере или просто подождите — это хороший знак.",
+        idPrefix: "ID: {{id}}",
+    },
     settings: {
         title: "Настройки",
         description: "Настройте параметры DBLand",
