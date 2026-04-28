@@ -24,6 +24,27 @@ export interface GeospatialQueryBuilderProps {
     collectionName: string | null
 }
 
+/**
+ * Parse `near`-mode coordinates from the two text fields. Empty / garbage
+ * inputs would otherwise pass NaN to the backend, which fails with an
+ * opaque MongoDB error. Returns either `{ ok: true }` with the parsed
+ * pair or `{ ok: false }` with a user-visible error string.
+ */
+function parseNearCoordinates(
+    longitude: string,
+    latitude: string,
+): { ok: true; coordinates: [number, number] } | { ok: false; error: string } {
+    const lon = parseFloat(longitude)
+    const lat = parseFloat(latitude)
+    if (Number.isNaN(lon) || Number.isNaN(lat)) {
+        return { ok: false, error: "Longitude and latitude must be valid numbers" }
+    }
+    if (lon < -180 || lon > 180 || lat < -90 || lat > 90) {
+        return { ok: false, error: "Coordinates out of range (longitude ±180, latitude ±90)" }
+    }
+    return { ok: true, coordinates: [lon, lat] }
+}
+
 export function GeospatialQueryBuilder({
     connectionId,
     databaseName,
@@ -77,7 +98,13 @@ export function GeospatialQueryBuilder({
 
         let coordinates: number[]
         if (queryType === "near") {
-            coordinates = [parseFloat(longitude), parseFloat(latitude)]
+            const parsed = parseNearCoordinates(longitude, latitude)
+            if (!parsed.ok) {
+                setError(parsed.error)
+                setIsLoading(false)
+                return
+            }
+            coordinates = parsed.coordinates
         } else {
             try {
                 coordinates = JSON.parse(polygonCoords) as number[]
@@ -99,6 +126,12 @@ export function GeospatialQueryBuilder({
             }
         }
 
+        // Same NaN-trap reasoning as for coordinates: silently sending NaN
+        // through means an unhelpful backend error. Drop bad values to
+        // `undefined` so the backend just omits the bound.
+        const maxDistanceNum = maxDistance ? parseInt(maxDistance, 10) : undefined
+        const minDistanceNum = minDistance ? parseInt(minDistance, 10) : undefined
+
         platform
             .executeGeospatialQuery({
                 connectionId,
@@ -107,8 +140,8 @@ export function GeospatialQueryBuilder({
                 field,
                 geoType: queryType,
                 coordinates,
-                maxDistance: maxDistance ? parseInt(maxDistance) : undefined,
-                minDistance: minDistance ? parseInt(minDistance) : undefined,
+                maxDistance: Number.isFinite(maxDistanceNum) ? maxDistanceNum : undefined,
+                minDistance: Number.isFinite(minDistanceNum) ? minDistanceNum : undefined,
                 additionalFilter: filter,
             })
             .then((data) => {
