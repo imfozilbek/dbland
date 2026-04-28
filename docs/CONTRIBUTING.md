@@ -15,13 +15,13 @@ Thank you for your interest in contributing to DBLand! This document provides gu
 
 - Node.js >= 22.0.0
 - Rust (stable)
-- pnpm 8.x
+- pnpm >= 9.0.0 (the repo's `packageManager` field pins 9.15.0)
 
 ### Development Setup
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/samiyev/dbland.git
+git clone https://github.com/imfozilbek/dbland.git
 cd dbland
 ```
 
@@ -60,7 +60,7 @@ dbland/
 
 ### 1. Find an Issue
 
-- Check [existing issues](https://github.com/samiyev/dbland/issues)
+- Check [existing issues](https://github.com/imfozilbek/dbland/issues)
 - Look for issues labeled `good first issue` or `help wanted`
 - Or create a new issue to discuss your idea
 
@@ -192,7 +192,7 @@ Create a pull request with:
 
 To add support for a new database:
 
-1. **Create adapter interface** in `libs/core/src/domain/ports/`:
+1. **Create adapter interface** in `libs/core/src/application/ports/`:
 ```typescript
 export interface NewDbPort {
     connect(config: ConnectionConfig): Promise<void>
@@ -333,9 +333,8 @@ export const useMyStore = create<MyStore>((set) => ({
 
 ## Getting Help
 
-- Ask questions in [Discussions](https://github.com/samiyev/dbland/discussions)
-- Report bugs in [Issues](https://github.com/samiyev/dbland/issues)
-- Join our community chat (coming soon)
+- Ask questions in [Discussions](https://github.com/imfozilbek/dbland/discussions)
+- Report bugs in [Issues](https://github.com/imfozilbek/dbland/issues)
 
 ## License
 

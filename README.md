@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/samiyev/dbland/main/assets/logo.png" alt="DBLand Logo" width="120" />
+  <img src="https://raw.githubusercontent.com/imfozilbek/dbland/main/assets/logo.png" alt="DBLand Logo" width="120" />
 </p>
 
 <h1 align="center">DBLand</h1>
@@ -17,10 +17,10 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-brightgreen.svg" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.1.0-brightgreen.svg" alt="Version" />
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue.svg" alt="Platform" />
   <img src="https://img.shields.io/badge/MongoDB-Full%20Support-brightgreen.svg" alt="MongoDB" />
-  <img src="https://img.shields.io/badge/Redis-Full%20Support-brightgreen.svg" alt="Redis" />
+  <img src="https://img.shields.io/badge/Redis-Supported-brightgreen.svg" alt="Redis" />
   <img src="https://img.shields.io/badge/SSH-Tunneling-blue.svg" alt="SSH" />
 </p>
 
@@ -65,22 +65,33 @@ DBLand is a modern, cross-platform database client for NoSQL databases. Built wi
 - **Index Management** — Create, drop, and monitor indexes with statistics
 - **Keyboard Shortcuts** — Efficient workflow navigation
 
-### ✅ Redis Support (Full)
+### ✅ Redis Support
 - **Key Browser** — Pattern-based search with SCAN command
 - **Data Viewers** — String, List, Set, Hash, Sorted Set viewers
 - **TTL Management** — View and set expiration times
 - **Slow Log** — Monitor slow queries with performance metrics
 - **Type Detection** — Automatic detection of key data types
 
+### 🆕 v1.1.0 — Enhanced MongoDB
+- **Database Profiler** — system.profile read, level / threshold control
+- **Collection Statistics** — count, size, index breakdown, sharding info
+- **Geospatial Query Builder** — $near, $geoWithin, $geoIntersects
+- **GridFS File Browser** — list, metadata, download, delete
+- **Replica Set Monitor** — members, health, replication lag
+- **Sharding Dashboard** — shards, sharded collections, chunk distribution
+
 ### 🔄 Coming Soon
-- **Web Version** — Use in browser with WebSocket proxy
+- **CSV / BSON import-export** — only JSON ships today
+- **Pub/Sub real-time monitor** — Redis pub/sub viewer
+- **Web Version** — full client in the browser via a WebSocket proxy
+  (the Vite web build today is a UI shell with a stub `PlatformAPI`)
 - **More Databases** — Elasticsearch, Cassandra, CouchDB, DynamoDB, Neo4j
 
 ## Installation
 
 ### Download
 
-Download the latest release for your platform from the [Releases](https://github.com/samiyev/dbland/releases) page.
+Download the latest release for your platform from the [Releases](https://github.com/imfozilbek/dbland/releases) page.
 
 | Platform | Download |
 |----------|----------|
@@ -99,7 +110,7 @@ Requirements:
 
 ```bash
 # Clone the repository
-git clone https://github.com/samiyev/dbland.git
+git clone https://github.com/imfozilbek/dbland.git
 cd dbland
 
 # Install dependencies
@@ -178,11 +189,18 @@ See [ROADMAP.md](ROADMAP.md) for the full product roadmap.
 
 - [x] **v0.1.0** — Foundation (monorepo, UI components, Tauri shell)
 - [x] **v0.2.0** — Core Connectivity (MongoDB/Redis adapters, connection storage)
-- [ ] **v0.3.0** — Basic UI (connection manager, schema browser, query editor)
-- [ ] **v0.4.0** — Query Features (history, autocomplete, formatting)
-- [ ] **v0.5.0** — Document Editing
-- [ ] **v0.6.0** — Import/Export
-- [ ] **v1.0.0** — Production Release
+- [x] **v0.3.0** — Basic UI (connection manager, schema browser, query editor)
+- [x] **v0.4.0** — Query Features (history, autocomplete, formatting)
+- [x] **v0.5.0** — Document Editing
+- [x] **v0.6.0** — Import/Export (🟡 JSON only; CSV / BSON deferred)
+- [x] **v0.7.0** — Aggregation Builder
+- [x] **v0.8.0** — Index Manager
+- [x] **v0.9.0** — SSH & Advanced Connectivity
+- [x] **v0.10.0** — Redis Features (🟡 Pub/Sub deferred to v1.2.0)
+- [x] **v1.0.0** — Production Release
+- [x] **v1.1.0** — Enhanced MongoDB Features
+- [ ] **v1.2.0** — Enhanced Redis Features (Pub/Sub, Cluster, Sentinel, Streams)
+- [ ] **v1.3.0** — Web Version (browser-based via WebSocket proxy)
 
 ## Contributing
 
@@ -215,5 +233,5 @@ We welcome contributions!
 ---
 
 <p align="center">
-  Made with ❤️ by <a href="https://github.com/samiyev">Fozilbek Samiyev</a>
+  Made with ❤️ by <a href="https://github.com/imfozilbek">Fozilbek Samiyev</a>
 </p>
