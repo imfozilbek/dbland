@@ -17,6 +17,7 @@ import { Label } from "../ui/label"
 import { Input } from "../ui/input"
 import { Textarea } from "../ui/textarea"
 import { ScrollArea } from "../ui/scroll-area"
+import { Skeleton } from "../ui/skeleton"
 
 export interface DocumentEditorDialogProps {
     open: boolean
@@ -217,8 +218,20 @@ export function DocumentEditorDialog({
                 )}
 
                 {isLoading ? (
-                    <div className="flex items-center justify-center p-8 text-[var(--muted-foreground)]">
-                        Loading…
+                    <div className="space-y-3 p-2">
+                        <Skeleton className="h-9 w-32" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-9 w-full" />
+                        </div>
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-9 w-full" />
+                        </div>
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-24 w-full" />
+                        </div>
                     </div>
                 ) : (
                     <Tabs defaultValue="form" className="w-full">

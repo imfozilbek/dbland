@@ -3,6 +3,7 @@ import { Card } from "../ui/card"
 import { Label } from "../ui/label"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
+import { Skeleton } from "../ui/skeleton"
 import { ScrollArea } from "../ui/scroll-area"
 import { Clock } from "lucide-react"
 import { type RedisValue, usePlatform } from "../../contexts/PlatformContext"
@@ -53,8 +54,13 @@ export function RedisDataViewer({ connectionId, selectedKey }: RedisDataViewerPr
 
     if (isLoading) {
         return (
-            <div className="flex h-full items-center justify-center">
-                <p className="text-muted-foreground">Loading…</p>
+            <div className="flex h-full flex-col gap-4 p-4">
+                <div className="flex items-center justify-between">
+                    <Skeleton className="h-5 w-48" />
+                    <Skeleton className="h-4 w-20" />
+                </div>
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-48 w-full" />
             </div>
         )
     }

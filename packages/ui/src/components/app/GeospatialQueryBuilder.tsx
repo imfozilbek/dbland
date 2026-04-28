@@ -285,7 +285,7 @@ export function GeospatialQueryBuilder({
                 )}
 
                 <Button onClick={handleExecute} disabled={isLoading} className="w-full">
-                    {isLoading ? "Executing..." : "Execute Query"}
+                    {isLoading ? "Executing…" : "Execute Query"}
                 </Button>
             </div>
 
