@@ -79,23 +79,34 @@ export function ResultsJson({ documents }: ResultsJsonProps): JSX.Element {
 }
 
 /**
- * Simple JSON syntax highlighting
+ * Simple JSON syntax highlighting.
+ *
+ * Walks the split tokens once and tracks the running offset into `json`,
+ * so deciding whether a string is a key or a value is a single character
+ * lookup at a known position. The previous version called
+ * `json.indexOf(part)` per string, which was O(n·m) and — worse —
+ * misclassified value strings that happened to equal an earlier key
+ * (indexOf always returns the *first* match).
  */
 function highlightJson(json: string): JSX.Element {
     const parts = json.split(
         /("(?:\\.|[^"\\])*"|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
     )
 
+    let offset = 0
     return (
         <>
             {parts.map((part, index) => {
+                const startedAt = offset
+                offset += part.length
+
                 if (!part) {
                     return null
                 }
 
                 // String
                 if (part.startsWith('"')) {
-                    const isKey = json[json.indexOf(part) + part.length] === ":"
+                    const isKey = json[startedAt + part.length] === ":"
                     return (
                         <span key={index} className={isKey ? "syntax-property" : "syntax-string"}>
                             {part}
