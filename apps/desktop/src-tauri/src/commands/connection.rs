@@ -25,6 +25,37 @@ pub struct ConnectionConfigDto {
 }
 
 impl ConnectionConfigDto {
+    /// Reject obviously invalid inputs at the IPC boundary so we don't
+    /// hand them to the driver and surface a confusing vendor error
+    /// later. Specifically:
+    ///   - empty / whitespace-only host (`mongodb://:27017` would be
+    ///     parsed by the driver as "host = empty string" and fail with
+    ///     a generic "DNS resolution failed");
+    ///   - port `0` (technically valid as a u16 but never a real
+    ///     outbound connection target — almost always a "user cleared
+    ///     the field" sign);
+    ///   - empty / whitespace-only name (saved connections need a
+    ///     non-blank label or the picker becomes a row of empty strings).
+    ///
+    /// Unknown `db_type` is reported with the same shape so the caller
+    /// gets one consistent "validation failed: …" pattern instead of a
+    /// mix of `Option::None` and ad-hoc format strings.
+    fn validate(&self) -> Result<(), String> {
+        if self.name.trim().is_empty() {
+            return Err("Connection name must not be empty".to_string());
+        }
+        if self.host.trim().is_empty() {
+            return Err("Connection host must not be empty".to_string());
+        }
+        if self.port == 0 {
+            return Err("Connection port must be between 1 and 65535".to_string());
+        }
+        if DatabaseType::from_str(&self.db_type).is_none() {
+            return Err(format!("Unsupported database type: {}", self.db_type));
+        }
+        Ok(())
+    }
+
     fn to_pool_config(&self, id: String) -> Option<ConnectionConfig> {
         let db_type = DatabaseType::from_str(&self.db_type)?;
 
@@ -98,6 +129,8 @@ pub async fn test_connection(
     state: State<'_, Arc<AppState>>,
     config: ConnectionConfigDto,
 ) -> Result<TestConnectionResult, String> {
+    config.validate()?;
+
     let id = config.id.clone().unwrap_or_else(|| "test".to_string());
 
     let pool_config = config
@@ -207,6 +240,8 @@ pub async fn save_connection(
     state: State<'_, Arc<AppState>>,
     config: ConnectionConfigDto,
 ) -> Result<ConnectionDto, String> {
+    config.validate()?;
+
     let now = chrono::Utc::now().to_rfc3339();
     let id = config
         .id
@@ -273,4 +308,62 @@ pub async fn delete_connection(
     }
 
     Ok(deleted)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn valid() -> ConnectionConfigDto {
+        ConnectionConfigDto {
+            id: None,
+            name: "prod".to_string(),
+            db_type: "mongodb".to_string(),
+            host: "db.local".to_string(),
+            port: 27017,
+            username: None,
+            password: None,
+            database: None,
+            auth_database: None,
+            tls: None,
+            ssh: None,
+        }
+    }
+
+    #[test]
+    fn validate_accepts_a_well_formed_config() {
+        assert!(valid().validate().is_ok());
+    }
+
+    #[test]
+    fn validate_rejects_empty_name() {
+        let mut c = valid();
+        c.name = "   ".to_string();
+        let err = c.validate().unwrap_err();
+        assert!(err.contains("name"), "got: {}", err);
+    }
+
+    #[test]
+    fn validate_rejects_empty_host() {
+        let mut c = valid();
+        c.host = "".to_string();
+        let err = c.validate().unwrap_err();
+        assert!(err.contains("host"), "got: {}", err);
+    }
+
+    #[test]
+    fn validate_rejects_port_zero() {
+        let mut c = valid();
+        c.port = 0;
+        let err = c.validate().unwrap_err();
+        assert!(err.contains("port"), "got: {}", err);
+    }
+
+    #[test]
+    fn validate_rejects_unknown_db_type() {
+        let mut c = valid();
+        c.db_type = "cassandra".to_string();
+        let err = c.validate().unwrap_err();
+        assert!(err.contains("Unsupported database type"), "got: {}", err);
+    }
 }
