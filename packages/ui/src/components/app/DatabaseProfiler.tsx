@@ -217,12 +217,20 @@ export function DatabaseProfiler({
             return
         }
 
-        const level = parseInt(selectedLevel)
-        const slowMsValue = level === 1 ? parseInt(slowMs) : undefined
+        const level = parseInt(selectedLevel, 10)
+        const parsedSlowMs = parseInt(slowMs, 10)
+        // Only forward a slow-ms threshold when level is "slow only" (1) and
+        // the user actually typed a sane positive integer — otherwise the
+        // backend gets NaN and rejects the whole call.
+        const slowMsValue =
+            level === 1 && Number.isFinite(parsedSlowMs) && parsedSlowMs > 0
+                ? parsedSlowMs
+                : undefined
 
         platform
             .setProfilerLevel(connectionId, databaseName, level, slowMsValue)
             .then(() => {
+                toast.success("Profiler level updated")
                 loadProfilerLevel()
                 if (level > 0) {
                     loadProfilerData(100)
@@ -230,6 +238,9 @@ export function DatabaseProfiler({
             })
             .catch((err: unknown) => {
                 console.error("Failed to set profiler level:", err)
+                toast.error("Failed to set profiler level", {
+                    description: err instanceof Error ? err.message : "Unknown error",
+                })
             })
     }
 
