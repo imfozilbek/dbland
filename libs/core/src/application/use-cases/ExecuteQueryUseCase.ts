@@ -1,5 +1,6 @@
 import {
     createQueryHistoryEntry,
+    getQueryLanguage,
     QueryHistoryEntry,
     QueryLanguage,
 } from "../../domain/entities/Query"
@@ -35,6 +36,29 @@ export interface ExecuteQueryOutput {
 }
 
 /**
+ * Build the standard "fail-fast" output shape for the three pre-flight
+ * gates (no adapter, not connected, language mismatch). Centralised
+ * here so the use case's main `execute` method stays under the
+ * `max-lines-per-function` cap and the three guards share a single
+ * shape — not three slightly-different copies that drift over time.
+ */
+function failFast(
+    connectionId: string,
+    query: string,
+    language: QueryLanguage,
+    error: string,
+): ExecuteQueryOutput {
+    const result = createErrorQueryResult(error)
+    const historyEntry = createQueryHistoryEntry(query, language, 0, false, { error })
+    return {
+        success: false,
+        result,
+        historyEntry,
+        events: [createQueryFailedEvent(connectionId, query, error)],
+    }
+}
+
+/**
  * Execute query use case
  */
 export class ExecuteQueryUseCase {
@@ -54,37 +78,42 @@ export class ExecuteQueryUseCase {
         // Get adapter for this connection
         const adapter = this.getAdapter(input.connectionId)
         if (!adapter) {
-            const error = `No active connection: ${input.connectionId}`
-            const result = createErrorQueryResult(error)
-            const historyEntry = createQueryHistoryEntry(input.query, input.language, 0, false, {
-                error,
-            })
-
-            events.push(createQueryFailedEvent(input.connectionId, input.query, error))
-
-            return {
-                success: false,
-                result,
-                historyEntry,
-                events,
-            }
+            return failFast(
+                input.connectionId,
+                input.query,
+                input.language,
+                `No active connection: ${input.connectionId}`,
+            )
         }
 
         if (!adapter.isConnected) {
-            const error = "Connection is not active"
-            const result = createErrorQueryResult(error)
-            const historyEntry = createQueryHistoryEntry(input.query, input.language, 0, false, {
-                error,
+            return failFast(
+                input.connectionId,
+                input.query,
+                input.language,
+                "Connection is not active",
+            )
+        }
+
+        // Reject obvious cross-engine query/connection mismatches before
+        // spending a network round trip on it. Sending a Mongo `find`
+        // payload to a Redis adapter (or vice versa) used to leak through
+        // and surface as a vendor parser error from the wire — typed
+        // gate here means the UI gets a clear "you picked the wrong
+        // editor language" signal instead.
+        const expectedLanguage = getQueryLanguage(adapter.type)
+        if (input.language !== expectedLanguage) {
+            this.logger.warn("Query language mismatch", {
+                connectionId: input.connectionId,
+                expected: expectedLanguage,
+                got: input.language,
             })
-
-            events.push(createQueryFailedEvent(input.connectionId, input.query, error))
-
-            return {
-                success: false,
-                result,
-                historyEntry,
-                events,
-            }
+            return failFast(
+                input.connectionId,
+                input.query,
+                input.language,
+                `Query language ${input.language} is not compatible with ${adapter.type} connection (expected ${expectedLanguage})`,
+            )
         }
 
         try {

@@ -36,6 +36,7 @@ export * from "./infrastructure/adapters/InMemoryAdapterRegistry"
 
 // Application - Use Cases
 export * from "./application/use-cases/ConnectToDatabaseUseCase"
+export * from "./application/use-cases/DisconnectFromDatabaseUseCase"
 export * from "./application/use-cases/ExecuteQueryUseCase"
 export * from "./application/use-cases/GetSchemaUseCase"
 

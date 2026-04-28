@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { ExecuteQueryUseCase } from "./ExecuteQueryUseCase"
 import { QueryLanguage } from "../../domain/entities/Query"
+import { DatabaseType } from "../../domain/value-objects/DatabaseType"
 import { makeAdapterStub, makeQueryResult } from "./test-helpers"
 
 describe("ExecuteQueryUseCase", () => {
@@ -84,6 +85,53 @@ describe("ExecuteQueryUseCase", () => {
         expect(out.success).toBe(false)
         expect(out.events[0].type).toBe("query.failed")
         expect(out.historyEntry.error).toBe("syntax error near $")
+    })
+
+    it("rejects a Mongo query against a Redis adapter without dialing the wire", async () => {
+        // The adapter is Redis-typed; the user submits a MongoDB query
+        // (perhaps the editor language was left wrong). Use case must
+        // short-circuit with a typed mismatch error before the network
+        // round trip — otherwise the user sees a Redis parser error
+        // about an unrecognised "{" command.
+        const executeSpy = vi.fn()
+        const adapter = makeAdapterStub({
+            type: DatabaseType.Redis,
+            isConnected: true,
+            executeQuery: executeSpy,
+        })
+        const useCase = new ExecuteQueryUseCase(() => adapter)
+
+        const out = await useCase.execute({
+            connectionId: "c1",
+            query: "{ name: 'a' }",
+            language: QueryLanguage.MongoDB,
+        })
+
+        expect(out.success).toBe(false)
+        expect(out.result.error).toMatch(/not compatible/)
+        expect(out.events[0].type).toBe("query.failed")
+        // Critical: the adapter was never asked to execute.
+        expect(executeSpy).not.toHaveBeenCalled()
+    })
+
+    it("rejects a Redis CLI query against a MongoDB adapter symmetrically", async () => {
+        const executeSpy = vi.fn()
+        const adapter = makeAdapterStub({
+            type: DatabaseType.MongoDB,
+            isConnected: true,
+            executeQuery: executeSpy,
+        })
+        const useCase = new ExecuteQueryUseCase(() => adapter)
+
+        const out = await useCase.execute({
+            connectionId: "c1",
+            query: "KEYS *",
+            language: QueryLanguage.RedisCLI,
+        })
+
+        expect(out.success).toBe(false)
+        expect(out.result.error).toMatch(/not compatible/)
+        expect(executeSpy).not.toHaveBeenCalled()
     })
 
     it("turns thrown adapter errors into a failed result without leaking the exception", async () => {
