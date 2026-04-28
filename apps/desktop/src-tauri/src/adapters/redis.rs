@@ -148,7 +148,19 @@ impl DatabaseAdapter for RedisAdapter {
     }
 
     fn is_connected(&self) -> bool {
-        true
+        // Reflect the actual stored connection state instead of always
+        // returning `true`. The previous version was a footgun: any caller
+        // using `is_connected()` as a precondition gate (the trait
+        // contract suggests this is what it is for) got a false positive
+        // even after `disconnect()` had cleared the inner client.
+        // `try_read` keeps the check non-blocking; if a writer is in
+        // flight (a concurrent connect/disconnect), we err on the
+        // pessimistic side and report not-connected — which matches the
+        // user-visible meaning of "is the connection currently usable".
+        self.connection
+            .try_read()
+            .map(|guard| guard.is_some())
+            .unwrap_or(false)
     }
 
     async fn get_databases(&self) -> Result<Vec<DatabaseInfo>, AdapterError> {
@@ -209,18 +221,51 @@ impl DatabaseAdapter for RedisAdapter {
             .await
             .map_err(|e| AdapterError::QueryFailed(e.to_string()))?;
 
-        // Get all keys (with pattern matching for grouping)
-        let keys: Vec<String> = conn
-            .keys("*")
-            .await
-            .map_err(|e| AdapterError::QueryFailed(e.to_string()))?;
+        // Walk the keyspace via SCAN, never KEYS.
+        //
+        // KEYS * is O(N) over the entire keyspace and blocks the whole
+        // server thread while it runs — on a production cache with
+        // millions of keys it freezes everything. Redis' own docs say
+        // "use it in production environments with extreme care."
+        // SCAN is the cursor-based replacement: each iteration returns
+        // a small batch and yields between iterations so other clients
+        // aren't starved.
+        //
+        // We cap the walk at SCAN_KEY_CAP entries so the schema browser
+        // can't accidentally pull a 10M-key cache into memory just to
+        // count prefixes. If the cap is hit, the panel surfaces "first N
+        // of unknown total" copy in the UI so the user knows the
+        // grouping isn't exhaustive.
+        const SCAN_KEY_CAP: usize = 5_000;
+        const SCAN_BATCH: usize = 500;
 
-        // Group keys by prefix (before first : or entire key)
         let mut prefixes: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
+        let mut total_scanned: usize = 0;
+        let mut cursor: u64 = 0;
 
-        for key in &keys {
-            let prefix = key.split(':').next().unwrap_or(key).to_string();
-            *prefixes.entry(prefix).or_insert(0) += 1;
+        loop {
+            let (next_cursor, batch): (u64, Vec<String>) = redis::cmd("SCAN")
+                .arg(cursor)
+                .arg("COUNT")
+                .arg(SCAN_BATCH)
+                .query_async(&mut conn)
+                .await
+                .map_err(|e| AdapterError::QueryFailed(e.to_string()))?;
+
+            for key in &batch {
+                let prefix = key.split(':').next().unwrap_or(key).to_string();
+                *prefixes.entry(prefix).or_insert(0) += 1;
+            }
+
+            total_scanned += batch.len();
+            cursor = next_cursor;
+
+            // SCAN ends when the cursor wraps back to 0; we also bail
+            // out when we've collected enough to give the user a useful
+            // grouping without dragging the whole keyspace through.
+            if cursor == 0 || total_scanned >= SCAN_KEY_CAP {
+                break
+            }
         }
 
         let collections: Vec<CollectionInfo> = prefixes
