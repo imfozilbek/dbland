@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use redis::{aio::MultiplexedConnection, AsyncCommands, Client};
+use redis::{aio::MultiplexedConnection, Client};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 

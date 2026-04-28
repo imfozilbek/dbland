@@ -1,4 +1,3 @@
-use crate::state::ConnectionPool;
 use crate::AppState;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;

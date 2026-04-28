@@ -1,8 +1,9 @@
+use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use ssh2::Session;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::thread;
 use thiserror::Error;
 
@@ -100,7 +101,7 @@ impl SSHTunnel {
         let active = Arc::clone(&self.active);
 
         // Set active flag
-        *active.lock().unwrap() = true;
+        *active.lock() = true;
 
         // Spawn tunnel thread
         thread::spawn(move || {
@@ -114,7 +115,7 @@ impl SSHTunnel {
                 // Log only the error variant name, never the full payload
                 // (it may contain host/user details that are sensitive in shared logs).
                 log::warn!("ssh tunnel terminated: {}", error_kind(&e));
-                *active.lock().unwrap() = false;
+                *active.lock() = false;
             }
         });
 
@@ -123,12 +124,7 @@ impl SSHTunnel {
 
     /// Stop the SSH tunnel
     pub fn stop(&mut self) {
-        *self.active.lock().unwrap() = false;
-    }
-
-    /// Check if tunnel is active
-    pub fn is_active(&self) -> bool {
-        *self.active.lock().unwrap()
+        *self.active.lock() = false;
     }
 
     /// Run the tunnel (internal)
@@ -196,7 +192,7 @@ impl SSHTunnel {
         let listener = TcpListener::bind(format!("127.0.0.1:{}", local_port))?;
 
         // Accept connections and forward through SSH
-        while *active.lock().unwrap() {
+        while *active.lock() {
             if let Ok((mut local_stream, _)) = listener.accept() {
                 // Create SSH channel
                 let mut channel = session

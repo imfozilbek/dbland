@@ -1,6 +1,5 @@
-use crate::adapters::mongodb::MongoDbAdapter;
 use crate::AppState;
-use mongodb::bson::{doc, Document};
+use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::State;
