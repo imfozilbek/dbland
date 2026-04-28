@@ -103,107 +103,28 @@ impl Crypto {
     }
 }
 
-/// Base64 encode
+/// Base64 encode using the standard `base64` crate.
+///
+/// The previous version was a hand-rolled encoder + custom `Write`
+/// adapter (~100 lines) plus a decoder that silently mapped invalid
+/// bytes to `0` (`_ => 0` in the match). Neither is worth maintaining
+/// when AES-GCM keys and encrypted credentials flow through it — the
+/// crate is 30kB, fuzz-tested, and rejects malformed input cleanly.
 fn base64_encode(data: &[u8]) -> String {
-    use std::io::Write;
-    let mut buf = Vec::new();
-    {
-        let mut encoder = base64_writer(&mut buf);
-        encoder.write_all(data).unwrap();
-    }
-    String::from_utf8(buf).unwrap()
+    use base64::engine::general_purpose::STANDARD;
+    use base64::Engine as _;
+    STANDARD.encode(data)
 }
 
-/// Base64 decode
+/// Base64 decode using the standard `base64` crate. Invalid input
+/// surfaces as `CryptoError::InvalidKey` instead of being silently
+/// coerced to zero bits.
 fn base64_decode(s: &str) -> Result<Vec<u8>, CryptoError> {
-    let mut result = Vec::new();
-    for chunk in s.as_bytes().chunks(4) {
-        let mut buf = [0u8; 4];
-        let len = chunk.len().min(4);
-        buf[..len].copy_from_slice(&chunk[..len]);
-
-        // Decode 4 base64 chars to 3 bytes
-        let vals: Vec<u8> = buf[..len]
-            .iter()
-            .filter(|&&c| c != b'=')
-            .map(|&c| match c {
-                b'A'..=b'Z' => c - b'A',
-                b'a'..=b'z' => c - b'a' + 26,
-                b'0'..=b'9' => c - b'0' + 52,
-                b'+' => 62,
-                b'/' => 63,
-                _ => 0,
-            })
-            .collect();
-
-        match vals.len() {
-            2 => {
-                result.push((vals[0] << 2) | (vals[1] >> 4));
-            }
-            3 => {
-                result.push((vals[0] << 2) | (vals[1] >> 4));
-                result.push((vals[1] << 4) | (vals[2] >> 2));
-            }
-            4 => {
-                result.push((vals[0] << 2) | (vals[1] >> 4));
-                result.push((vals[1] << 4) | (vals[2] >> 2));
-                result.push((vals[2] << 6) | vals[3]);
-            }
-            _ => {}
-        }
-    }
-    Ok(result)
-}
-
-/// Simple base64 encoder writer
-fn base64_writer(output: &mut Vec<u8>) -> Base64Writer<'_> {
-    Base64Writer { output, buffer: 0, bits: 0 }
-}
-
-struct Base64Writer<'a> {
-    output: &'a mut Vec<u8>,
-    buffer: u32,
-    bits: u8,
-}
-
-impl<'a> std::io::Write for Base64Writer<'a> {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-        for &byte in buf {
-            self.buffer = (self.buffer << 8) | (byte as u32);
-            self.bits += 8;
-
-            while self.bits >= 6 {
-                self.bits -= 6;
-                let idx = ((self.buffer >> self.bits) & 0x3F) as usize;
-                self.output.push(CHARS[idx]);
-            }
-        }
-
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        if self.bits > 0 {
-            const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-            let idx = ((self.buffer << (6 - self.bits)) & 0x3F) as usize;
-            self.output.push(CHARS[idx]);
-
-            // Add padding
-            let padding = (3 - (self.bits / 8 + 1) % 3) % 3;
-            for _ in 0..padding {
-                self.output.push(b'=');
-            }
-        }
-        Ok(())
-    }
-}
-
-impl<'a> Drop for Base64Writer<'a> {
-    fn drop(&mut self) {
-        let _ = std::io::Write::flush(self);
-    }
+    use base64::engine::general_purpose::STANDARD;
+    use base64::Engine as _;
+    STANDARD
+        .decode(s)
+        .map_err(|e| CryptoError::DecryptionFailed(format!("invalid base64: {e}")))
 }
 
 #[cfg(test)]

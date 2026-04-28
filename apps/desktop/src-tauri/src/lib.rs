@@ -145,14 +145,32 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
+            // Each step that previously called `.expect(...)` now
+            // propagates a `Box<dyn Error>` through the `?` operator —
+            // any failure (read-only home, locked Linux Secret Service,
+            // disk full, corrupt SQLite) lands on Tauri's setup-error
+            // path which logs the cause and refuses to bring up the
+            // window, instead of dumping a Rust panic ("DBLand quit
+            // unexpectedly") with no recourse for the user.
+            //
+            // Once we have a startup-error UI surface, the catch site
+            // can route through that. For now `Err(...)` from `setup`
+            // already prevents window creation, which is the right
+            // outcome — half-initialised state running queries against
+            // a missing keychain is worse than a clean refusal.
+
             // Get app data directory for storage
-            let app_data_dir = app
-                .path()
-                .app_data_dir()
-                .expect("Failed to get app data directory");
+            let app_data_dir = app.path().app_data_dir().map_err(|e| -> Box<dyn std::error::Error> {
+                Box::from(format!("Failed to get app data directory: {e}"))
+            })?;
 
             // Create directory if it doesn't exist
-            std::fs::create_dir_all(&app_data_dir).expect("Failed to create app data directory");
+            std::fs::create_dir_all(&app_data_dir).map_err(|e| -> Box<dyn std::error::Error> {
+                Box::from(format!(
+                    "Failed to create app data directory at {}: {e}",
+                    app_data_dir.display()
+                ))
+            })?;
 
             // Master key now lives in the OS keychain (migrated from `.key` if present).
             let key = load_or_create_master_key(&app_data_dir);
@@ -160,17 +178,25 @@ pub fn run() {
             // Initialize storage
             let db_path = app_data_dir.join("connections.db");
             let storage = ConnectionStorage::new(db_path, &key)
-                .expect("Failed to initialize connection storage");
+                .map_err(|e| -> Box<dyn std::error::Error> {
+                    Box::from(format!("Failed to initialize connection storage: {e}"))
+                })?;
 
             // Initialize query history storage
             let history_db_path = app_data_dir.join("query_history.db");
-            let query_history = QueryHistoryStorage::new(history_db_path)
-                .expect("Failed to initialize query history storage");
+            let query_history = QueryHistoryStorage::new(history_db_path).map_err(
+                |e| -> Box<dyn std::error::Error> {
+                    Box::from(format!("Failed to initialize query history storage: {e}"))
+                },
+            )?;
 
             // Initialize saved queries storage
             let saved_queries_db_path = app_data_dir.join("saved_queries.db");
-            let saved_queries = SavedQueriesStorage::new(saved_queries_db_path)
-                .expect("Failed to initialize saved queries storage");
+            let saved_queries = SavedQueriesStorage::new(saved_queries_db_path).map_err(
+                |e| -> Box<dyn std::error::Error> {
+                    Box::from(format!("Failed to initialize saved queries storage: {e}"))
+                },
+            )?;
 
             // Initialize connection pool
             let pool = ConnectionPool::new();
