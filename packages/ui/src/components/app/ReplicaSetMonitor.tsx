@@ -5,12 +5,16 @@ import { Button } from "../ui/button"
 import { Card } from "../ui/card"
 import { ScrollArea } from "../ui/scroll-area"
 import { Activity, ArrowRight, CheckCircle, RefreshCw, Server, XCircle } from "lucide-react"
+import { useT } from "../../i18n"
+
+type T = ReturnType<typeof useT>
 
 export interface ReplicaSetMonitorProps {
     connectionId: string | null
 }
 
 export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [status, setStatus] = useState<ReplicaSetStatus | null>(null)
     const [isLoading, setIsLoading] = useState(false)
@@ -47,7 +51,7 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
             })
             .catch((err: unknown) => {
                 console.error("Failed to get replica set status:", err)
-                setError(err instanceof Error ? err.message : "Failed to load replica set status")
+                setError(err instanceof Error ? err.message : t("replicaSet.loadFailed"))
             })
             .finally(() => {
                 setIsLoading(false)
@@ -67,17 +71,23 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
 
     const getHealthIcon = (health: number): JSX.Element => {
         return health === 1 ? (
-            <CheckCircle className="h-4 w-4 text-[var(--success)]" aria-label="Member healthy" />
+            <CheckCircle
+                className="h-4 w-4 text-[var(--success)]"
+                aria-label={t("replicaSet.memberHealthyAria")}
+            />
         ) : (
-            <XCircle className="h-4 w-4 text-[var(--destructive)]" aria-label="Member unhealthy" />
+            <XCircle
+                className="h-4 w-4 text-[var(--destructive)]"
+                aria-label={t("replicaSet.memberUnhealthyAria")}
+            />
         )
     }
 
-    const formatUptime = (seconds: number): string => {
+    const formatUptime = (seconds: number, tt: T): string => {
         const days = Math.floor(seconds / 86400)
         const hours = Math.floor((seconds % 86400) / 3600)
         const minutes = Math.floor((seconds % 3600) / 60)
-        return `${days}d ${hours}h ${minutes}m`
+        return tt("replicaSet.uptimeFormat", { d: days, h: hours, m: minutes })
     }
 
     /**
@@ -85,27 +95,27 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
      * last applied op. Surfaces as a human-friendly duration; the colour cue is
      * carried by the surrounding state badge so this is purely informational.
      */
-    const formatLag = (now: string, secondaryOptime: string): string => {
+    const formatLag = (now: string, secondaryOptime: string, tt: T): string => {
         const lagMs = new Date(now).getTime() - new Date(secondaryOptime).getTime()
         if (Number.isNaN(lagMs) || lagMs < 0) {
-            return "—"
+            return tt("replicaSet.lagFormat.none")
         }
         if (lagMs < 1000) {
-            return `${lagMs}ms`
+            return tt("replicaSet.lagFormat.ms", { ms: lagMs })
         }
         if (lagMs < 60_000) {
-            return `${(lagMs / 1000).toFixed(1)}s`
+            return tt("replicaSet.lagFormat.s", { value: (lagMs / 1000).toFixed(1) })
         }
         const minutes = Math.floor(lagMs / 60_000)
         const seconds = Math.floor((lagMs % 60_000) / 1000)
-        return `${minutes}m ${seconds}s`
+        return tt("replicaSet.lagFormat.mAndS", { m: minutes, s: seconds })
     }
 
     if (!connectionId) {
         return (
             <div className="flex h-full items-center justify-center text-muted-foreground">
                 <Server className="mr-2 h-5 w-5" />
-                Select a connection to monitor replica set
+                {t("replicaSet.selectPrompt")}
             </div>
         )
     }
@@ -116,7 +126,7 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
                 <div className="text-destructive">{error}</div>
                 <Button onClick={loadStatus} variant="outline">
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Retry
+                    {t("replicaSet.retry")}
                 </Button>
             </div>
         )
@@ -125,7 +135,7 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
     if (isLoading && !status) {
         return (
             <div className="flex h-full items-center justify-center text-muted-foreground">
-                Loading replica set status...
+                {t("replicaSet.loading")}
             </div>
         )
     }
@@ -133,7 +143,7 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
     if (!status) {
         return (
             <div className="flex h-full items-center justify-center text-muted-foreground">
-                No replica set status available
+                {t("replicaSet.noStatus")}
             </div>
         )
     }
@@ -146,7 +156,7 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
                     <Activity className="h-5 w-5" />
                     <h2 className="text-lg font-semibold">{status.setName}</h2>
                     <Badge variant={status.ok === 1 ? "default" : "destructive"}>
-                        {status.ok === 1 ? "Healthy" : "Unhealthy"}
+                        {status.ok === 1 ? t("replicaSet.healthy") : t("replicaSet.unhealthy")}
                     </Badge>
                 </div>
                 <div className="flex items-center gap-2">
@@ -159,11 +169,11 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
                             }}
                             className="h-4 w-4"
                         />
-                        Auto-refresh (5s)
+                        {t("replicaSet.autoRefresh")}
                     </label>
                     <Button onClick={loadStatus} variant="outline" size="sm" disabled={isLoading}>
                         <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-                        Refresh
+                        {t("replicaSet.refresh")}
                     </Button>
                 </div>
             </div>
@@ -191,7 +201,9 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
                                         </div>
                                     </div>
                                     <div className="text-sm text-muted-foreground">
-                                        Uptime: {formatUptime(member.uptime)}
+                                        {t("replicaSet.uptime", {
+                                            value: formatUptime(member.uptime, t),
+                                        })}
                                     </div>
                                 </div>
 
@@ -200,22 +212,28 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
                                     {member.stateStr !== "PRIMARY" && (
                                         <div>
                                             <div className="text-muted-foreground">
-                                                Replication lag
+                                                {t("replicaSet.replicationLag")}
                                             </div>
                                             <div className="font-medium">
-                                                {formatLag(status.date, member.optimeDate)}
+                                                {formatLag(status.date, member.optimeDate, t)}
                                             </div>
                                         </div>
                                     )}
                                     {member.pingMs !== undefined && member.pingMs !== null && (
                                         <div>
-                                            <div className="text-muted-foreground">Ping</div>
-                                            <div className="font-medium">{member.pingMs}ms</div>
+                                            <div className="text-muted-foreground">
+                                                {t("replicaSet.ping")}
+                                            </div>
+                                            <div className="font-medium">
+                                                {t("replicaSet.pingMs", { ms: member.pingMs })}
+                                            </div>
                                         </div>
                                     )}
                                     {member.syncSourceHost && (
                                         <div>
-                                            <div className="text-muted-foreground">Sync Source</div>
+                                            <div className="text-muted-foreground">
+                                                {t("replicaSet.syncSource")}
+                                            </div>
                                             <div className="flex items-center gap-1 font-mono text-xs">
                                                 <ArrowRight className="h-3 w-3" />
                                                 {member.syncSourceHost}
@@ -223,13 +241,15 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
                                         </div>
                                     )}
                                     <div>
-                                        <div className="text-muted-foreground">Config Version</div>
+                                        <div className="text-muted-foreground">
+                                            {t("replicaSet.configVersion")}
+                                        </div>
                                         <div className="font-medium">{member.configVersion}</div>
                                     </div>
                                     {member.lastHeartbeat && (
                                         <div>
                                             <div className="text-muted-foreground">
-                                                Last Heartbeat
+                                                {t("replicaSet.lastHeartbeat")}
                                             </div>
                                             <div className="text-xs">
                                                 {new Date(member.lastHeartbeat).toLocaleString()}
