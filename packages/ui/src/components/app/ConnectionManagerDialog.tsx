@@ -22,6 +22,9 @@ import {
     type TestConnectionResult,
     useConnectionStore,
 } from "../../stores/connection-store"
+import { useT } from "../../i18n"
+
+type T = ReturnType<typeof useT>
 
 export interface ConnectionManagerDialogProps {
     open: boolean
@@ -83,21 +86,21 @@ function getInitialFormData(connection?: Connection): ConnectionConfig {
     }
 }
 
-function validateForm(config: ConnectionConfig): FormErrors {
+function validateForm(config: ConnectionConfig, t: T): FormErrors {
     const errors: FormErrors = {}
 
     if (!config.name.trim()) {
-        errors.name = "Connection name is required"
+        errors.name = t("connectionManager.errors.nameRequired")
     } else if (config.name.length > MAX_NAME_LENGTH) {
-        errors.name = `Name must be ${MAX_NAME_LENGTH} characters or less`
+        errors.name = t("connectionManager.errors.nameTooLong", { max: MAX_NAME_LENGTH })
     }
 
     if (!config.host.trim()) {
-        errors.host = "Host is required"
+        errors.host = t("connectionManager.errors.hostRequired")
     }
 
     if (config.port < MIN_PORT || config.port > MAX_PORT) {
-        errors.port = `Port must be between ${MIN_PORT} and ${MAX_PORT}`
+        errors.port = t("connectionManager.errors.portRange", { min: MIN_PORT, max: MAX_PORT })
     }
 
     return errors
@@ -151,10 +154,11 @@ function BasicFields({
     onTypeChange,
     updateField,
 }: BasicFieldsProps): JSX.Element {
+    const t = useT()
     const portPlaceholder = formData.type === "mongodb" ? DEFAULT_MONGODB_PORT : DEFAULT_REDIS_PORT
     return (
         <div className="grid gap-4 py-4">
-            <FormRow htmlFor="type" label="Type">
+            <FormRow htmlFor="type" label={t("connectionManager.fields.type")}>
                 <Select
                     value={formData.type}
                     onValueChange={(value: "mongodb" | "redis") => {
@@ -162,7 +166,7 @@ function BasicFields({
                     }}
                 >
                     <SelectTrigger>
-                        <SelectValue placeholder="Select database type" />
+                        <SelectValue placeholder={t("connectionManager.fields.typePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="mongodb">MongoDB</SelectItem>
@@ -171,18 +175,18 @@ function BasicFields({
                 </Select>
             </FormRow>
 
-            <FormRow htmlFor="name" label="Name" error={errors.name}>
+            <FormRow htmlFor="name" label={t("connectionManager.fields.name")} error={errors.name}>
                 <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => {
                         updateField("name", e.target.value)
                     }}
-                    placeholder="My Connection"
+                    placeholder={t("connectionManager.fields.namePlaceholder")}
                 />
             </FormRow>
 
-            <FormRow htmlFor="host" label="Host" error={errors.host}>
+            <FormRow htmlFor="host" label={t("connectionManager.fields.host")} error={errors.host}>
                 <Input
                     id="host"
                     value={formData.host}
@@ -193,7 +197,7 @@ function BasicFields({
                 />
             </FormRow>
 
-            <FormRow htmlFor="port" label="Port" error={errors.port}>
+            <FormRow htmlFor="port" label={t("connectionManager.fields.port")} error={errors.port}>
                 <Input
                     id="port"
                     type="number"
@@ -205,18 +209,18 @@ function BasicFields({
                 />
             </FormRow>
 
-            <FormRow htmlFor="username" label="Username">
+            <FormRow htmlFor="username" label={t("connectionManager.fields.username")}>
                 <Input
                     id="username"
                     value={formData.username ?? ""}
                     onChange={(e) => {
                         updateField("username", e.target.value || undefined)
                     }}
-                    placeholder="Optional"
+                    placeholder={t("connectionManager.fields.usernamePlaceholder")}
                 />
             </FormRow>
 
-            <FormRow htmlFor="password" label="Password">
+            <FormRow htmlFor="password" label={t("connectionManager.fields.password")}>
                 <Input
                     id="password"
                     type="password"
@@ -224,25 +228,29 @@ function BasicFields({
                     onChange={(e) => {
                         updateField("password", e.target.value || undefined)
                     }}
-                    placeholder={isEditMode ? "Leave empty to keep current" : "Optional"}
+                    placeholder={
+                        isEditMode
+                            ? t("connectionManager.fields.passwordPlaceholderEdit")
+                            : t("connectionManager.fields.passwordPlaceholderNew")
+                    }
                 />
             </FormRow>
 
             {formData.type === "mongodb" && (
-                <FormRow htmlFor="authDatabase" label="Auth DB">
+                <FormRow htmlFor="authDatabase" label={t("connectionManager.fields.authDatabase")}>
                     <Input
                         id="authDatabase"
                         value={formData.authDatabase ?? ""}
                         onChange={(e) => {
                             updateField("authDatabase", e.target.value || undefined)
                         }}
-                        placeholder="admin"
+                        placeholder={t("connectionManager.fields.authDatabasePlaceholder")}
                     />
                 </FormRow>
             )}
 
             {formData.type === "redis" && (
-                <FormRow htmlFor="database" label="Database">
+                <FormRow htmlFor="database" label={t("connectionManager.fields.database")}>
                     <Input
                         id="database"
                         type="number"
@@ -261,17 +269,21 @@ function BasicFields({
 }
 
 function TestResultAlert({ result }: { result: TestConnectionResult }): JSX.Element {
+    const t = useT()
     return (
         <Alert variant={result.success ? "default" : "destructive"} className="mt-4">
             <AlertTitle>
-                {result.success ? "Connection successful" : "Connection failed"}
+                {result.success
+                    ? t("connectionManager.test.success")
+                    : t("connectionManager.test.failed")}
             </AlertTitle>
             <AlertDescription>
                 {result.message}
                 {result.success && result.latencyMs !== undefined && (
                     <span className="block text-xs text-muted-foreground">
-                        Latency: {result.latencyMs}ms
-                        {result.serverVersion && ` | Server: ${result.serverVersion}`}
+                        {t("connectionManager.test.latency", { ms: result.latencyMs })}
+                        {result.serverVersion &&
+                            ` | ${t("connectionManager.test.server", { version: result.serverVersion })}`}
                     </span>
                 )}
             </AlertDescription>
@@ -285,6 +297,7 @@ export function ConnectionManagerDialog({
     connection,
     onSaved,
 }: ConnectionManagerDialogProps): JSX.Element {
+    const t = useT()
     const { testConnection, saveConnection } = useConnectionStore()
 
     const [formData, setFormData] = useState<ConnectionConfig>(() => getInitialFormData(connection))
@@ -326,7 +339,7 @@ export function ConnectionManagerDialog({
     }
 
     async function handleTest(): Promise<void> {
-        const validationErrors = validateForm(formData)
+        const validationErrors = validateForm(formData, t)
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors)
             return
@@ -344,7 +357,7 @@ export function ConnectionManagerDialog({
     }
 
     async function handleSave(): Promise<void> {
-        const validationErrors = validateForm(formData)
+        const validationErrors = validateForm(formData, t)
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors)
             return
@@ -369,20 +382,26 @@ export function ConnectionManagerDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[520px]">
                 <DialogHeader>
-                    <DialogTitle>{isEditMode ? "Edit Connection" : "New Connection"}</DialogTitle>
+                    <DialogTitle>
+                        {isEditMode
+                            ? t("connectionManager.titleEdit")
+                            : t("connectionManager.titleNew")}
+                    </DialogTitle>
                     <DialogDescription>
                         {isEditMode
-                            ? "Update your database connection settings."
-                            : "Configure a new database connection."}
+                            ? t("connectionManager.descriptionEdit")
+                            : t("connectionManager.descriptionNew")}
                     </DialogDescription>
                 </DialogHeader>
 
                 <Tabs defaultValue="basic" className="w-full">
                     <TabsList className="grid w-full grid-cols-4">
-                        <TabsTrigger value="basic">Basic</TabsTrigger>
-                        <TabsTrigger value="ssh">SSH</TabsTrigger>
-                        <TabsTrigger value="ssl">SSL/TLS</TabsTrigger>
-                        <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                        <TabsTrigger value="basic">{t("connectionManager.tabs.basic")}</TabsTrigger>
+                        <TabsTrigger value="ssh">{t("connectionManager.tabs.ssh")}</TabsTrigger>
+                        <TabsTrigger value="ssl">{t("connectionManager.tabs.ssl")}</TabsTrigger>
+                        <TabsTrigger value="advanced">
+                            {t("connectionManager.tabs.advanced")}
+                        </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="basic" className="mt-4">
@@ -445,7 +464,7 @@ export function ConnectionManagerDialog({
                         }}
                         disabled={isLoading}
                     >
-                        Cancel
+                        {t("common.cancel")}
                     </Button>
                     <Button
                         variant="secondary"
@@ -454,7 +473,9 @@ export function ConnectionManagerDialog({
                         }}
                         disabled={isLoading}
                     >
-                        {isTesting ? "Testing…" : "Test Connection"}
+                        {isTesting
+                            ? t("connectionManager.test.testing")
+                            : t("connectionManager.test.button")}
                     </Button>
                     <Button
                         onClick={() => {
@@ -462,7 +483,7 @@ export function ConnectionManagerDialog({
                         }}
                         disabled={isLoading}
                     >
-                        {isSaving ? "Saving…" : "Save"}
+                        {isSaving ? t("common.saving") : t("common.save")}
                     </Button>
                 </DialogFooter>
             </DialogContent>
