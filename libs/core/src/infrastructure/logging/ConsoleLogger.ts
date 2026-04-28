@@ -10,23 +10,57 @@ import { LogContext, LoggerPort, LogLevel } from "../../application/ports/Logger
  * Add to it sparingly; prefer a wrapping branded type at the call site
  * (e.g. a `RedactedString` value object) for everything else.
  */
-const SENSITIVE_KEYS = new Set<string>([
+const SENSITIVE_KEYS_LOWER = new Set<string>([
     "password",
-    "authPassword",
-    "sshPassword",
+    "authpassword",
+    "sshpassword",
     "passphrase",
-    "privateKey",
-    "encryptedPassword",
-    "encryptedPrivateKey",
-    "encryptedPassphrase",
+    "privatekey",
+    "encryptedpassword",
+    "encryptedprivatekey",
+    "encryptedpassphrase",
     "token",
-    "accessToken",
-    "refreshToken",
+    "accesstoken",
+    "refreshtoken",
     "secret",
-    "apiKey",
+    "apikey",
 ])
 
+/** Case- and separator-insensitive sensitive-key check. `password`,
+ *  `Password`, `AUTH_PASSWORD`, `auth-password`, and `authPassword`
+ *  all redact — real-world call sites mix casing and separators
+ *  freely, and the previous exact-match set silently let many of them
+ *  through. Stripping `_`/`-` collapses snake_case, kebab-case, and
+ *  SCREAMING_SNAKE all onto the lowercase camelCase keyword set. */
+function isSensitiveKey(key: string): boolean {
+    return SENSITIVE_KEYS_LOWER.has(key.toLowerCase().replace(/[_-]/g, ""))
+}
+
 const REDACTED = "[REDACTED]"
+
+/**
+ * URI userinfo (the `user:pass@` between scheme and host) and bare
+ * `password=…` / `password: …` key-value pairs in free-form strings.
+ * Mirrors the Rust-side `redact_error` regexes so error messages from
+ * vendor drivers can't smuggle credentials into a log line just
+ * because they happen to inline the connection URI.
+ */
+const URI_USERINFO_PATTERN = /([a-z][a-z0-9+.-]*:\/\/)[^:/@\s]+:[^@\s]+@/giu
+// Matches `password=…`, `password: …`, `password = "…"`, `password="…"`.
+// The non-capturing alternative covers double-quoted, single-quoted, and
+// bare values — the previous bare-only form silently let
+// `password="hunter2"` through because of the leading quote.
+const PASSWORD_KV_PATTERN = /(password)\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;"']+)/giu
+
+/** Strip credentials from a free-form message. Used on both the log
+ *  message itself and on error.message values pulled from thrown
+ *  exceptions — vendor drivers are notorious for echoing the offending
+ *  URI back at you with a connection-failed payload. */
+function redactString(input: string): string {
+    return input
+        .replace(URI_USERINFO_PATTERN, "$1[REDACTED]@")
+        .replace(PASSWORD_KV_PATTERN, "$1=[REDACTED]")
+}
 
 const LEVEL_RANK: Record<LogLevel, number> = {
     debug: 10,
@@ -63,7 +97,7 @@ export interface ConsoleLoggerOptions {
 function redact(context: LogContext): LogContext {
     const redacted: LogContext = {}
     for (const [key, value] of Object.entries(context)) {
-        if (SENSITIVE_KEYS.has(key)) {
+        if (isSensitiveKey(key)) {
             redacted[key] = REDACTED
             continue
         }
@@ -71,7 +105,7 @@ function redact(context: LogContext): LogContext {
             const nested = value as LogContext
             const nestedRedacted: LogContext = {}
             for (const [k, v] of Object.entries(nested)) {
-                nestedRedacted[k] = SENSITIVE_KEYS.has(k) ? REDACTED : v
+                nestedRedacted[k] = isSensitiveKey(k) ? REDACTED : v
             }
             redacted[key] = nestedRedacted
             continue
@@ -140,10 +174,15 @@ export class ConsoleLogger implements LoggerPort {
             return
         }
 
+        // Redact the message string itself — callers occasionally do
+        // `logger.warn("connect failed for " + uri, …)` and the
+        // structured-payload redactor on its own won't catch a URI baked
+        // into the unstructured message.
+        const safeMessage = redactString(message)
         const merged = redact({ ...this.context, ...(context ?? {}) })
         const payload = error === undefined ? merged : { ...merged, error: serialiseError(error) }
 
-        this.sink[level](message, payload)
+        this.sink[level](safeMessage, payload)
     }
 
     private invertRank(rank: number): LogLevel {
@@ -160,18 +199,23 @@ export class ConsoleLogger implements LoggerPort {
  */
 function serialiseError(error: unknown): Record<string, unknown> | string {
     if (!(error instanceof Error)) {
-        return typeof error === "string" ? error : JSON.stringify(error)
+        return typeof error === "string" ? redactString(error) : redactString(JSON.stringify(error))
     }
     const out: Record<string, unknown> = {
         name: error.name,
-        message: error.message,
+        // Vendor driver errors love to echo the offending connection URI
+        // back at you ("Could not connect to mongodb://user:pass@host…"),
+        // so the message is the most likely leak source in the whole
+        // logger pipeline. Run it through the same regex sweep as the
+        // top-level log message.
+        message: redactString(error.message),
     }
     const code = (error as unknown as { code?: unknown }).code
     if (typeof code === "string") {
         out.code = code
     }
     if (error.stack) {
-        out.stack = error.stack
+        out.stack = redactString(error.stack)
     }
     if (error.cause !== undefined) {
         out.cause = serialiseError(error.cause)

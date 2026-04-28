@@ -106,6 +106,51 @@ describe("ConsoleLogger", () => {
         })
     })
 
+    it("redacts sensitive keys regardless of casing — Password / AUTH_PASSWORD / apiKey all match", () => {
+        const sink = fakeSink()
+        const logger = new ConsoleLogger({ level: "info", sink })
+
+        logger.info("trying", {
+            Password: "p1",
+            AUTH_PASSWORD: "p2",
+            apiKey: "k1",
+            random: "kept",
+        })
+
+        const [, payload] = sink.info.mock.calls[0] as [string, Record<string, unknown>]
+        expect(payload).toMatchObject({
+            Password: "[REDACTED]",
+            AUTH_PASSWORD: "[REDACTED]",
+            apiKey: "[REDACTED]",
+            random: "kept",
+        })
+    })
+
+    it("strips URI userinfo from the log message itself", () => {
+        const sink = fakeSink()
+        const logger = new ConsoleLogger({ level: "warn", sink })
+
+        // A common foot-gun: callers concatenate the URI into the message.
+        logger.warn("connect failed for mongodb://alice:hunter2@db.local:27017")
+
+        const [message] = sink.warn.mock.calls[0]
+        expect(message).toBe("connect failed for mongodb://[REDACTED]@db.local:27017")
+    })
+
+    it("redacts URI userinfo and password=… patterns from error.message", () => {
+        const sink = fakeSink()
+        const logger = new ConsoleLogger({ level: "error", sink })
+
+        const err = new Error('failed: mongodb://alice:hunter2@db.local — password="hunter2"')
+        logger.error("connect failed", err)
+
+        const [, payload] = sink.error.mock.calls[0] as [string, Record<string, unknown>]
+        const errorPayload = payload.error as Record<string, unknown>
+        expect(errorPayload.message).toBe(
+            "failed: mongodb://[REDACTED]@db.local — password=[REDACTED]",
+        )
+    })
+
     it("serialises Error.cause chain on .error()", () => {
         const sink = fakeSink()
         const logger = new ConsoleLogger({ level: "error", sink })
