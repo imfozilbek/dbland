@@ -419,6 +419,16 @@ export const ru: Translations = {
         keyPath: "Путь к клиентскому ключу (необязательно)",
         keyPathPlaceholder: "/path/to/client-key.pem",
     },
+    connectionString: {
+        label: "Строка подключения",
+        placeholder: "{{type}}://user:password@host:port/database",
+        showPassword: "Показать пароль",
+        hidePassword: "Скрыть пароль",
+        parseAria: "Разобрать строку подключения в поля формы",
+        helpBase:
+            "Вставьте URI и нажмите на стрелки, чтобы заполнить форму, или соберите URI выше.",
+        helpPasswordHidden: " Пароль по умолчанию скрыт — нажмите на глаз, чтобы показать.",
+    },
     settings: {
         title: "Настройки",
         description: "Настройте параметры DBLand",

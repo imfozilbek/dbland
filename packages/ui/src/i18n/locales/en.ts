@@ -421,6 +421,15 @@ export const en = {
         keyPath: "Client Key Path (optional)",
         keyPathPlaceholder: "/path/to/client-key.pem",
     },
+    connectionString: {
+        label: "Connection String",
+        placeholder: "{{type}}://user:password@host:port/database",
+        showPassword: "Show password",
+        hidePassword: "Hide password",
+        parseAria: "Parse connection string into form fields",
+        helpBase: "Paste a URI and click the arrows to populate the form, or build one above.",
+        helpPasswordHidden: " Password is hidden by default — use the eye to reveal.",
+    },
     settings: {
         title: "Settings",
         description: "Configure your DBLand preferences",

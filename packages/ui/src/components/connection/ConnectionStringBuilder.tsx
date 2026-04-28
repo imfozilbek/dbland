@@ -3,6 +3,7 @@ import { Label } from "../ui/label"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { ArrowLeftRight, Eye, EyeOff } from "lucide-react"
+import { useT } from "../../i18n"
 
 interface ConnectionStringBuilderProps {
     databaseType: "mongodb" | "redis"
@@ -37,6 +38,7 @@ export function ConnectionStringBuilder({
     authDatabase,
     onParse,
 }: ConnectionStringBuilderProps): JSX.Element {
+    const t = useT()
     const [connectionString, setConnectionString] = useState("")
     const [showPassword, setShowPassword] = useState(false)
 
@@ -101,11 +103,11 @@ export function ConnectionStringBuilder({
     return (
         <div className="space-y-4">
             <div className="space-y-2">
-                <Label htmlFor="connection-string">Connection String</Label>
+                <Label htmlFor="connection-string">{t("connectionString.label")}</Label>
                 <div className="flex gap-2">
                     <Input
                         id="connection-string"
-                        placeholder={`${databaseType}://user:password@host:port/database`}
+                        placeholder={t("connectionString.placeholder", { type: databaseType })}
                         value={displayValue}
                         onChange={(e) => {
                             setConnectionString(e.target.value)
@@ -121,7 +123,11 @@ export function ConnectionStringBuilder({
                             }}
                             variant="outline"
                             size="icon"
-                            aria-label={showPassword ? "Hide password" : "Show password"}
+                            aria-label={
+                                showPassword
+                                    ? t("connectionString.hidePassword")
+                                    : t("connectionString.showPassword")
+                            }
                             aria-pressed={showPassword}
                         >
                             {showPassword ? (
@@ -135,14 +141,14 @@ export function ConnectionStringBuilder({
                         onClick={handleParseConnectionString}
                         variant="outline"
                         size="icon"
-                        aria-label="Parse connection string into form fields"
+                        aria-label={t("connectionString.parseAria")}
                     >
                         <ArrowLeftRight className="h-4 w-4" />
                     </Button>
                 </div>
                 <p id="connection-string-help" className="text-xs text-[var(--muted-foreground)]">
-                    Paste a URI and click the arrows to populate the form, or build one above.
-                    {hasPassword && " Password is hidden by default — use the eye to reveal."}
+                    {t("connectionString.helpBase")}
+                    {hasPassword && t("connectionString.helpPasswordHidden")}
                 </p>
             </div>
         </div>
