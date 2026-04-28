@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { createDatabase } from "./Database"
+import { createDatabase, isSystemDatabase } from "./Database"
 import { DatabaseType } from "../value-objects/DatabaseType"
 
 describe("Database.createDatabase", () => {
@@ -18,5 +18,23 @@ describe("Database.createDatabase", () => {
         expect(db.sizeBytes).toBe(1_000_000)
         expect(db.collectionCount).toBe(4)
         expect(db.isEmpty).toBe(false)
+    })
+})
+
+describe("Database.isSystemDatabase", () => {
+    it("returns true for the three MongoDB metadata databases", () => {
+        expect(isSystemDatabase(createDatabase("admin", DatabaseType.MongoDB))).toBe(true)
+        expect(isSystemDatabase(createDatabase("config", DatabaseType.MongoDB))).toBe(true)
+        expect(isSystemDatabase(createDatabase("local", DatabaseType.MongoDB))).toBe(true)
+    })
+
+    it("returns false for ordinary user databases", () => {
+        expect(isSystemDatabase(createDatabase("appdata", DatabaseType.MongoDB))).toBe(false)
+        expect(isSystemDatabase(createDatabase("Admin", DatabaseType.MongoDB))).toBe(false) // case-sensitive
+    })
+
+    it("returns false for Redis (no named system databases)", () => {
+        expect(isSystemDatabase(createDatabase("admin", DatabaseType.Redis))).toBe(false)
+        expect(isSystemDatabase(createDatabase("0", DatabaseType.Redis))).toBe(false)
     })
 })

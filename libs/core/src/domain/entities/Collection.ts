@@ -52,3 +52,20 @@ export function createCollection(
         ...options,
     }
 }
+
+/**
+ * MongoDB stores its internal book-keeping in collections that live
+ * under the `system.` prefix (`system.indexes`, `system.users`,
+ * `system.profile`, …). Touching them by hand corrupts metadata in
+ * subtle ways the user can't easily roll back.
+ *
+ * The UI uses this to hide system collections by default — drop /
+ * rename / clone are still reachable in an "advanced" view, but we
+ * don't dangle the loaded gun in front of the user.
+ */
+export function isSystemCollection(collection: Collection): boolean {
+    if (collection.type === DatabaseType.MongoDB) {
+        return collection.name.startsWith("system.")
+    }
+    return false
+}
