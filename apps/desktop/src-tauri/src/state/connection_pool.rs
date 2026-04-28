@@ -221,27 +221,20 @@ impl ConnectionPool {
     fn prepare_effective_config(
         config: ConnectionConfig,
     ) -> Result<(Option<SSHTunnel>, ConnectionConfig), AdapterError> {
-        let needs_tunnel = config
-            .ssh
-            .as_ref()
-            .map(|s| s.enabled)
-            .unwrap_or(false);
+        // Take the SSH config out of the input early. If it isn't there
+        // or isn't enabled, fall straight through with the original
+        // config — the previous shape used `.expect("checked above")` to
+        // re-extract it after a separate boolean check, which was a
+        // panic site that would in theory never fire but still lived in
+        // production code.
+        let ssh_config = match config.ssh.clone() {
+            Some(ssh) if ssh.enabled => ssh,
+            _ => return Ok((None, config)),
+        };
 
-        if !needs_tunnel {
-            return Ok((None, config));
-        }
-
-        let ssh_config = config
-            .ssh
-            .clone()
-            .expect("ssh config presence already checked above");
-
-        let mut tunnel =
-            SSHTunnel::new(ssh_config, config.host.clone(), config.port).map_err(
-                |e: crate::tunnel::ssh::SSHTunnelError| {
-                    AdapterError::ConnectionFailed(e.to_string())
-                },
-            )?;
+        let mut tunnel = SSHTunnel::new(ssh_config, config.host.clone(), config.port).map_err(
+            |e: crate::tunnel::ssh::SSHTunnelError| AdapterError::ConnectionFailed(e.to_string()),
+        )?;
 
         tunnel
             .start()
