@@ -1,6 +1,7 @@
 import { Collection } from "../../domain/entities/Collection"
 import { Database } from "../../domain/entities/Database"
 import { DatabaseAdapterPort } from "../ports/DatabaseAdapterPort"
+import { LoggerPort, NoopLogger } from "../ports/LoggerPort"
 
 /**
  * Get schema use case input
@@ -36,9 +37,14 @@ export interface GetSchemaOutput {
  * Retrieves database and collection information for the schema browser
  */
 export class GetSchemaUseCase {
+    private readonly logger: LoggerPort
+
     constructor(
         private readonly getAdapter: (connectionId: string) => DatabaseAdapterPort | undefined,
-    ) {}
+        logger?: LoggerPort,
+    ) {
+        this.logger = logger?.child?.({ useCase: "GetSchema" }) ?? NoopLogger
+    }
 
     /**
      * Get full schema tree
@@ -101,6 +107,7 @@ export class GetSchemaUseCase {
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error)
+            this.logger.error("Schema fetch failed", error)
             return {
                 success: false,
                 error: errorMessage,
@@ -135,6 +142,7 @@ export class GetSchemaUseCase {
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error)
+            this.logger.error("Schema fetch failed", error)
             return {
                 success: false,
                 error: errorMessage,
@@ -169,6 +177,7 @@ export class GetSchemaUseCase {
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error)
+            this.logger.error("Schema fetch failed", error)
             return {
                 success: false,
                 error: errorMessage,

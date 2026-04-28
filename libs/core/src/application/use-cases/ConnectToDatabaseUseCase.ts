@@ -13,6 +13,7 @@ import {
 } from "../../domain/events/ConnectionEvents"
 import { DatabaseAdapterPort } from "../ports/DatabaseAdapterPort"
 import { ConnectionStoragePort } from "../ports/ConnectionStoragePort"
+import { LoggerPort, NoopLogger } from "../ports/LoggerPort"
 
 /**
  * Connect to database use case input
@@ -35,10 +36,17 @@ export interface ConnectToDatabaseOutput {
  * Connect to database use case
  */
 export class ConnectToDatabaseUseCase {
+    private readonly logger: LoggerPort
+
     constructor(
         private readonly storage: ConnectionStoragePort,
         private readonly adapterFactory: (connection: Connection) => DatabaseAdapterPort,
-    ) {}
+        logger?: LoggerPort,
+    ) {
+        // Defaults to a no-op so existing call sites (and 73+ unit tests)
+        // don't have to construct a logger they don't care about.
+        this.logger = logger?.child?.({ useCase: "ConnectToDatabase" }) ?? NoopLogger
+    }
 
     async execute(input: ConnectToDatabaseInput): Promise<ConnectToDatabaseOutput> {
         const events: (
@@ -50,12 +58,19 @@ export class ConnectToDatabaseUseCase {
         // Get connection from storage
         const connection = await this.storage.getConnection(input.connectionId)
         if (!connection) {
+            this.logger.warn("Connection not found", { connectionId: input.connectionId })
             return {
                 success: false,
                 error: `Connection not found: ${input.connectionId}`,
                 events,
             }
         }
+
+        this.logger.info("Connecting", {
+            connectionId: connection.id,
+            type: connection.config.type,
+            host: connection.config.host,
+        })
 
         // Update status to connecting
         const previousStatus = connection.status
@@ -119,6 +134,8 @@ export class ConnectToDatabaseUseCase {
 
             events.push(createConnectionEstablishedEvent(updatedConnection))
 
+            this.logger.info("Connected", { connectionId: connection.id })
+
             return {
                 success: true,
                 connection: updatedConnection,
@@ -126,6 +143,8 @@ export class ConnectToDatabaseUseCase {
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error)
+
+            this.logger.error("Connect failed", error, { connectionId: connection.id })
 
             // Update status to error
             updatedConnection = updateConnectionStatus(updatedConnection, ConnectionStatus.Error)

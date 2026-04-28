@@ -1,0 +1,127 @@
+import { describe, expect, it, vi } from "vitest"
+import { ConnectionError } from "../../domain/errors/ConnectionError"
+import { ConsoleLogger } from "./ConsoleLogger"
+
+function fakeSink(): {
+    debug: ReturnType<typeof vi.fn>
+    info: ReturnType<typeof vi.fn>
+    warn: ReturnType<typeof vi.fn>
+    error: ReturnType<typeof vi.fn>
+} {
+    return {
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+    }
+}
+
+describe("ConsoleLogger", () => {
+    it("forwards each level to the matching sink method", () => {
+        const sink = fakeSink()
+        const logger = new ConsoleLogger({ level: "debug", sink })
+
+        logger.debug("d")
+        logger.info("i")
+        logger.warn("w")
+        logger.error("e")
+
+        expect(sink.debug).toHaveBeenCalledTimes(1)
+        expect(sink.info).toHaveBeenCalledTimes(1)
+        expect(sink.warn).toHaveBeenCalledTimes(1)
+        expect(sink.error).toHaveBeenCalledTimes(1)
+    })
+
+    it("filters out levels below the threshold", () => {
+        const sink = fakeSink()
+        const logger = new ConsoleLogger({ level: "warn", sink })
+
+        logger.debug("dropped")
+        logger.info("dropped")
+        logger.warn("kept")
+        logger.error("kept")
+
+        expect(sink.debug).not.toHaveBeenCalled()
+        expect(sink.info).not.toHaveBeenCalled()
+        expect(sink.warn).toHaveBeenCalledOnce()
+        expect(sink.error).toHaveBeenCalledOnce()
+    })
+
+    it("redacts top-level sensitive keys", () => {
+        const sink = fakeSink()
+        const logger = new ConsoleLogger({ level: "info", sink })
+
+        logger.info("connecting", { host: "db.local", password: "secret123" })
+
+        const [, payload] = sink.info.mock.calls[0]
+        expect(payload).toMatchObject({ host: "db.local", password: "[REDACTED]" })
+    })
+
+    it("redacts nested sensitive keys one level deep", () => {
+        const sink = fakeSink()
+        const logger = new ConsoleLogger({ level: "info", sink })
+
+        logger.info("connecting", {
+            connection: { id: "c1", password: "secret", token: "t" },
+        })
+
+        const [, payload] = sink.info.mock.calls[0] as [string, Record<string, unknown>]
+        expect(payload.connection).toMatchObject({
+            id: "c1",
+            password: "[REDACTED]",
+            token: "[REDACTED]",
+        })
+    })
+
+    it("merges baked-in scope context with per-call context", () => {
+        const sink = fakeSink()
+        const logger = new ConsoleLogger({
+            level: "info",
+            context: { useCase: "Connect" },
+            sink,
+        })
+
+        logger.info("trying", { connectionId: "c1" })
+
+        expect(sink.info).toHaveBeenCalledWith("trying", {
+            useCase: "Connect",
+            connectionId: "c1",
+        })
+    })
+
+    it("child() returns a logger with merged scope", () => {
+        const sink = fakeSink()
+        const parent = new ConsoleLogger({
+            level: "info",
+            context: { useCase: "Connect" },
+            sink,
+        })
+        const child = parent.child?.({ connectionId: "c1" })
+
+        child?.info("trying")
+
+        expect(sink.info).toHaveBeenCalledWith("trying", {
+            useCase: "Connect",
+            connectionId: "c1",
+        })
+    })
+
+    it("serialises Error.cause chain on .error()", () => {
+        const sink = fakeSink()
+        const logger = new ConsoleLogger({ level: "error", sink })
+        const root = new Error("ECONNREFUSED")
+        const wrapped = ConnectionError.refused("c1", root)
+
+        logger.error("connect failed", wrapped, { connectionId: "c1" })
+
+        const [, payload] = sink.error.mock.calls[0] as [string, Record<string, unknown>]
+        expect(payload).toMatchObject({
+            connectionId: "c1",
+            error: expect.objectContaining({
+                name: "ConnectionError",
+                code: "CONNECTION_REFUSED",
+                cause: expect.objectContaining({ name: "Error", message: "ECONNREFUSED" }),
+            }) as unknown,
+        })
+    })
+})

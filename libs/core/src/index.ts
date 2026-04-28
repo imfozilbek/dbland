@@ -24,6 +24,10 @@ export * from "./domain/errors"
 // Application - Ports
 export * from "./application/ports/DatabaseAdapterPort"
 export * from "./application/ports/ConnectionStoragePort"
+export * from "./application/ports/LoggerPort"
+
+// Infrastructure - Logging
+export * from "./infrastructure/logging/ConsoleLogger"
 
 // Application - Use Cases
 export * from "./application/use-cases/ConnectToDatabaseUseCase"

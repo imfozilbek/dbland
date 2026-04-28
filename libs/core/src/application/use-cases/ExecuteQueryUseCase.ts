@@ -11,6 +11,7 @@ import {
 } from "../../domain/events/QueryEvents"
 import { createErrorQueryResult, QueryResult } from "../../domain/value-objects/QueryResult"
 import { DatabaseAdapterPort } from "../ports/DatabaseAdapterPort"
+import { LoggerPort, NoopLogger } from "../ports/LoggerPort"
 
 /**
  * Execute query use case input
@@ -37,9 +38,14 @@ export interface ExecuteQueryOutput {
  * Execute query use case
  */
 export class ExecuteQueryUseCase {
+    private readonly logger: LoggerPort
+
     constructor(
         private readonly getAdapter: (connectionId: string) => DatabaseAdapterPort | undefined,
-    ) {}
+        logger?: LoggerPort,
+    ) {
+        this.logger = logger?.child?.({ useCase: "ExecuteQuery" }) ?? NoopLogger
+    }
 
     async execute(input: ExecuteQueryInput): Promise<ExecuteQueryOutput> {
         const events: (QueryExecutedEvent | QueryFailedEvent)[] = []
