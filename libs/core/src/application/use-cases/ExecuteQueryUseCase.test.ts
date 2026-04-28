@@ -134,6 +134,23 @@ describe("ExecuteQueryUseCase", () => {
         expect(executeSpy).not.toHaveBeenCalled()
     })
 
+    it("rejects empty queries before touching the adapter", async () => {
+        const executeSpy = vi.fn()
+        const adapter = makeAdapterStub({ isConnected: true, executeQuery: executeSpy })
+        const useCase = new ExecuteQueryUseCase(() => adapter)
+
+        const out = await useCase.execute({
+            connectionId: "c1",
+            query: "   \n\t  ",
+            language: QueryLanguage.MongoDB,
+        })
+
+        expect(out.success).toBe(false)
+        expect(out.result.error).toMatch(/empty/i)
+        expect(executeSpy).not.toHaveBeenCalled()
+        expect(out.historyEntry.success).toBe(false)
+    })
+
     it("turns thrown adapter errors into a failed result without leaking the exception", async () => {
         const adapter = makeAdapterStub({
             executeQuery: async () => {

@@ -36,11 +36,11 @@ export interface ExecuteQueryOutput {
 }
 
 /**
- * Build the standard "fail-fast" output shape for the three pre-flight
- * gates (no adapter, not connected, language mismatch). Centralised
- * here so the use case's main `execute` method stays under the
- * `max-lines-per-function` cap and the three guards share a single
- * shape — not three slightly-different copies that drift over time.
+ * Build the standard "fail-fast" output shape for the four pre-flight
+ * gates (empty query, no adapter, not connected, language mismatch).
+ * Centralised so the use case's main `execute` method stays under the
+ * `max-lines-per-function` cap and the guards share a single shape —
+ * not four slightly-different copies that drift over time.
  */
 function failFast(
     connectionId: string,
@@ -59,6 +59,72 @@ function failFast(
 }
 
 /**
+ * Build the output for a normal adapter response — either success or
+ * `success: false` with an error attached. Pulls history-entry creation
+ * and event emission out of `execute` so the orchestrator stays under
+ * the line cap and reads as a flat sequence of guards + outcomes.
+ */
+function recordCompletion(
+    input: ExecuteQueryInput,
+    result: QueryResult,
+    executionTimeMs: number,
+): ExecuteQueryOutput {
+    const historyEntry = createQueryHistoryEntry(
+        input.query,
+        input.language,
+        executionTimeMs,
+        result.success,
+        {
+            databaseName: input.databaseName,
+            collectionName: input.collectionName,
+            resultCount: result.documents.length,
+            error: result.error,
+        },
+    )
+
+    const event = result.success
+        ? createQueryExecutedEvent(input.connectionId, input.query, result, {
+              databaseName: input.databaseName,
+              collectionName: input.collectionName,
+          })
+        : createQueryFailedEvent(input.connectionId, input.query, result.error ?? "Unknown error")
+
+    return { success: result.success, result, historyEntry, events: [event] }
+}
+
+/**
+ * Wrap a thrown adapter exception into the standard output shape. The
+ * driver-side error message is propagated verbatim — by the time it
+ * reaches this layer it has already passed through the IPC redactor,
+ * so embedded URIs / passwords are stripped.
+ */
+function recordException(
+    input: ExecuteQueryInput,
+    error: unknown,
+    executionTimeMs: number,
+): ExecuteQueryOutput {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const result = createErrorQueryResult(errorMessage)
+    const historyEntry = createQueryHistoryEntry(
+        input.query,
+        input.language,
+        executionTimeMs,
+        false,
+        {
+            databaseName: input.databaseName,
+            collectionName: input.collectionName,
+            error: errorMessage,
+        },
+    )
+    return {
+        success: false,
+        result,
+        historyEntry,
+        events: [createQueryFailedEvent(input.connectionId, input.query, errorMessage)],
+    }
+}
+
+/**
  * Execute query use case
  */
 export class ExecuteQueryUseCase {
@@ -72,8 +138,17 @@ export class ExecuteQueryUseCase {
     }
 
     async execute(input: ExecuteQueryInput): Promise<ExecuteQueryOutput> {
-        const events: (QueryExecutedEvent | QueryFailedEvent)[] = []
         const startTime = Date.now()
+
+        // Reject empty / whitespace-only queries before any adapter
+        // round trip. The adapter would also fail, but vendor parsers
+        // surface this as anything from "syntax error at position 0"
+        // (Mongo) to a hung WAITRESP (Redis) — landing here lets the UI
+        // show a clear "type something first" message and avoids a
+        // misleading history entry that looks like a real failed query.
+        if (input.query.trim().length === 0) {
+            return failFast(input.connectionId, input.query, input.language, "Query is empty")
+        }
 
         // Get adapter for this connection
         const adapter = this.getAdapter(input.connectionId)
@@ -126,71 +201,9 @@ export class ExecuteQueryUseCase {
                 input.databaseName,
                 input.collectionName,
             )
-
-            const executionTimeMs = Date.now() - startTime
-
-            // Create history entry
-            const historyEntry = createQueryHistoryEntry(
-                input.query,
-                input.language,
-                executionTimeMs,
-                result.success,
-                {
-                    databaseName: input.databaseName,
-                    collectionName: input.collectionName,
-                    resultCount: result.documents.length,
-                    error: result.error,
-                },
-            )
-
-            if (result.success) {
-                events.push(
-                    createQueryExecutedEvent(input.connectionId, input.query, result, {
-                        databaseName: input.databaseName,
-                        collectionName: input.collectionName,
-                    }),
-                )
-            } else {
-                events.push(
-                    createQueryFailedEvent(
-                        input.connectionId,
-                        input.query,
-                        result.error ?? "Unknown error",
-                    ),
-                )
-            }
-
-            return {
-                success: result.success,
-                result,
-                historyEntry,
-                events,
-            }
+            return recordCompletion(input, result, Date.now() - startTime)
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error)
-            const executionTimeMs = Date.now() - startTime
-            const result = createErrorQueryResult(errorMessage)
-
-            const historyEntry = createQueryHistoryEntry(
-                input.query,
-                input.language,
-                executionTimeMs,
-                false,
-                {
-                    databaseName: input.databaseName,
-                    collectionName: input.collectionName,
-                    error: errorMessage,
-                },
-            )
-
-            events.push(createQueryFailedEvent(input.connectionId, input.query, errorMessage))
-
-            return {
-                success: false,
-                result,
-                historyEntry,
-                events,
-            }
+            return recordException(input, error, Date.now() - startTime)
         }
     }
 }
