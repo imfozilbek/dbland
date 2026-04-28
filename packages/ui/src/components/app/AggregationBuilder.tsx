@@ -23,6 +23,22 @@ export interface AggregationBuilderProps {
     collectionName: string
 }
 
+/**
+ * MongoDB's pipeline stages expect different shapes for their payload:
+ * primitives for some, objects for most. Seeding a freshly added stage
+ * with the right zero value ensures the pipeline stays valid even if
+ * the user never edits the new stage's parameters.
+ */
+function defaultStageData(stageType: string): AggregationPipelineStage["stageData"] {
+    if (stageType === "limit" || stageType === "skip") {
+        return 0
+    }
+    if (stageType === "count") {
+        return "count"
+    }
+    return {}
+}
+
 export function AggregationBuilder({
     connectionId,
     databaseName,
@@ -40,7 +56,12 @@ export function AggregationBuilder({
     const handleAddStage = (stageType: string): void => {
         const newStage: AggregationPipelineStage = {
             stageType,
-            stageData: {},
+            // MongoDB's `$count` expects a string, and `$limit` / `$skip`
+            // expect a number — defaulting all stages to `{}` produced an
+            // invalid pipeline if the user clicked Run Pipeline before
+            // touching the input. Seed the right primitive so the freshly
+            // added stage is already executable.
+            stageData: defaultStageData(stageType),
         }
         setPipeline([...pipeline, newStage])
         setSelectedStageIndex(pipeline.length)
