@@ -11,9 +11,19 @@ import { Clock, Database, Search, Tag, Trash2 } from "lucide-react"
 export interface SavedQueriesProps {
     connectionId: string | null
     onLoadQuery?: (query: SavedQuery) => void
+    /**
+     * Bump this number to ask the panel to refetch from the platform — used
+     * by the parent after a new query is saved so the list updates without a
+     * full page reload.
+     */
+    refreshKey?: number
 }
 
-export function SavedQueries({ connectionId, onLoadQuery }: SavedQueriesProps): JSX.Element {
+export function SavedQueries({
+    connectionId,
+    onLoadQuery,
+    refreshKey,
+}: SavedQueriesProps): JSX.Element {
     const platform = usePlatform()
     const [queries, setQueries] = useState<SavedQuery[]>([])
     const [searchQuery, setSearchQuery] = useState("")
@@ -27,7 +37,7 @@ export function SavedQueries({ connectionId, onLoadQuery }: SavedQueriesProps): 
         }
 
         loadQueries()
-    }, [connectionId, platform])
+    }, [connectionId, platform, refreshKey])
 
     const loadQueries = (): void => {
         if (!connectionId) {

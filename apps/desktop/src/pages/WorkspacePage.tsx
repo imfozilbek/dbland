@@ -150,6 +150,7 @@ interface QueriesTabProps {
     resultsViewMode: "table" | "json" | "tree"
     showHistory: boolean
     showSavedQueries: boolean
+    savedQueriesRefresh: number
     setQuery: (value: string) => void
     setResultsViewMode: (mode: "table" | "json" | "tree") => void
     formatQueryAction: () => void
@@ -231,6 +232,7 @@ function QueriesTab(props: QueriesTabProps): JSX.Element {
                             <SavedQueries
                                 connectionId={props.connectionId}
                                 onLoadQuery={props.onLoadSavedQuery}
+                                refreshKey={props.savedQueriesRefresh}
                             />
                         </ResizablePanel>
                     </>
@@ -261,6 +263,9 @@ export function WorkspacePage(): JSX.Element {
     const [showExportDialog, setShowExportDialog] = useState(false)
     const [editingDocumentId, setEditingDocumentId] = useState<string | null>(null)
     const [activeTab, setActiveTab] = useState<string>("queries")
+    // Bumped after a new query is saved so the SavedQueries panel refetches
+    // without a full window reload.
+    const [savedQueriesRefresh, setSavedQueriesRefresh] = useState(0)
 
     // Query store
     const activeQuery = useQueryStore(selectActiveQuery)
@@ -432,6 +437,7 @@ export function WorkspacePage(): JSX.Element {
                         resultsViewMode={resultsViewMode}
                         showHistory={showHistory}
                         showSavedQueries={showSavedQueries}
+                        savedQueriesRefresh={savedQueriesRefresh}
                         setQuery={setQuery}
                         setResultsViewMode={setResultsViewMode}
                         formatQueryAction={formatQueryAction}
@@ -494,10 +500,10 @@ export function WorkspacePage(): JSX.Element {
                 query={activeQuery}
                 language={queryLanguage}
                 onSaved={() => {
-                    // Refresh saved queries if panel is open
-                    if (showSavedQueries) {
-                        window.location.reload()
-                    }
+                    // Targeted refetch — never reload the window. Doing so
+                    // would lose the active query, scroll position, and
+                    // every other piece of unsaved local state.
+                    setSavedQueriesRefresh((n) => n + 1)
                 }}
             />
 
