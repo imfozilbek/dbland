@@ -1,7 +1,24 @@
 import { type BeforeMount, Editor, type OnMount } from "@monaco-editor/react"
-import { useEffect, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import * as monaco from "monaco-editor"
 import type { QueryLanguage } from "../../stores/query-store"
+import { useSettingsStore } from "../../stores/settings-store"
+import { useTheme } from "./ThemeProvider"
+
+/**
+ * Resolve `"system"` to the actual current mode by checking the OS
+ * preference. Falls back to dark when there is no `window.matchMedia`
+ * (SSR / non-browser host).
+ */
+function resolveTheme(theme: "light" | "dark" | "system"): "light" | "dark" {
+    if (theme !== "system") {
+        return theme
+    }
+    if (typeof window === "undefined") {
+        return "dark"
+    }
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+}
 
 export interface QueryEditorProps {
     value: string
@@ -185,6 +202,9 @@ export function QueryEditor({
     height = "300px",
 }: QueryEditorProps): JSX.Element {
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
+    const { theme } = useTheme()
+    const editorSettings = useSettingsStore((state) => state.settings.editor)
+    const resolvedTheme = useMemo(() => resolveTheme(theme), [theme])
 
     /**
      * Register custom themes before editor mounts.
@@ -240,17 +260,17 @@ export function QueryEditor({
                 onChange={handleEditorChange}
                 beforeMount={handleEditorWillMount}
                 onMount={handleEditorDidMount}
-                theme="dbland-dark"
+                theme={resolvedTheme === "light" ? "dbland-light" : "dbland-dark"}
                 options={{
-                    minimap: { enabled: false },
-                    fontSize: 13,
-                    fontFamily: "'Geist Mono', 'SF Mono', 'Fira Code', Consolas, monospace",
+                    minimap: { enabled: editorSettings.minimap },
+                    fontSize: editorSettings.fontSize,
+                    fontFamily: "'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, monospace",
                     fontLigatures: true,
                     lineNumbers: "on",
-                    wordWrap: "on",
+                    wordWrap: editorSettings.wordWrap ? "on" : "off",
                     scrollBeyondLastLine: false,
                     readOnly,
-                    tabSize: 4,
+                    tabSize: editorSettings.tabSize,
                     insertSpaces: true,
                     automaticLayout: true,
                     padding: { top: 8, bottom: 8 },
