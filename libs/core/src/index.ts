@@ -18,6 +18,9 @@ export * from "./domain/constants/database-defaults"
 export * from "./domain/events/ConnectionEvents"
 export * from "./domain/events/QueryEvents"
 
+// Domain - Errors
+export * from "./domain/errors"
+
 // Application - Ports
 export * from "./application/ports/DatabaseAdapterPort"
 export * from "./application/ports/ConnectionStoragePort"

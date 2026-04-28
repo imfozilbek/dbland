@@ -75,17 +75,30 @@ export class ConnectToDatabaseUseCase {
             // Get decrypted credentials if needed
             const credentials = await this.storage.getCredentials(connection.id)
 
-            // Build config with decrypted credentials
+            // Route each secret to the slot that needs it. Database auth and
+            // SSH-tunnel auth are independent, and the previous version
+            // copied `credentials.password` into both — so when a user set
+            // only one of the two, the other field silently received a
+            // mismatched secret. The legacy single `password` field stays
+            // as a transition-window fallback for storage adapters that
+            // haven't been updated yet, but the explicit `authPassword` /
+            // `sshPassword` always win when present.
+            const authPassword =
+                credentials?.authPassword ??
+                credentials?.password ??
+                connection.config.auth?.password
+            const sshPassword = credentials?.sshPassword ?? connection.config.ssh?.password
+
             const config = {
                 ...connection.config,
                 auth: {
                     ...connection.config.auth,
-                    password: credentials?.password ?? connection.config.auth?.password,
+                    password: authPassword,
                 },
                 ssh: connection.config.ssh
                     ? {
                           ...connection.config.ssh,
-                          password: credentials?.password ?? connection.config.ssh?.password,
+                          password: sshPassword,
                           privateKeyPath: undefined,
                       }
                     : undefined,

@@ -69,27 +69,29 @@ export class GetSchemaUseCase {
                 }
             }
 
-            // Get all databases and their collections
+            // Fetch every database's collections in parallel. The previous
+            // sequential `for … await` was an O(n) round-trip walk: with
+            // 30 databases on a remote MongoDB it blew well past the
+            // 100ms target the perf SLA promises. `Promise.all` keeps the
+            // total wall time at one round trip plus the slowest call.
             const databases = await adapter.getDatabases()
+            const collectionsPerDb = await Promise.all(
+                databases.map(async (db) => adapter.getCollections(db.name)),
+            )
+
             const schema: SchemaNode = {
                 type: "server",
                 name: "Server",
-                children: [],
-            }
-
-            for (const db of databases) {
-                const collections = await adapter.getCollections(db.name)
-                const dbNode: SchemaNode = {
-                    type: "database",
+                children: databases.map((db, i) => ({
+                    type: "database" as const,
                     name: db.name,
                     data: db,
-                    children: collections.map((col) => ({
+                    children: collectionsPerDb[i].map((col) => ({
                         type: "collection" as const,
                         name: col.name,
                         data: col,
                     })),
-                }
-                schema.children?.push(dbNode)
+                })),
             }
 
             return {
