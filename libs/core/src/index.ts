@@ -38,3 +38,6 @@ export * from "./infrastructure/adapters/InMemoryAdapterRegistry"
 export * from "./application/use-cases/ConnectToDatabaseUseCase"
 export * from "./application/use-cases/ExecuteQueryUseCase"
 export * from "./application/use-cases/GetSchemaUseCase"
+
+// Application - Utilities
+export * from "./application/error-extraction"

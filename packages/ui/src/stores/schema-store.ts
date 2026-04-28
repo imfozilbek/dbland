@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import type { CollectionInfo, DatabaseInfo, PlatformAPI } from "../contexts/PlatformContext"
+import { extractErrorMessage } from "@dbland/core"
 
 export type { DatabaseInfo, CollectionInfo }
 
@@ -52,7 +53,7 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
             set({ databases: updated, isLoading: false })
             return databases
         } catch (error) {
-            set({ error: String(error), isLoading: false })
+            set({ error: extractErrorMessage(error), isLoading: false })
             throw error
         }
     },
@@ -79,7 +80,7 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
             set({ collections: updated, isLoading: false })
             return collections
         } catch (error) {
-            set({ error: String(error), isLoading: false })
+            set({ error: extractErrorMessage(error), isLoading: false })
             throw error
         }
     },

@@ -6,6 +6,7 @@ import type {
     PlatformAPI,
     TestConnectionResult,
 } from "../contexts/PlatformContext"
+import { extractErrorMessage } from "@dbland/core"
 
 export type { Connection, ConnectionConfig, ConnectionStatus, TestConnectionResult }
 
@@ -58,7 +59,7 @@ function createLoadConnections(get: Get, set: Set): () => Promise<void> {
             const connections = await _api.getConnections()
             set({ connections, isLoading: false })
         } catch (error) {
-            set({ error: String(error), isLoading: false })
+            set({ error: extractErrorMessage(error), isLoading: false })
         }
     }
 }
@@ -86,7 +87,7 @@ function createSaveConnection(
             }
             return connection
         } catch (error) {
-            set({ error: String(error), isLoading: false })
+            set({ error: extractErrorMessage(error), isLoading: false })
             throw error
         }
     }
@@ -108,7 +109,7 @@ function createDeleteConnection(get: Get, set: Set): (id: string) => Promise<voi
                 isLoading: false,
             })
         } catch (error) {
-            set({ error: String(error), isLoading: false })
+            set({ error: extractErrorMessage(error), isLoading: false })
             throw error
         }
     }
@@ -125,7 +126,7 @@ function createTestConnection(
         try {
             return await _api.testConnection(config)
         } catch (error) {
-            return { success: false, message: String(error) }
+            return { success: false, message: extractErrorMessage(error) }
         }
     }
 }
@@ -163,7 +164,7 @@ function createConnect(get: Get, set: Set): (id: string) => Promise<void> {
                 connections: get().connections.map((c) =>
                     c.id === id ? { ...c, status: "error" as const } : c,
                 ),
-                error: String(error),
+                error: extractErrorMessage(error),
             })
             throw error
         }
@@ -186,7 +187,7 @@ function createDisconnect(get: Get, set: Set): (id: string) => Promise<void> {
                 activeConnectionId: activeConnectionId === id ? null : activeConnectionId,
             })
         } catch (error) {
-            set({ error: String(error) })
+            set({ error: extractErrorMessage(error) })
             throw error
         }
     }
