@@ -223,7 +223,7 @@ export function ExportDialog({
                         onClick={handleExport}
                         disabled={!filePath || !databaseName || !collectionName || isExporting}
                     >
-                        {isExporting ? "Exporting..." : "Export"}
+                        {isExporting ? "Exporting…" : "Export"}
                     </Button>
                 </DialogFooter>
             </DialogContent>

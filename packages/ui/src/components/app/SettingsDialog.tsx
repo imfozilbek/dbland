@@ -31,6 +31,7 @@ const FEATURES: { label: string; group: string }[] = [
     { group: "MongoDB", label: "Geospatial query builder" },
     { group: "MongoDB", label: "Database profiler" },
     { group: "MongoDB", label: "Collection statistics" },
+    { group: "MongoDB", label: "Import / export (JSON; CSV & BSON planned)" },
     { group: "Redis", label: "Key browser with pattern search" },
     { group: "Redis", label: "Data viewers (string, list, set, hash, zset)" },
     { group: "Redis", label: "TTL viewer & editor" },

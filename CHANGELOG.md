@@ -44,6 +44,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   contract (was missing 16+ v1.0–v1.1 methods, breaking typecheck).
 - Replaced unsafe `document.getElementById("root")!` patterns in both apps.
 
+### Documentation
+
+- ROADMAP.md v0.6.0 was claiming "CSV import/export" and "BSON
+  import/export" had shipped, but the corresponding arms in
+  `commands/import_export.rs` return `Err("not yet implemented")` —
+  only JSON is wired through. Marked CSV / BSON as deferred and
+  added a note. The v1.0.0 feature summary and the SettingsDialog
+  About list were updated to match.
+
 ## [1.1.0] - 2026-04-27
 
 ### Added

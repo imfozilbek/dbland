@@ -108,21 +108,26 @@ Become the #1 GUI/web client for NoSQL databases.
 
 ## v0.6.0 - Import/Export
 
-**Status:** ✅ Completed
+**Status:** 🟡 Partial — JSON shipped, CSV / BSON deferred
 
 **Goals:**
 - [x] JSON import/export
-- [x] CSV import/export (with field mapping)
-- [x] BSON import/export
-- [x] Field mapping for CSV
-- [x] Progress indicator
+- [ ] CSV import/export (with field mapping) — deferred
+- [ ] BSON import/export — deferred
+- [ ] Field mapping for CSV — deferred (depends on CSV import)
+- [x] Progress indicator (UI plumbing)
 
 **Deliverables:**
-- Import with field mapping
+- JSON import/export through `apps/desktop/src-tauri/src/commands/import_export.rs`
 - Export with query-based filters
 - Chunked processing (100 docs/batch)
 - Real-time progress tracking
 - Large-file support
+
+> The Import / Export dialogs in the UI list CSV and BSON as
+> "Coming soon" and the matching arms in the Rust command return
+> "not yet implemented" — the implementation never landed alongside
+> JSON. Tracked for a follow-up release.
 
 ---
 
@@ -281,7 +286,7 @@ Become the #1 GUI/web client for NoSQL databases.
 - Saved Queries (tags, descriptions)
 - Results Viewer (Table, JSON, Tree)
 - Document CRUD (Create, Read, Update, Delete, Clone)
-- Import/Export (JSON, CSV, BSON)
+- Import/Export (JSON; CSV / BSON deferred — see v0.6.0 above)
 - Aggregation Pipeline Builder (10+ stages)
 - Index Management (create, drop, stats)
 - Autocomplete & formatting

@@ -214,7 +214,7 @@ export function ImportDialog({
                         onClick={handleImport}
                         disabled={!filePath || !databaseName || !collectionName || isImporting}
                     >
-                        {isImporting ? "Importing..." : "Import"}
+                        {isImporting ? "Importing…" : "Import"}
                     </Button>
                 </DialogFooter>
             </DialogContent>
