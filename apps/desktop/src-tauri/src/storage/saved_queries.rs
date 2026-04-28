@@ -1,6 +1,6 @@
+use parking_lot::Mutex;
 use rusqlite::{params, Connection, Result};
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavedQuery {
@@ -86,7 +86,7 @@ impl SavedQueriesStorage {
     }
 
     pub fn insert(&self, entry: &NewSavedQuery) -> Result<i64> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
         conn.execute(
             "INSERT INTO saved_queries
              (connection_id, name, description, query, language, database_name, collection_name, tags)
@@ -107,7 +107,7 @@ impl SavedQueriesStorage {
     }
 
     pub fn get_by_connection(&self, connection_id: &str) -> Result<Vec<SavedQuery>> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
         let mut stmt = conn.prepare(
             "SELECT id, connection_id, name, description, query, language, database_name, collection_name, tags, created_at, updated_at
              FROM saved_queries
@@ -137,7 +137,7 @@ impl SavedQueriesStorage {
     }
 
     pub fn update(&self, entry: &UpdateSavedQuery) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
         conn.execute(
             "UPDATE saved_queries
              SET name = ?1, description = ?2, query = ?3, database_name = ?4, collection_name = ?5, tags = ?6, updated_at = datetime('now')
@@ -156,7 +156,7 @@ impl SavedQueriesStorage {
     }
 
     pub fn delete(&self, id: i64) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
         conn.execute("DELETE FROM saved_queries WHERE id = ?1", params![id])?;
         Ok(())
     }
@@ -167,7 +167,7 @@ impl SavedQueriesStorage {
         search_query: &str,
     ) -> Result<Vec<SavedQuery>> {
         let search_pattern = format!("%{}%", search_query);
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
         let mut stmt = conn.prepare(
             "SELECT id, connection_id, name, description, query, language, database_name, collection_name, tags, created_at, updated_at
              FROM saved_queries
@@ -198,7 +198,7 @@ impl SavedQueriesStorage {
 
     pub fn get_by_tag(&self, connection_id: &str, tag: &str) -> Result<Vec<SavedQuery>> {
         let tag_pattern = format!("%{}%", tag);
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
         let mut stmt = conn.prepare(
             "SELECT id, connection_id, name, description, query, language, database_name, collection_name, tags, created_at, updated_at
              FROM saved_queries

@@ -1,7 +1,7 @@
+use parking_lot::Mutex;
 use rusqlite::{Connection, Result as SqliteResult};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::sync::Mutex;
 use thiserror::Error;
 
 use super::crypto::{Crypto, CryptoError};
@@ -81,7 +81,7 @@ impl ConnectionStorage {
 
     /// Initialize database schema
     fn init_schema(&self) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
 
         conn.execute(
             "CREATE TABLE IF NOT EXISTS connections (
@@ -120,7 +120,7 @@ impl ConnectionStorage {
 
     /// Save a new connection or update existing
     pub fn save(&self, connection: &SavedConnection) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
 
         // Encrypt password if present
         let encrypted_password = connection
@@ -181,7 +181,7 @@ impl ConnectionStorage {
 
     /// Get a connection by ID
     pub fn get(&self, id: &str) -> Result<SavedConnection, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
 
         let mut stmt = conn.prepare(
             "SELECT id, name, db_type, host, port, username, password_encrypted,
@@ -220,7 +220,7 @@ impl ConnectionStorage {
 
     /// Get all connections
     pub fn get_all(&self) -> Result<Vec<SavedConnection>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
 
         let mut stmt = conn.prepare(
             "SELECT id, name, db_type, host, port, username, password_encrypted,
@@ -261,7 +261,7 @@ impl ConnectionStorage {
 
     /// Delete a connection
     pub fn delete(&self, id: &str) -> Result<bool, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
 
         let affected = conn.execute("DELETE FROM connections WHERE id = ?1", [id])?;
 
@@ -270,7 +270,7 @@ impl ConnectionStorage {
 
     /// Update last connected timestamp
     pub fn update_last_connected(&self, id: &str) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
         let now = chrono::Utc::now().to_rfc3339();
 
         conn.execute(

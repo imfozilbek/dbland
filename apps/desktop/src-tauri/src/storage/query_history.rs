@@ -1,6 +1,6 @@
+use parking_lot::Mutex;
 use rusqlite::{params, Connection, Result};
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryHistoryEntry {
@@ -69,7 +69,7 @@ impl QueryHistoryStorage {
     }
 
     pub fn insert(&self, entry: &NewQueryHistoryEntry) -> Result<i64> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
         conn.execute(
             "INSERT INTO query_history
              (connection_id, query, language, database_name, collection_name,
@@ -92,7 +92,7 @@ impl QueryHistoryStorage {
     }
 
     pub fn get_by_connection(&self, connection_id: &str, limit: i64) -> Result<Vec<QueryHistoryEntry>> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
         let mut stmt = conn.prepare(
             "SELECT id, connection_id, query, language, database_name, collection_name,
                     executed_at, execution_time_ms, success, result_count, error
@@ -124,13 +124,13 @@ impl QueryHistoryStorage {
     }
 
     pub fn delete(&self, id: i64) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
         conn.execute("DELETE FROM query_history WHERE id = ?1", params![id])?;
         Ok(())
     }
 
     pub fn clear_by_connection(&self, connection_id: &str) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
         conn.execute(
             "DELETE FROM query_history WHERE connection_id = ?1",
             params![connection_id],
@@ -145,7 +145,7 @@ impl QueryHistoryStorage {
         limit: i64,
     ) -> Result<Vec<QueryHistoryEntry>> {
         let search_pattern = format!("%{}%", search_query);
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock();
         let mut stmt = conn.prepare(
             "SELECT id, connection_id, query, language, database_name, collection_name,
                     executed_at, execution_time_ms, success, result_count, error
