@@ -121,6 +121,49 @@ describe("ConnectToDatabaseUseCase", () => {
         })
     })
 
+    it("returns idempotent success without re-running the handshake when already Connected", async () => {
+        const stored = makeConnection({ status: ConnectionStatus.Connected })
+        const transition = vi.fn().mockResolvedValue(undefined)
+        const adapterConnect = vi.fn().mockResolvedValue(undefined)
+        const useCase = new ConnectToDatabaseUseCase(
+            makeStorage({
+                getConnection: async () => stored,
+                persistConnectionTransition: transition,
+            }),
+            () => makeAdapterStub({ connect: adapterConnect }),
+        )
+
+        const out = await useCase.execute({ connectionId: "c1" })
+
+        expect(out.success).toBe(true)
+        expect(out.connection?.status).toBe(ConnectionStatus.Connected)
+        // No handshake re-run: the adapter and the storage both stay untouched.
+        expect(adapterConnect).not.toHaveBeenCalled()
+        expect(transition).not.toHaveBeenCalled()
+        // No status_changed event since nothing actually moved.
+        expect(out.events).toHaveLength(0)
+    })
+
+    it("rejects illegal lifecycle transitions (Connecting → Connecting) without touching the adapter", async () => {
+        const stored = makeConnection({ status: ConnectionStatus.Connecting })
+        const transition = vi.fn().mockResolvedValue(undefined)
+        const adapterConnect = vi.fn().mockResolvedValue(undefined)
+        const useCase = new ConnectToDatabaseUseCase(
+            makeStorage({
+                getConnection: async () => stored,
+                persistConnectionTransition: transition,
+            }),
+            () => makeAdapterStub({ connect: adapterConnect }),
+        )
+
+        const out = await useCase.execute({ connectionId: "c1" })
+
+        expect(out.success).toBe(false)
+        expect(out.error).toMatch(/cannot transition/i)
+        expect(adapterConnect).not.toHaveBeenCalled()
+        expect(transition).not.toHaveBeenCalled()
+    })
+
     it("merges decrypted credentials into the adapter config when storage has them", async () => {
         const stored = makeConnection({
             config: {

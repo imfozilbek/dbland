@@ -14,6 +14,7 @@ export class ConnectionError extends DomainError {
     readonly code:
         | typeof ErrorCode.CONNECTION_NOT_FOUND
         | typeof ErrorCode.CONNECTION_ALREADY_CONNECTED
+        | typeof ErrorCode.CONNECTION_INVALID_TRANSITION
         | typeof ErrorCode.CONNECTION_REFUSED
         | typeof ErrorCode.CONNECTION_TIMEOUT
         | typeof ErrorCode.AUTH_FAILED
@@ -59,6 +60,22 @@ export class ConnectionError extends DomainError {
             ErrorCode.AUTH_FAILED,
             `Authentication failed for connection ${connectionId}`,
             { cause },
+        )
+    }
+
+    /**
+     * Raised when a use case tries to drive a connection from one
+     * lifecycle state to another that the state machine forbids — e.g.
+     * `Connected → Connecting` (must `Disconnected` first) or
+     * `Connecting → Connecting` (a request is already in flight). The UI
+     * normally prevents these by disabling the offending button, so
+     * landing here points at a race condition or a programmer error
+     * rather than user input we can recover from.
+     */
+    static invalidTransition(connectionId: string, from: string, to: string): ConnectionError {
+        return new ConnectionError(
+            ErrorCode.CONNECTION_INVALID_TRANSITION,
+            `Connection ${connectionId} cannot transition from ${from} to ${to}`,
         )
     }
 }

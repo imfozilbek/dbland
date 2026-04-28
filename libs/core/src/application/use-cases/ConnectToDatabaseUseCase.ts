@@ -1,4 +1,5 @@
 import {
+    canTransitionTo,
     Connection,
     ConnectionStatus,
     updateConnectionStatus,
@@ -11,6 +12,7 @@ import {
     createConnectionFailedEvent,
     createConnectionStatusChangedEvent,
 } from "../../domain/events/ConnectionEvents"
+import { ConnectionError } from "../../domain/errors/ConnectionError"
 import { DatabaseAdapterPort } from "../ports/DatabaseAdapterPort"
 import { ConnectionStoragePort } from "../ports/ConnectionStoragePort"
 import { LoggerPort, NoopLogger } from "../ports/LoggerPort"
@@ -48,6 +50,42 @@ export class ConnectToDatabaseUseCase {
         this.logger = logger?.child?.({ useCase: "ConnectToDatabase" }) ?? NoopLogger
     }
 
+    /**
+     * Pull decrypted credentials from storage and route each one to the
+     * slot that needs it. Database auth and SSH-tunnel auth are
+     * independent, and the previous version copied `credentials.password`
+     * into both — so when a user set only one of the two, the other
+     * field silently received a mismatched secret. The legacy single
+     * `password` field stays as a transition-window fallback for storage
+     * adapters that haven't been updated yet, but the explicit
+     * `authPassword` / `sshPassword` always win when present.
+     *
+     * Extracted out of `execute` so that method stays under the 100-line
+     * cap and reads as the high-level state-machine driver it is.
+     */
+    private async resolveAdapterConfig(connection: Connection): Promise<Connection["config"]> {
+        const credentials = await this.storage.getCredentials(connection.id)
+
+        const authPassword =
+            credentials?.authPassword ?? credentials?.password ?? connection.config.auth?.password
+        const sshPassword = credentials?.sshPassword ?? connection.config.ssh?.password
+
+        return {
+            ...connection.config,
+            auth: {
+                ...connection.config.auth,
+                password: authPassword,
+            },
+            ssh: connection.config.ssh
+                ? {
+                      ...connection.config.ssh,
+                      password: sshPassword,
+                      privateKeyPath: undefined,
+                  }
+                : undefined,
+        }
+    }
+
     async execute(input: ConnectToDatabaseInput): Promise<ConnectToDatabaseOutput> {
         const events: (
             | ConnectionEstablishedEvent
@@ -72,6 +110,36 @@ export class ConnectToDatabaseUseCase {
             host: connection.config.host,
         })
 
+        // Already connected — return idempotently rather than re-running
+        // the handshake. Re-running would orphan the existing driver
+        // pool and SSH tunnel under whatever stale registry entry we
+        // had, so the only safe shortcut is to do nothing.
+        if (connection.status === ConnectionStatus.Connected) {
+            this.logger.info("Already connected — idempotent return", {
+                connectionId: connection.id,
+            })
+            return { success: true, connection, events }
+        }
+
+        // Reject illegal lifecycle transitions before we touch the
+        // adapter. The state machine forbids `Connecting → Connecting`
+        // (request already in flight) and any other path that doesn't
+        // start from a settled state — landing here means the UI
+        // double-fired or a stored record is out of sync with reality.
+        if (!canTransitionTo(connection.status, ConnectionStatus.Connecting)) {
+            const err = ConnectionError.invalidTransition(
+                connection.id,
+                connection.status,
+                ConnectionStatus.Connecting,
+            )
+            this.logger.warn("Invalid lifecycle transition", {
+                connectionId: connection.id,
+                from: connection.status,
+                to: ConnectionStatus.Connecting,
+            })
+            return { success: false, error: err.message, events }
+        }
+
         // Update status to connecting
         const previousStatus = connection.status
         let updatedConnection = updateConnectionStatus(connection, ConnectionStatus.Connecting)
@@ -87,39 +155,7 @@ export class ConnectToDatabaseUseCase {
         const adapter = this.adapterFactory(connection)
 
         try {
-            // Get decrypted credentials if needed
-            const credentials = await this.storage.getCredentials(connection.id)
-
-            // Route each secret to the slot that needs it. Database auth and
-            // SSH-tunnel auth are independent, and the previous version
-            // copied `credentials.password` into both — so when a user set
-            // only one of the two, the other field silently received a
-            // mismatched secret. The legacy single `password` field stays
-            // as a transition-window fallback for storage adapters that
-            // haven't been updated yet, but the explicit `authPassword` /
-            // `sshPassword` always win when present.
-            const authPassword =
-                credentials?.authPassword ??
-                credentials?.password ??
-                connection.config.auth?.password
-            const sshPassword = credentials?.sshPassword ?? connection.config.ssh?.password
-
-            const config = {
-                ...connection.config,
-                auth: {
-                    ...connection.config.auth,
-                    password: authPassword,
-                },
-                ssh: connection.config.ssh
-                    ? {
-                          ...connection.config.ssh,
-                          password: sshPassword,
-                          privateKeyPath: undefined,
-                      }
-                    : undefined,
-            }
-
-            // Connect
+            const config = await this.resolveAdapterConfig(connection)
             await adapter.connect(config)
 
             // Update status to connected. One atomic write — previously
