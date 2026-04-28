@@ -6,6 +6,7 @@ import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
 import { ScrollArea } from "../ui/scroll-area"
+import { Skeleton } from "../ui/skeleton"
 import { CheckCircle, Clock, Database, Search, Trash2, XCircle } from "lucide-react"
 
 export interface QueryHistoryProps {
@@ -185,8 +186,10 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
 
             <ScrollArea className="flex-1">
                 {isLoading ? (
-                    <div className="flex items-center justify-center p-8 text-muted-foreground">
-                        Loading…
+                    <div className="space-y-2 p-4">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <Skeleton key={i} className="h-[88px] w-full" />
+                        ))}
                     </div>
                 ) : entries.length === 0 ? (
                     <div className="flex items-center justify-center p-8 text-muted-foreground">

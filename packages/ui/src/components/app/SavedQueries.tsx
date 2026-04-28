@@ -4,6 +4,7 @@ import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
 import { ScrollArea } from "../ui/scroll-area"
+import { Skeleton } from "../ui/skeleton"
 import { Clock, Database, Search, Tag, Trash2 } from "lucide-react"
 
 export interface SavedQueriesProps {
@@ -159,8 +160,10 @@ export function SavedQueries({ connectionId, onLoadQuery }: SavedQueriesProps): 
 
             <ScrollArea className="flex-1">
                 {isLoading ? (
-                    <div className="flex items-center justify-center p-8 text-muted-foreground">
-                        Loading…
+                    <div className="space-y-2 p-4">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <Skeleton key={i} className="h-[76px] w-full" />
+                        ))}
                     </div>
                 ) : queries.length === 0 ? (
                     <div className="flex items-center justify-center p-8 text-muted-foreground">
