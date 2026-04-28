@@ -34,7 +34,18 @@ export function SortableStageCard({
         opacity: isDragging ? 0.5 : 1,
     }
 
-    const isEmpty = Object.keys(stage.stageData).length === 0
+    // `stageData` can be a primitive (string for $count, number for
+    // $limit/$skip) or an object. `Object.keys` on a number returns `[]`
+    // and on a string returns its character indices — both wrong here.
+    // An empty stage means "default zero / placeholder value, no real
+    // user input yet": the empty object, the empty string, or the
+    // default-seeded zero from `defaultStageData`.
+    const isEmpty =
+        (typeof stage.stageData === "object" &&
+            stage.stageData !== null &&
+            Object.keys(stage.stageData).length === 0) ||
+        stage.stageData === "" ||
+        stage.stageData === 0
 
     return (
         <Card
