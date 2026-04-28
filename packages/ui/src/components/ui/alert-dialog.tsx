@@ -15,7 +15,12 @@ const AlertDialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <AlertDialogPrimitive.Overlay
         className={cn(
-            "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+            // Match Dialog's overlay (bg-black/60 + backdrop-blur) so an
+            // AlertDialog stacked above a Dialog reads as "another step
+            // up", not a surprise harder backdrop.
+            "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm",
+            "data-[state=open]:animate-in data-[state=closed]:animate-out",
+            "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
             className,
         )}
         {...props}
@@ -33,7 +38,18 @@ const AlertDialogContent = React.forwardRef<
         <AlertDialogPrimitive.Content
             ref={ref}
             className={cn(
-                "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+                "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%]",
+                // Aligned with DialogContent: same surface (--card), same
+                // border token, same shadow-2xl elevation. Previously
+                // AlertDialog used `bg-background` (the deepest brand
+                // tone) which made destructive prompts look LESS
+                // important than the regular dialog they sat over.
+                "gap-4 border border-[var(--border)] bg-[var(--card)] p-6 shadow-2xl duration-200 sm:rounded-lg",
+                "data-[state=open]:animate-in data-[state=closed]:animate-out",
+                "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+                "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+                "data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]",
+                "data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
                 className,
             )}
             {...props}
@@ -61,10 +77,10 @@ function AlertDialogFooter({
 }: React.HTMLAttributes<HTMLDivElement>): JSX.Element {
     return (
         <div
-            className={cn(
-                "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
-                className,
-            )}
+            // Use gap-2 instead of sm:space-x-2 to match DialogFooter's
+            // spacing convention; previously AlertDialog and Dialog
+            // footers used incompatible Tailwind utilities side by side.
+            className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
             {...props}
         />
     )
