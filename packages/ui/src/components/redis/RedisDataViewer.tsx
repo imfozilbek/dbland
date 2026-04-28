@@ -39,7 +39,9 @@ export function RedisDataViewer({ connectionId, selectedKey }: RedisDataViewerPr
 
     const handleSetTTL = async (): Promise<void> => {
         const seconds = parseInt(newTTL, 10)
-        if (isNaN(seconds)) {
+        // Redis EXPIRE with 0 deletes the key immediately and negatives are
+        // a server error — refuse to send those. Only positive integers.
+        if (isNaN(seconds) || seconds <= 0) {
             return
         }
 
@@ -74,8 +76,12 @@ export function RedisDataViewer({ connectionId, selectedKey }: RedisDataViewerPr
                 </div>
                 <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
-                    {ttl === null ? (
+                    {/* Redis TTL: null = couldn't read, -1 = no expiry set,
+                        -2 = key doesn't exist, >=0 = seconds until expiry. */}
+                    {ttl === null || ttl === -1 ? (
                         <span className="text-sm text-muted-foreground">No expiration</span>
+                    ) : ttl === -2 ? (
+                        <span className="text-sm text-[var(--destructive)]">Key not found</span>
                     ) : (
                         <span className="text-sm text-muted-foreground">{ttl}s</span>
                     )}
@@ -87,13 +93,19 @@ export function RedisDataViewer({ connectionId, selectedKey }: RedisDataViewerPr
                 <div className="mt-2 flex gap-2">
                     <Input
                         type="number"
+                        min={1}
                         placeholder="3600"
                         value={newTTL}
                         onChange={(e) => {
                             setNewTTL(e.target.value)
                         }}
                     />
-                    <Button onClick={() => void handleSetTTL()}>Set</Button>
+                    <Button
+                        onClick={() => void handleSetTTL()}
+                        disabled={!newTTL.trim() || parseInt(newTTL, 10) <= 0}
+                    >
+                        Set
+                    </Button>
                 </div>
             </Card>
 
