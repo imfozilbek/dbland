@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { toast } from "sonner"
 import {
     type AggregationPipelineStage,
     type AggregationResult,
@@ -102,7 +103,13 @@ export function AggregationBuilder({
                 setPreviewResult(res)
             })
             .catch((err: unknown) => {
+                // Without a visible signal, clicking Preview on a malformed
+                // stage (or against an unreachable database) looked
+                // identical to a slow request — the user just waited.
                 console.error("Failed to preview stage:", err)
+                toast.error("Couldn't preview stage", {
+                    description: err instanceof Error ? err.message : "Unknown error",
+                })
             })
     }
 
