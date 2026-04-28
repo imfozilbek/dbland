@@ -15,7 +15,7 @@ Welcome to DBLand! This guide will help you get started with managing your NoSQL
 
 ### Installation
 
-Download the appropriate installer for your platform from the [Releases](https://github.com/samiyev/dbland/releases) page:
+Download the appropriate installer for your platform from the [Releases](https://github.com/imfozilbek/dbland/releases) page:
 
 - **macOS**: Download the `.dmg` file and drag DBLand to your Applications folder
 - **Windows**: Download the `.exe` installer and run it
@@ -29,7 +29,8 @@ When you first launch DBLand, you'll see an empty connection list. Click the "Ne
 
 ### Creating a Connection
 
-1. Click the "New Connection" button or press `Cmd+N` (Mac) / `Ctrl+N` (Windows/Linux)
+1. Click the **+** button next to "Connections" in the sidebar (or the
+   **New Connection** card on the Home page).
 2. Fill in the connection details in the **Basic** tab:
    - **Name**: A friendly name for this connection
    - **Type**: MongoDB or Redis
@@ -167,23 +168,26 @@ Switch modes using the tabs at the top of the results panel.
 
 ### Import/Export
 
+> **Format support:** JSON works end-to-end. CSV and BSON are listed as
+> "Coming soon" in the format dropdown — the matching arms in the Rust
+> backend return *not yet implemented*. Use JSON for now.
+
 #### Import Data
 
-1. Click "Import" button
-2. Select file format (JSON, CSV, BSON)
-3. Choose the file to import
-4. Select target database and collection
-5. For CSV files, map fields to document properties
-6. Click "Import"
-7. Monitor progress in the progress bar
+1. Click "Import" button.
+2. Select **JSON** as the file format.
+3. Choose the file to import.
+4. Select target database and collection.
+5. Click "Import" — the dialog reports success or the backend error
+   inline.
 
 #### Export Data
 
-1. Click "Export" button
-2. Select file format (JSON, CSV, BSON)
-3. Choose save location
-4. (Optional) Add a query filter
-5. Click "Export"
+1. Click "Export" button.
+2. Select **JSON** as the file format.
+3. Choose save location.
+4. (Optional) Add a filter query (e.g. `{"status": "active"}`).
+5. Click "Export" — the document count is reported inline when done.
 
 ### Aggregation Pipeline
 
@@ -257,56 +261,75 @@ DBLand automatically detects the data type of each key and displays it appropria
 
 ## Keyboard Shortcuts
 
-### Global
+> Only shortcuts wired through the workspace's `useKeyboardShortcuts`
+> hook are listed below. Monaco's standard editor bindings (Find,
+> Toggle comment, Multi-cursor, etc.) work inside the editor pane via
+> Monaco itself.
 
-- `Cmd+N` / `Ctrl+N`: New Connection
-- `Cmd+W` / `Ctrl+W`: Close Tab
-- `Cmd+,` / `Ctrl+,`: Open Settings
-- `Cmd+Q` / `Ctrl+Q`: Quit
+### Workspace (when the query editor or workspace is focused)
 
-### Query Editor
+- `Cmd+Enter` / `Ctrl+Enter`: Execute query
+- `Cmd+S` / `Ctrl+S`: Save query (opens the Save Query dialog)
+- `Cmd+Shift+F` / `Ctrl+Shift+F`: Format query
 
-- `Cmd+Enter` / `Ctrl+Enter`: Execute Query
-- `Cmd+S` / `Ctrl+S`: Save Query
-- `Cmd+F` / `Ctrl+F`: Find in Editor
-- `Cmd+/` / `Ctrl+/`: Toggle Comment
+### Inside the Monaco editor
 
-### Navigation
+- `Cmd+F` / `Ctrl+F`: Find in editor (Monaco built-in)
+- `Cmd+/` / `Ctrl+/`: Toggle comment
+- `Cmd+D` / `Ctrl+D`: Add cursor at next match
+- Press `F1` for Monaco's full command palette
 
-- `Cmd+1-9` / `Ctrl+1-9`: Switch to Tab 1-9
-- `Cmd+[` / `Ctrl+[`: Previous Tab
-- `Cmd+]` / `Ctrl+]`: Next Tab
+> Tab navigation, "New connection", "Open settings" and "Quit" do not
+> have global hotkeys yet — track them on
+> [GitHub Issues](https://github.com/imfozilbek/dbland/issues) if you
+> rely on them.
 
 ## Settings
 
-Access settings via `Cmd+,` (Mac) / `Ctrl+,` (Windows/Linux) or from the menu.
+Click the **Settings** entry at the bottom of the sidebar.
 
 ### General
 
-- **Language**: Choose interface language
 - **Theme**: Light, Dark, or System
-- **Auto-save**: Auto-save queries on execution
+- **Language**: Interface language (English / Russian — i18n is wired
+  in the store, copy isn't translated yet)
+- **Auto-save queries**: Auto-save queries on execution
+- **Confirm before delete**: Show a confirmation dialog for destructive
+  actions
 
 ### Editor
 
-- **Font Size**: Adjust editor font size (12-24px)
-- **Tab Size**: Set indentation size (2 or 4 spaces)
-- **Word Wrap**: Enable/disable word wrapping
+- **Font Size**: 10–24px
+- **Tab Size**: 2–8 spaces
+- **Word Wrap**: Toggle word wrapping
+- **Show Minimap**: Toggle Monaco's minimap overlay
 
-### Updates
+### About
 
-- **Check for Updates**: Manually check for new versions
-- **Auto-update**: Enable automatic updates
+- App version, grouped feature list, and a "Reset to defaults" button
+  (clears preferences only; saved connections stay).
+
+> Auto-updater runs through Tauri's plugin and pulls signed releases
+> from GitHub Releases. There's no separate "Check for Updates" tab in
+> Settings — the updater dialog appears when an update is available.
 
 ## Tips & Tricks
 
-1. **Quick Connect**: Double-click a connection to connect instantly
-2. **Format Query**: Use `Cmd+Shift+F` to auto-format your query
-3. **Explain Query**: View query execution plan with "Explain" button
-4. **Dark Mode**: DBLand supports system-wide dark mode preferences
-5. **Connection String**: Paste a full connection string in the Advanced tab for quick setup
-6. **SSH Tunneling**: Use SSH tunneling to securely connect to remote databases
-7. **Batch Operations**: Use aggregation pipelines for complex data transformations
+1. **Format Query**: Press `Cmd+Shift+F` / `Ctrl+Shift+F` to auto-format
+   your query.
+2. **Connection String**: Paste a full URI into the **Advanced** tab of
+   the connection dialog and click the parse arrow — the Basic fields
+   populate from the URI. The eye toggle hides / reveals the password.
+3. **SSH Tunneling**: All three SSH auth methods (password, key file,
+   agent) are supported — pick the one your server expects in the
+   **SSH** tab of the connection dialog.
+4. **Theme follows OS**: DBLand picks Light / Dark from the OS by
+   default. Override in Settings → General → Theme.
+5. **Aggregation Pipelines**: Drag $match / $group / $project and
+   friends from the Stage Library into the canvas; click "Show Code"
+   to see the generated `db.collection.aggregate(...)` snippet.
+6. **Document edit modes**: The edit dialog has both Form and JSON
+   modes — switch via the tabs at the top.
 
 ## Troubleshooting
 
@@ -334,9 +357,8 @@ Access settings via `Cmd+,` (Mac) / `Ctrl+,` (Windows/Linux) or from the menu.
 
 ## Getting Help
 
-- **Documentation**: Visit [docs.dbland.app](https://docs.dbland.app)
-- **Issues**: Report bugs at [GitHub Issues](https://github.com/samiyev/dbland/issues)
-- **Discussions**: Join the community at [GitHub Discussions](https://github.com/samiyev/dbland/discussions)
+- **Issues**: Report bugs at [GitHub Issues](https://github.com/imfozilbek/dbland/issues)
+- **Discussions**: Join the community at [GitHub Discussions](https://github.com/imfozilbek/dbland/discussions)
 
 ## License
 
