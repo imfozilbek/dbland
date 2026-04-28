@@ -14,6 +14,7 @@ import { Input } from "../ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { Textarea } from "../ui/textarea"
 import { FileDown } from "lucide-react"
+import { useT } from "../../i18n"
 
 export interface ExportDialogProps {
     open: boolean
@@ -32,6 +33,7 @@ export function ExportDialog({
     collectionName: initialCollection = "",
     onExported,
 }: ExportDialogProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [filePath, setFilePath] = useState("")
     const [format, setFormat] = useState("json")
@@ -89,7 +91,7 @@ export function ExportDialog({
                 setResult({
                     success: false,
                     exported: 0,
-                    error: err instanceof Error ? err.message : "Export failed",
+                    error: err instanceof Error ? err.message : t("exportDialog.defaultError"),
                 })
             })
             .finally(() => {
@@ -101,15 +103,13 @@ export function ExportDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Export Data</DialogTitle>
-                    <DialogDescription>
-                        Export documents from your database collection to a file.
-                    </DialogDescription>
+                    <DialogTitle>{t("exportDialog.title")}</DialogTitle>
+                    <DialogDescription>{t("exportDialog.description")}</DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                        <Label htmlFor="export-format">Format</Label>
+                        <Label htmlFor="export-format">{t("exportDialog.formatLabel")}</Label>
                         <Select value={format} onValueChange={setFormat}>
                             <SelectTrigger id="export-format">
                                 <SelectValue />
@@ -117,55 +117,57 @@ export function ExportDialog({
                             <SelectContent>
                                 <SelectItem value="json">JSON</SelectItem>
                                 <SelectItem value="csv" disabled>
-                                    CSV (Coming soon)
+                                    {t("importDialog.csvComingSoon")}
                                 </SelectItem>
                                 <SelectItem value="bson" disabled>
-                                    BSON (Coming soon)
+                                    {t("importDialog.bsonComingSoon")}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="export-database">Database</Label>
+                        <Label htmlFor="export-database">{t("exportDialog.databaseLabel")}</Label>
                         <Input
                             id="export-database"
                             value={databaseName}
                             onChange={(e) => {
                                 setDatabaseName(e.target.value)
                             }}
-                            placeholder="mydb"
+                            placeholder={t("exportDialog.databasePlaceholder")}
                         />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="export-collection">Collection</Label>
+                        <Label htmlFor="export-collection">
+                            {t("exportDialog.collectionLabel")}
+                        </Label>
                         <Input
                             id="export-collection"
                             value={collectionName}
                             onChange={(e) => {
                                 setCollectionName(e.target.value)
                             }}
-                            placeholder="mycollection"
+                            placeholder={t("exportDialog.collectionPlaceholder")}
                         />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="export-query">Filter Query (optional)</Label>
+                        <Label htmlFor="export-query">{t("exportDialog.queryLabel")}</Label>
                         <Textarea
                             id="export-query"
                             value={query}
                             onChange={(e) => {
                                 setQuery(e.target.value)
                             }}
-                            placeholder='{"status": "active"}'
+                            placeholder={t("exportDialog.queryPlaceholder")}
                             rows={3}
                             className="font-mono text-sm"
                         />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="export-file">Save To</Label>
+                        <Label htmlFor="export-file">{t("exportDialog.saveToLabel")}</Label>
                         <div className="flex gap-2">
                             <Input
                                 id="export-file"
@@ -173,13 +175,13 @@ export function ExportDialog({
                                 onChange={(e) => {
                                     setFilePath(e.target.value)
                                 }}
-                                placeholder="/path/to/export.json"
+                                placeholder={t("exportDialog.saveToPlaceholder")}
                                 className="flex-1"
                             />
                             <Button
                                 variant="outline"
                                 size="icon"
-                                aria-label="Browse export destination"
+                                aria-label={t("exportDialog.browseLabel")}
                                 onClick={handleBrowse}
                             >
                                 <FileDown className="h-4 w-4" />
@@ -197,12 +199,13 @@ export function ExportDialog({
                         >
                             {result.success ? (
                                 <div>
-                                    <strong>Success!</strong> Exported {result.exported} documents.
+                                    <strong>{t("exportDialog.successPrefix")}</strong>{" "}
+                                    {t("exportDialog.successMessage", { count: result.exported })}
                                 </div>
                             ) : (
                                 <div>
-                                    <strong>Failed.</strong>{" "}
-                                    {result.error || "Unknown error occurred."}
+                                    <strong>{t("exportDialog.failedPrefix")}</strong>{" "}
+                                    {result.error || t("exportDialog.unknownError")}
                                 </div>
                             )}
                         </div>
@@ -217,13 +220,13 @@ export function ExportDialog({
                         }}
                         disabled={isExporting}
                     >
-                        {result ? "Close" : "Cancel"}
+                        {result ? t("common.close") : t("common.cancel")}
                     </Button>
                     <Button
                         onClick={handleExport}
                         disabled={!filePath || !databaseName || !collectionName || isExporting}
                     >
-                        {isExporting ? "Exporting…" : "Export"}
+                        {isExporting ? t("exportDialog.exporting") : t("exportDialog.exportButton")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

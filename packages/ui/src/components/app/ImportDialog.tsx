@@ -13,6 +13,7 @@ import { Label } from "../ui/label"
 import { Input } from "../ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { FileUp } from "lucide-react"
+import { useT } from "../../i18n"
 
 export interface ImportDialogProps {
     open: boolean
@@ -27,6 +28,7 @@ export function ImportDialog({
     connectionId,
     onImported,
 }: ImportDialogProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [filePath, setFilePath] = useState("")
     const [format, setFormat] = useState("json")
@@ -82,7 +84,7 @@ export function ImportDialog({
                     success: false,
                     imported: 0,
                     failed: 0,
-                    errors: [err instanceof Error ? err.message : "Import failed"],
+                    errors: [err instanceof Error ? err.message : t("importDialog.defaultError")],
                 })
             })
             .finally(() => {
@@ -94,15 +96,13 @@ export function ImportDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Import Data</DialogTitle>
-                    <DialogDescription>
-                        Import documents from a file into your database collection.
-                    </DialogDescription>
+                    <DialogTitle>{t("importDialog.title")}</DialogTitle>
+                    <DialogDescription>{t("importDialog.description")}</DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                        <Label htmlFor="format">Format</Label>
+                        <Label htmlFor="format">{t("importDialog.formatLabel")}</Label>
                         <Select value={format} onValueChange={setFormat}>
                             <SelectTrigger id="format">
                                 <SelectValue />
@@ -110,17 +110,17 @@ export function ImportDialog({
                             <SelectContent>
                                 <SelectItem value="json">JSON</SelectItem>
                                 <SelectItem value="csv" disabled>
-                                    CSV (Coming soon)
+                                    {t("importDialog.csvComingSoon")}
                                 </SelectItem>
                                 <SelectItem value="bson" disabled>
-                                    BSON (Coming soon)
+                                    {t("importDialog.bsonComingSoon")}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="file">File</Label>
+                        <Label htmlFor="file">{t("importDialog.fileLabel")}</Label>
                         <div className="flex gap-2">
                             <Input
                                 id="file"
@@ -128,13 +128,13 @@ export function ImportDialog({
                                 onChange={(e) => {
                                     setFilePath(e.target.value)
                                 }}
-                                placeholder="/path/to/file.json"
+                                placeholder={t("importDialog.filePlaceholder")}
                                 className="flex-1"
                             />
                             <Button
                                 variant="outline"
                                 size="icon"
-                                aria-label="Browse import source"
+                                aria-label={t("importDialog.browseLabel")}
                                 onClick={handleBrowse}
                             >
                                 <FileUp className="h-4 w-4" />
@@ -143,26 +143,26 @@ export function ImportDialog({
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="database">Database</Label>
+                        <Label htmlFor="database">{t("importDialog.databaseLabel")}</Label>
                         <Input
                             id="database"
                             value={databaseName}
                             onChange={(e) => {
                                 setDatabaseName(e.target.value)
                             }}
-                            placeholder="mydb"
+                            placeholder={t("importDialog.databasePlaceholder")}
                         />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="collection">Collection</Label>
+                        <Label htmlFor="collection">{t("importDialog.collectionLabel")}</Label>
                         <Input
                             id="collection"
                             value={collectionName}
                             onChange={(e) => {
                                 setCollectionName(e.target.value)
                             }}
-                            placeholder="mycollection"
+                            placeholder={t("importDialog.collectionPlaceholder")}
                         />
                     </div>
 
@@ -176,12 +176,16 @@ export function ImportDialog({
                         >
                             {result.success ? (
                                 <div>
-                                    <strong>Success!</strong> Imported {result.imported} documents.
+                                    <strong>{t("importDialog.successPrefix")}</strong>{" "}
+                                    {t("importDialog.successMessage", { count: result.imported })}
                                 </div>
                             ) : (
                                 <div>
-                                    <strong>Failed.</strong> Imported {result.imported}, failed{" "}
-                                    {result.failed}.
+                                    <strong>{t("importDialog.failedPrefix")}</strong>{" "}
+                                    {t("importDialog.failedSummary", {
+                                        imported: result.imported,
+                                        failed: result.failed,
+                                    })}
                                     {result.errors.length > 0 && (
                                         <div className="mt-2 space-y-1">
                                             {result.errors.map((err, i) => (
@@ -208,13 +212,13 @@ export function ImportDialog({
                         }}
                         disabled={isImporting}
                     >
-                        {result ? "Close" : "Cancel"}
+                        {result ? t("common.close") : t("common.cancel")}
                     </Button>
                     <Button
                         onClick={handleImport}
                         disabled={!filePath || !databaseName || !collectionName || isImporting}
                     >
-                        {isImporting ? "Importing…" : "Import"}
+                        {isImporting ? t("importDialog.importing") : t("importDialog.importButton")}
                     </Button>
                 </DialogFooter>
             </DialogContent>
