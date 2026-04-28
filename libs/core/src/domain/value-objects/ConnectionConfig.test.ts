@@ -126,6 +126,47 @@ describe("ConnectionConfig", () => {
             )
         })
 
+        it("appends ?tls=true to MongoDB URIs when SSL is enabled", () => {
+            const config: ConnectionConfig = {
+                type: DatabaseType.MongoDB,
+                name: "test",
+                host: "localhost",
+                port: 27017,
+                ssl: { enabled: true, rejectUnauthorized: true },
+            }
+
+            expect(buildConnectionString(config).reveal()).toBe(
+                "mongodb://localhost:27017/?tls=true",
+            )
+        })
+
+        it("places ?tls=true after the auth database when both are set on MongoDB", () => {
+            const config: ConnectionConfig = {
+                type: DatabaseType.MongoDB,
+                name: "test",
+                host: "localhost",
+                port: 27017,
+                auth: { authDatabase: "admin" },
+                ssl: { enabled: true, rejectUnauthorized: true },
+            }
+
+            expect(buildConnectionString(config).reveal()).toBe(
+                "mongodb://localhost:27017/admin?tls=true",
+            )
+        })
+
+        it("uses the rediss:// scheme for TLS-enabled Redis connections", () => {
+            const config: ConnectionConfig = {
+                type: DatabaseType.Redis,
+                name: "test",
+                host: "localhost",
+                port: 6379,
+                ssl: { enabled: true, rejectUnauthorized: true },
+            }
+
+            expect(buildConnectionString(config).reveal()).toBe("rediss://localhost:6379")
+        })
+
         it("redacts the password in toString", () => {
             const config: ConnectionConfig = {
                 type: DatabaseType.MongoDB,

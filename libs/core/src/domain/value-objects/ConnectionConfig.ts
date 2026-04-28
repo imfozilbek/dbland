@@ -115,26 +115,54 @@ function buildRawConnectionString(config: ConnectionConfig): string {
     }
 
     switch (config.type) {
-        case DatabaseType.MongoDB: {
-            let uri = "mongodb://"
-            if (config.auth?.username && config.auth?.password) {
-                uri += `${encodeURIComponent(config.auth.username)}:${encodeURIComponent(config.auth.password)}@`
-            }
-            uri += `${config.host}:${config.port}`
-            if (config.auth?.authDatabase) {
-                uri += `/${config.auth.authDatabase}`
-            }
-            return uri
-        }
-        case DatabaseType.Redis: {
-            let uri = "redis://"
-            if (config.auth?.password) {
-                uri += `:${encodeURIComponent(config.auth.password)}@`
-            }
-            uri += `${config.host}:${config.port}`
-            return uri
-        }
+        case DatabaseType.MongoDB:
+            return buildMongoUri(config)
+        case DatabaseType.Redis:
+            return buildRedisUri(config)
         default:
-            throw new Error(`Unsupported database type: ${String(config.type)}`)
+            // Exhaustive switch: hitting this branch means a new
+            // `DatabaseType` was added but its URI shape wasn't. We want
+            // that to fail at compile time, not at runtime — the
+            // `: never` annotation forces a TS error on the typed branch
+            // and the runtime throw covers the cast-from-unknown case.
+            return assertNever(config.type, `Unsupported database type: ${String(config.type)}`)
     }
+}
+
+function buildMongoUri(config: ConnectionConfig): string {
+    let uri = "mongodb://"
+    if (config.auth?.username && config.auth?.password) {
+        uri += `${encodeURIComponent(config.auth.username)}:${encodeURIComponent(config.auth.password)}@`
+    }
+    uri += `${config.host}:${config.port}`
+    if (config.auth?.authDatabase) {
+        uri += `/${config.auth.authDatabase}`
+    }
+    // Honour the SSL toggle so a TLS-enabled config produces a URI the
+    // driver actually connects securely with. Previously the flag lived
+    // in the model and was silently ignored here, which meant the only
+    // way to enable TLS was via the raw `connectionString` override —
+    // surprising and easy to forget.
+    if (config.ssl?.enabled) {
+        uri += `${config.auth?.authDatabase ? "" : "/"}?tls=true`
+    }
+    return uri
+}
+
+function buildRedisUri(config: ConnectionConfig): string {
+    // `rediss://` is the wire-level signal for TLS; `redis://` is
+    // plaintext. Same problem as MongoDB — the SSL toggle wasn't
+    // reflected in the URI, so it might as well not have existed for
+    // everyone using the GUI builder.
+    const scheme = config.ssl?.enabled ? "rediss" : "redis"
+    let uri = `${scheme}://`
+    if (config.auth?.password) {
+        uri += `:${encodeURIComponent(config.auth.password)}@`
+    }
+    uri += `${config.host}:${config.port}`
+    return uri
+}
+
+function assertNever(_value: never, message: string): never {
+    throw new Error(message)
 }
