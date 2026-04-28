@@ -3,6 +3,24 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::{command, State};
 
+/// Wrap a user-supplied Redis argument in the double-quoted form the
+/// redis-cli tokenizer recognises, with `\` and `"` escaped.
+///
+/// Without this, a perfectly valid key containing whitespace
+/// (`"user profile:42"`) was passed through `format!("GET {}", key)`,
+/// then split by the tokenizer into three argv entries — Redis replied
+/// "wrong number of arguments for 'get' command" and the user had no
+/// idea why their value was unreachable. With it, every path through
+/// these commands hands Redis exactly one argument per logical input.
+///
+/// This is not a defence against Redis-level command injection (the
+/// RESP framing already prevents that) — it's about preserving argv
+/// boundaries for inputs that contain whitespace or quotes.
+fn redis_quote(input: &str) -> String {
+    let escaped = input.replace('\\', "\\\\").replace('"', "\\\"");
+    format!("\"{}\"", escaped)
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ScanKeysRequest {
     pub connection_id: String,
@@ -69,7 +87,7 @@ pub async fn redis_scan_keys(
             None,
             &format!(
                 "SCAN 0 MATCH {} COUNT {}",
-                request.pattern,
+                redis_quote(&request.pattern),
                 request.count.unwrap_or(100)
             ),
         )
@@ -98,7 +116,12 @@ pub async fn redis_get_value(
     // Get key type
     let type_result = state
         .pool
-        .execute_query(&request.connection_id, "0", None, &format!("TYPE {}", request.key))
+        .execute_query(
+            &request.connection_id,
+            "0",
+            None,
+            &format!("TYPE {}", redis_quote(&request.key)),
+        )
         .await
         .map_err(|e| crate::redact_error(e.to_string()))?;
 
@@ -111,7 +134,12 @@ pub async fn redis_get_value(
     // Get TTL
     let ttl_result = state
         .pool
-        .execute_query(&request.connection_id, "0", None, &format!("TTL {}", request.key))
+        .execute_query(
+            &request.connection_id,
+            "0",
+            None,
+            &format!("TTL {}", redis_quote(&request.key)),
+        )
         .await
         .map_err(|e| crate::redact_error(e.to_string()))?;
 
@@ -125,7 +153,12 @@ pub async fn redis_get_value(
         "string" => {
             let result = state
                 .pool
-                .execute_query(&request.connection_id, "0", None, &format!("GET {}", request.key))
+                .execute_query(
+                    &request.connection_id,
+                    "0",
+                    None,
+                    &format!("GET {}", redis_quote(&request.key)),
+                )
                 .await
                 .map_err(|e| crate::redact_error(e.to_string()))?;
 
@@ -141,7 +174,12 @@ pub async fn redis_get_value(
         "list" => {
             let result = state
                 .pool
-                .execute_query(&request.connection_id, "0", None, &format!("LRANGE {} 0 -1", request.key))
+                .execute_query(
+                    &request.connection_id,
+                    "0",
+                    None,
+                    &format!("LRANGE {} 0 -1", redis_quote(&request.key)),
+                )
                 .await
                 .map_err(|e| crate::redact_error(e.to_string()))?;
 
@@ -156,7 +194,12 @@ pub async fn redis_get_value(
         "set" => {
             let result = state
                 .pool
-                .execute_query(&request.connection_id, "0", None, &format!("SMEMBERS {}", request.key))
+                .execute_query(
+                    &request.connection_id,
+                    "0",
+                    None,
+                    &format!("SMEMBERS {}", redis_quote(&request.key)),
+                )
                 .await
                 .map_err(|e| crate::redact_error(e.to_string()))?;
 
@@ -171,7 +214,12 @@ pub async fn redis_get_value(
         "zset" => {
             let result = state
                 .pool
-                .execute_query(&request.connection_id, "0", None, &format!("ZRANGE {} 0 -1 WITHSCORES", request.key))
+                .execute_query(
+                    &request.connection_id,
+                    "0",
+                    None,
+                    &format!("ZRANGE {} 0 -1 WITHSCORES", redis_quote(&request.key)),
+                )
                 .await
                 .map_err(|e| crate::redact_error(e.to_string()))?;
 
@@ -194,7 +242,12 @@ pub async fn redis_get_value(
         "hash" => {
             let result = state
                 .pool
-                .execute_query(&request.connection_id, "0", None, &format!("HGETALL {}", request.key))
+                .execute_query(
+                    &request.connection_id,
+                    "0",
+                    None,
+                    &format!("HGETALL {}", redis_quote(&request.key)),
+                )
                 .await
                 .map_err(|e| crate::redact_error(e.to_string()))?;
 
@@ -233,7 +286,7 @@ pub async fn redis_set_ttl(
             &request.connection_id,
             "0",
             None,
-            &format!("EXPIRE {} {}", request.key, request.seconds),
+            &format!("EXPIRE {} {}", redis_quote(&request.key), request.seconds),
         )
         .await
         .map_err(|e| crate::redact_error(e.to_string()))?;
@@ -277,4 +330,32 @@ pub async fn redis_slow_log(
         .collect();
 
     Ok(entries)
+}
+
+#[cfg(test)]
+mod redis_quote_tests {
+    use super::redis_quote;
+
+    #[test]
+    fn wraps_simple_input_in_double_quotes() {
+        assert_eq!(redis_quote("foo"), "\"foo\"");
+    }
+
+    #[test]
+    fn preserves_internal_whitespace_so_argv_stays_one_token() {
+        assert_eq!(redis_quote("user profile:42"), "\"user profile:42\"");
+    }
+
+    #[test]
+    fn escapes_embedded_double_quotes() {
+        assert_eq!(redis_quote(r#"say "hi""#), r#""say \"hi\"""#);
+    }
+
+    #[test]
+    fn escapes_backslashes_first_so_round_trip_is_lossless() {
+        // Back-slash before quote: caller meant a literal backslash and a
+        // literal quote. Both must escape, in that order, or the quote
+        // ends up looking pre-escaped to the tokenizer.
+        assert_eq!(redis_quote(r#"a\b"c"#), r#""a\\b\"c""#);
+    }
 }
