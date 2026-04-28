@@ -7,6 +7,42 @@ use thiserror::Error;
 use super::crypto::{Crypto, CryptoError};
 use crate::tunnel::SSHTunnelConfig;
 
+/// Ordered list of `(target_version, sql)` migration steps. Each step
+/// runs at most once per database — `user_version` records the highest
+/// applied target. Append new migrations to the end, never edit a
+/// historical entry: an existing user's DB has already absorbed the
+/// previous text, and changing it now would skip the new behaviour.
+///
+/// Use `CREATE TABLE IF NOT EXISTS` and similar guards inside the SQL
+/// so a fresh install (which runs every step from 0) and a partial
+/// upgrade (which resumes from where it stopped) both converge to the
+/// same shape.
+const MIGRATIONS: &[(u32, &str)] = &[
+    (
+        1,
+        "CREATE TABLE IF NOT EXISTS connections (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            db_type TEXT NOT NULL,
+            host TEXT NOT NULL,
+            port INTEGER NOT NULL,
+            username TEXT,
+            password_encrypted TEXT,
+            database_name TEXT,
+            auth_database TEXT,
+            tls INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            last_connected_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_connections_name ON connections(name);",
+    ),
+    (
+        2,
+        "ALTER TABLE connections ADD COLUMN ssh_config_encrypted TEXT;",
+    ),
+];
+
 #[derive(Debug, Error)]
 pub enum StorageError {
     #[error("Database error: {0}")]
@@ -79,41 +115,35 @@ impl ConnectionStorage {
         Ok(storage)
     }
 
-    /// Initialize database schema
+    /// Run any schema migrations needed to bring the DB up to the
+    /// current code version, tracked via SQLite's `user_version` pragma.
+    ///
+    /// Each migration is a `(target_version, sql)` pair applied
+    /// in-order; on success `user_version` is bumped to its target
+    /// inside the same transaction, so a crash mid-migration leaves
+    /// the DB at the previous version and the next startup retries.
+    /// Replaces the previous "blind `ALTER TABLE ADD COLUMN`, swallow
+    /// the error" pattern, which silently masked real schema bugs and
+    /// gave us no way to know which schema a file was actually at.
     fn init_schema(&self) -> Result<(), StorageError> {
-        let conn = self.conn.lock();
+        let mut conn = self.conn.lock();
 
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS connections (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                db_type TEXT NOT NULL,
-                host TEXT NOT NULL,
-                port INTEGER NOT NULL,
-                username TEXT,
-                password_encrypted TEXT,
-                database_name TEXT,
-                auth_database TEXT,
-                tls INTEGER NOT NULL DEFAULT 0,
-                ssh_config_encrypted TEXT,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                last_connected_at TEXT
-            )",
-            [],
-        )?;
+        let current: u32 = conn
+            .query_row("SELECT user_version FROM pragma_user_version", [], |row| {
+                row.get(0)
+            })
+            .unwrap_or(0);
 
-        // Migration: Add ssh_config_encrypted column if it doesn't exist
-        let _ = conn.execute(
-            "ALTER TABLE connections ADD COLUMN ssh_config_encrypted TEXT",
-            [],
-        );
-
-        // Create index on name
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_connections_name ON connections(name)",
-            [],
-        )?;
+        for (target, sql) in MIGRATIONS {
+            if current < *target {
+                let tx = conn.transaction()?;
+                tx.execute_batch(sql)?;
+                // user_version cannot be parameterised, but `target` is a
+                // hard-coded u32 from `MIGRATIONS` and never user input.
+                tx.execute_batch(&format!("PRAGMA user_version = {}", target))?;
+                tx.commit()?;
+            }
+        }
 
         Ok(())
     }
@@ -442,5 +472,30 @@ mod tests {
         storage.save(&connection).unwrap();
         assert!(storage.delete("to-delete").unwrap());
         assert!(storage.get("to-delete").is_err());
+    }
+
+    #[test]
+    fn schema_reaches_latest_migration_version() {
+        let key = Crypto::generate_key();
+        let storage = ConnectionStorage::in_memory(&key).unwrap();
+        let latest = MIGRATIONS.last().map(|(v, _)| *v).unwrap_or(0);
+
+        let conn = storage.conn.lock();
+        let version: u32 = conn
+            .query_row("SELECT user_version FROM pragma_user_version", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(version, latest, "fresh DB should be at the latest version");
+    }
+
+    #[test]
+    fn schema_init_is_idempotent() {
+        // Two `init_schema` runs on the same connection must not double-apply
+        // any migration — the second call should observe `user_version` and
+        // skip everything.
+        let key = Crypto::generate_key();
+        let storage = ConnectionStorage::in_memory(&key).unwrap();
+        storage.init_schema().expect("re-running init must succeed");
     }
 }
