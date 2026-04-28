@@ -106,6 +106,40 @@ impl SavedQueriesStorage {
         Ok(conn.last_insert_rowid())
     }
 
+    /// Fetch a single saved query by its primary key. Used by
+    /// `save_query` to return the freshly-inserted row to the caller —
+    /// the previous version pulled `get_by_connection` (potentially
+    /// thousands of rows) and filtered in memory just to find the one
+    /// row we knew the id of.
+    pub fn get_by_id(&self, id: i64) -> Result<Option<SavedQuery>> {
+        let conn = self.conn.lock();
+        let mut stmt = conn.prepare(
+            "SELECT id, connection_id, name, description, query, language, database_name, collection_name, tags, created_at, updated_at
+             FROM saved_queries
+             WHERE id = ?1",
+        )?;
+
+        let row = stmt
+            .query_row(params![id], |row| {
+                Ok(SavedQuery {
+                    id: row.get(0)?,
+                    connection_id: row.get(1)?,
+                    name: row.get(2)?,
+                    description: row.get(3)?,
+                    query: row.get(4)?,
+                    language: row.get(5)?,
+                    database_name: row.get(6)?,
+                    collection_name: row.get(7)?,
+                    tags: row.get(8)?,
+                    created_at: row.get(9)?,
+                    updated_at: row.get(10)?,
+                })
+            })
+            .ok();
+
+        Ok(row)
+    }
+
     pub fn get_by_connection(&self, connection_id: &str) -> Result<Vec<SavedQuery>> {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(
@@ -296,5 +330,21 @@ mod tests {
         storage.delete_by_connection("conn-zzz").unwrap();
 
         assert_eq!(storage.get_by_connection("conn-a").unwrap().len(), 1);
+    }
+
+    #[test]
+    fn get_by_id_returns_the_inserted_row() {
+        let (_dir, storage) = fresh_storage();
+        let id = storage.insert(&entry("conn-a", "q1")).unwrap();
+
+        let fetched = storage.get_by_id(id).unwrap().expect("row must exist");
+        assert_eq!(fetched.id, id);
+        assert_eq!(fetched.name, "q1");
+    }
+
+    #[test]
+    fn get_by_id_returns_none_for_missing_id() {
+        let (_dir, storage) = fresh_storage();
+        assert!(storage.get_by_id(99_999).unwrap().is_none());
     }
 }

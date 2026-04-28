@@ -3,6 +3,33 @@ use crate::AppState;
 use std::sync::Arc;
 use tauri::{command, State};
 
+/// Reject obviously broken inputs at the IPC boundary so SQLite isn't
+/// asked to insert blank rows the user can't even identify in the
+/// picker afterwards. Mirrors the validate() pattern on
+/// ConnectionConfigDto.
+fn validate_new(query: &NewSavedQuery) -> Result<(), String> {
+    if query.connection_id.trim().is_empty() {
+        return Err("Saved query must reference a connection".to_string());
+    }
+    if query.name.trim().is_empty() {
+        return Err("Saved query name must not be empty".to_string());
+    }
+    if query.query.trim().is_empty() {
+        return Err("Saved query body must not be empty".to_string());
+    }
+    Ok(())
+}
+
+fn validate_update(query: &UpdateSavedQuery) -> Result<(), String> {
+    if query.name.trim().is_empty() {
+        return Err("Saved query name must not be empty".to_string());
+    }
+    if query.query.trim().is_empty() {
+        return Err("Saved query body must not be empty".to_string());
+    }
+    Ok(())
+}
+
 /// Get saved queries for a connection
 #[command]
 pub async fn get_saved_queries(
@@ -21,21 +48,22 @@ pub async fn save_query(
     state: State<'_, Arc<AppState>>,
     query: NewSavedQuery,
 ) -> Result<SavedQuery, String> {
+    validate_new(&query)?;
+
     let id = state
         .saved_queries
         .insert(&query)
         .map_err(|e| crate::redact_error(e.to_string()))?;
 
-    // Get the saved query
-    let queries = state
+    // Direct fetch by id — the previous version pulled the entire
+    // get_by_connection list (potentially thousands of rows across the
+    // IPC boundary) and filtered in memory just to find the one row we
+    // knew the id of.
+    state
         .saved_queries
-        .get_by_connection(&query.connection_id)
-        .map_err(|e| crate::redact_error(e.to_string()))?;
-
-    queries
-        .into_iter()
-        .find(|q| q.id == id)
-        .ok_or_else(|| "Failed to retrieve saved query".to_string())
+        .get_by_id(id)
+        .map_err(|e| crate::redact_error(e.to_string()))?
+        .ok_or_else(|| "Saved query disappeared between insert and read".to_string())
 }
 
 /// Update a saved query
@@ -44,6 +72,8 @@ pub async fn update_saved_query(
     state: State<'_, Arc<AppState>>,
     query: UpdateSavedQuery,
 ) -> Result<(), String> {
+    validate_update(&query)?;
+
     state
         .saved_queries
         .update(&query)
