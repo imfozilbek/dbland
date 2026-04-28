@@ -123,6 +123,26 @@ export const ru: Translations = {
             testing: "Проверка…",
         },
     },
+    results: {
+        emptyTitle: "Результатов пока нет",
+        emptyDescriptionPrefix: "Запустите запрос, чтобы заполнить эту панель.",
+        emptyDescriptionSuffix: "выполняет.",
+        success: "Успех",
+        error: "Ошибка",
+        unknownError: "Произошла неизвестная ошибка",
+        moreAvailable: "Доступно ещё",
+        // Russian has three plural forms — i18next handles `_one` / `_few` / `_many`.
+        documents_one: "документ",
+        documents_few: "документа",
+        documents_many: "документов",
+        documents_other: "документов",
+        executionTime: "{{ms}} мс",
+        tabs: {
+            table: "Таблица",
+            json: "JSON",
+            tree: "Дерево",
+        },
+    },
     settings: {
         title: "Настройки",
         description: "Настройте параметры DBLand",

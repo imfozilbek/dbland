@@ -124,6 +124,28 @@ export const en = {
             testing: "Testing…",
         },
     },
+    results: {
+        emptyTitle: "No results yet",
+        emptyDescriptionPrefix: "Run a query to populate this panel.",
+        emptyDescriptionSuffix: "executes.",
+        success: "Success",
+        error: "Error",
+        unknownError: "Unknown error occurred",
+        moreAvailable: "More available",
+        // i18next plural forms — English only triggers `_one` / `_other`,
+        // but the shape has to mirror the Russian set so the Translations
+        // type contract stays satisfied.
+        documents_one: "document",
+        documents_few: "documents",
+        documents_many: "documents",
+        documents_other: "documents",
+        executionTime: "{{ms}}ms",
+        tabs: {
+            table: "Table",
+            json: "JSON",
+            tree: "Tree",
+        },
+    },
     settings: {
         title: "Settings",
         description: "Configure your DBLand preferences",

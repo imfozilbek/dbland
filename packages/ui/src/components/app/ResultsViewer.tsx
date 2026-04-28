@@ -8,6 +8,7 @@ import type { ResultsViewMode } from "../../stores/query-store"
 import { ResultsTable } from "./ResultsTable"
 import { ResultsJson } from "./ResultsJson"
 import { ResultsTree } from "./ResultsTree"
+import { useT } from "../../i18n"
 
 /**
  * Render the keyboard shortcut for "execute query" using the convention
@@ -47,19 +48,20 @@ export function ResultsViewer({
     onCloneDocument,
     onDeleteDocument,
 }: ResultsViewerProps): JSX.Element {
+    const t = useT()
     if (!result) {
         return (
             <div className="flex h-full items-center justify-center">
                 <EmptyState
                     icon={<Play className="h-5 w-5" />}
-                    title="No results yet"
+                    title={t("results.emptyTitle")}
                     description={
                         <>
-                            Run a query to populate this panel.{" "}
+                            {t("results.emptyDescriptionPrefix")}{" "}
                             <span className="rounded border border-[var(--border)] bg-[var(--card)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--foreground)]">
                                 {getExecuteShortcutLabel()}
                             </span>{" "}
-                            executes.
+                            {t("results.emptyDescriptionSuffix")}
                         </>
                     }
                 />
@@ -72,12 +74,12 @@ export function ResultsViewer({
             <Card className="h-full animate-fadeIn">
                 <CardHeader className="pb-2">
                     <div className="flex items-center gap-2">
-                        <Badge variant="destructive">Error</Badge>
+                        <Badge variant="destructive">{t("results.error")}</Badge>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className="text-destructive font-mono text-sm whitespace-pre-wrap bg-destructive/5 rounded-md p-3 border border-destructive/20">
-                        {result.error ?? "Unknown error occurred"}
+                        {result.error ?? t("results.unknownError")}
                     </div>
                 </CardContent>
             </Card>
@@ -91,20 +93,22 @@ export function ResultsViewer({
             <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Badge variant="success">Success</Badge>
+                        <Badge variant="success">{t("results.success")}</Badge>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span className="font-medium text-foreground">
                                 {stats.documentsReturned}
                             </span>
-                            <span>{stats.documentsReturned === 1 ? "document" : "documents"}</span>
+                            <span>
+                                {t("results.documents", { count: stats.documentsReturned })}
+                            </span>
                             <span className="text-border">•</span>
                             <span className="font-mono text-xs bg-secondary px-1.5 py-0.5 rounded">
-                                {stats.executionTimeMs}ms
+                                {t("results.executionTime", { ms: stats.executionTimeMs })}
                             </span>
                         </div>
                         {cursor?.hasMore && (
                             <Badge variant="outline" className="text-xs">
-                                More available
+                                {t("results.moreAvailable")}
                             </Badge>
                         )}
                     </div>
@@ -121,15 +125,15 @@ export function ResultsViewer({
                     <TabsList className="mb-2">
                         <TabsTrigger value="table" className="flex items-center gap-2">
                             <Table className="h-4 w-4" />
-                            Table
+                            {t("results.tabs.table")}
                         </TabsTrigger>
                         <TabsTrigger value="json" className="flex items-center gap-2">
                             <Braces className="h-4 w-4" />
-                            JSON
+                            {t("results.tabs.json")}
                         </TabsTrigger>
                         <TabsTrigger value="tree" className="flex items-center gap-2">
                             <ListTree className="h-4 w-4" />
-                            Tree
+                            {t("results.tabs.tree")}
                         </TabsTrigger>
                     </TabsList>
                     <TabsContent value="table" className="flex-1 overflow-hidden">
