@@ -12,6 +12,7 @@ import {
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 import { Textarea } from "../ui/textarea"
+import { useT } from "../../i18n"
 
 export interface SaveQueryDialogProps {
     open: boolean
@@ -34,6 +35,7 @@ export function SaveQueryDialog({
     collectionName,
     onSaved,
 }: SaveQueryDialogProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [name, setName] = useState("")
     const [description, setDescription] = useState("")
@@ -81,18 +83,16 @@ export function SaveQueryDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Save Query</DialogTitle>
-                    <DialogDescription>
-                        Save this query for later use. You can add a name, description, and tags.
-                    </DialogDescription>
+                    <DialogTitle>{t("saveQuery.title")}</DialogTitle>
+                    <DialogDescription>{t("saveQuery.description")}</DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                        <Label htmlFor="name">Name *</Label>
+                        <Label htmlFor="name">{t("saveQuery.nameLabel")}</Label>
                         <Input
                             id="name"
-                            placeholder="My Query"
+                            placeholder={t("saveQuery.namePlaceholder")}
                             value={name}
                             onChange={(e) => {
                                 setName(e.target.value)
@@ -102,10 +102,10 @@ export function SaveQueryDialog({
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="description">Description</Label>
+                        <Label htmlFor="description">{t("saveQuery.descriptionLabel")}</Label>
                         <Textarea
                             id="description"
-                            placeholder="What does this query do?"
+                            placeholder={t("saveQuery.descriptionPlaceholder")}
                             value={description}
                             onChange={(e) => {
                                 setDescription(e.target.value)
@@ -115,10 +115,10 @@ export function SaveQueryDialog({
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="tags">Tags</Label>
+                        <Label htmlFor="tags">{t("saveQuery.tagsLabel")}</Label>
                         <Input
                             id="tags"
-                            placeholder="analytics, reports, users (comma separated)"
+                            placeholder={t("saveQuery.tagsPlaceholder")}
                             value={tags}
                             onChange={(e) => {
                                 setTags(e.target.value)
@@ -127,7 +127,9 @@ export function SaveQueryDialog({
                     </div>
 
                     <div className="rounded-md bg-muted p-3">
-                        <p className="text-xs text-muted-foreground mb-1">Preview:</p>
+                        <p className="text-xs text-muted-foreground mb-1">
+                            {t("saveQuery.preview")}
+                        </p>
                         <code className="block text-xs font-mono line-clamp-3">{query}</code>
                     </div>
                 </div>
@@ -140,10 +142,10 @@ export function SaveQueryDialog({
                         }}
                         disabled={isSaving}
                     >
-                        Cancel
+                        {t("common.cancel")}
                     </Button>
                     <Button onClick={handleSave} disabled={!name.trim() || isSaving}>
-                        {isSaving ? "Saving…" : "Save Query"}
+                        {isSaving ? t("common.saving") : t("saveQuery.saveButton")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

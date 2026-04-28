@@ -13,6 +13,7 @@ import { Label } from "../ui/label"
 import { Input } from "../ui/input"
 import { Textarea } from "../ui/textarea"
 import { Switch } from "../ui/switch"
+import { useT } from "../../i18n"
 
 export interface CreateIndexDialogProps {
     open: boolean
@@ -31,6 +32,7 @@ export function CreateIndexDialog({
     collectionName,
     onCreated,
 }: CreateIndexDialogProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [indexName, setIndexName] = useState("")
     const [keysJson, setKeysJson] = useState('{"field": 1}')
@@ -48,7 +50,7 @@ export function CreateIndexDialog({
         try {
             keys = JSON.parse(keysJson) as Record<string, number>
         } catch (_err) {
-            setError("Invalid JSON for keys")
+            setError(t("createIndex.invalidJson"))
             return
         }
 
@@ -79,7 +81,7 @@ export function CreateIndexDialog({
                 }
             })
             .catch((err: unknown) => {
-                setError(err instanceof Error ? err.message : "Failed to create index")
+                setError(err instanceof Error ? err.message : t("createIndex.defaultError"))
             })
             .finally(() => {
                 setIsCreating(false)
@@ -90,27 +92,30 @@ export function CreateIndexDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Create Index</DialogTitle>
+                    <DialogTitle>{t("createIndex.title")}</DialogTitle>
                     <DialogDescription>
-                        Create a new index for {databaseName}.{collectionName}
+                        {t("createIndex.description", {
+                            db: databaseName,
+                            coll: collectionName,
+                        })}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                        <Label htmlFor="index-name">Index Name (optional)</Label>
+                        <Label htmlFor="index-name">{t("createIndex.indexNameLabel")}</Label>
                         <Input
                             id="index-name"
                             value={indexName}
                             onChange={(e) => {
                                 setIndexName(e.target.value)
                             }}
-                            placeholder="my_index"
+                            placeholder={t("createIndex.indexNamePlaceholder")}
                         />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="keys">Keys (JSON)</Label>
+                        <Label htmlFor="keys">{t("createIndex.keysLabel")}</Label>
                         <Textarea
                             id="keys"
                             value={keysJson}
@@ -120,26 +125,24 @@ export function CreateIndexDialog({
                             }}
                             rows={4}
                             className="font-mono text-sm"
-                            placeholder='{"field1": 1, "field2": -1}'
+                            placeholder={t("createIndex.keysPlaceholder")}
                         />
-                        <p className="text-xs text-muted-foreground">
-                            1 for ascending, -1 for descending
-                        </p>
+                        <p className="text-xs text-muted-foreground">{t("createIndex.keysHint")}</p>
                     </div>
 
                     <div className="grid gap-3">
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="unique">Unique</Label>
+                            <Label htmlFor="unique">{t("createIndex.unique")}</Label>
                             <Switch id="unique" checked={unique} onCheckedChange={setUnique} />
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="sparse">Sparse</Label>
+                            <Label htmlFor="sparse">{t("createIndex.sparse")}</Label>
                             <Switch id="sparse" checked={sparse} onCheckedChange={setSparse} />
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="background">Background Build</Label>
+                            <Label htmlFor="background">{t("createIndex.backgroundBuild")}</Label>
                             <Switch
                                 id="background"
                                 checked={background}
@@ -148,7 +151,7 @@ export function CreateIndexDialog({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="ttl">TTL (seconds, optional)</Label>
+                            <Label htmlFor="ttl">{t("createIndex.ttlLabel")}</Label>
                             <Input
                                 id="ttl"
                                 type="number"
@@ -176,10 +179,10 @@ export function CreateIndexDialog({
                         }}
                         disabled={isCreating}
                     >
-                        Cancel
+                        {t("common.cancel")}
                     </Button>
                     <Button onClick={handleCreate} disabled={isCreating}>
-                        {isCreating ? "Creating..." : "Create"}
+                        {isCreating ? t("createIndex.creating") : t("createIndex.createButton")}
                     </Button>
                 </DialogFooter>
             </DialogContent>
