@@ -175,6 +175,26 @@ export const en = {
         creating: "Creating...",
         defaultError: "Failed to create index",
     },
+    documentEditor: {
+        title: "Edit Document",
+        tabs: {
+            form: "Form",
+            json: "JSON",
+        },
+        invalidJson: "Invalid JSON",
+        noDocumentLoaded: "No document loaded",
+        deleteConfirmTitle: "Delete document?",
+        deleteConfirmDescription: "This document will be permanently removed from {{db}}.{{coll}}.",
+        deleted: "Document deleted",
+        cloneButton: "Clone",
+        errors: {
+            load: "Failed to load document",
+            update: "Failed to update document",
+            save: "Failed to save document",
+            delete: "Failed to delete document",
+            clone: "Failed to clone document",
+        },
+    },
     settings: {
         title: "Settings",
         description: "Configure your DBLand preferences",

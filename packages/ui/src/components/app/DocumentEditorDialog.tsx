@@ -18,6 +18,7 @@ import { Input } from "../ui/input"
 import { Textarea } from "../ui/textarea"
 import { ScrollArea } from "../ui/scroll-area"
 import { Skeleton } from "../ui/skeleton"
+import { useT } from "../../i18n"
 
 export interface DocumentEditorDialogProps {
     open: boolean
@@ -38,6 +39,7 @@ export function DocumentEditorDialog({
     documentId,
     onSaved,
 }: DocumentEditorDialogProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [confirm, confirmDialog] = useConfirm()
     const [document, setDocument] = useState<ResultDocument | null>(null)
@@ -62,7 +64,7 @@ export function DocumentEditorDialog({
                 setJsonContent(JSON.stringify(doc, null, 4))
             })
             .catch((err: unknown) => {
-                setError(err instanceof Error ? err.message : "Failed to load document")
+                setError(err instanceof Error ? err.message : t("documentEditor.errors.load"))
                 console.error("Failed to load document:", err)
             })
             .finally(() => {
@@ -75,7 +77,7 @@ export function DocumentEditorDialog({
             const parsed = JSON.parse(jsonContent) as Record<string, unknown>
             handleSave(parsed)
         } catch (_err) {
-            setError("Invalid JSON")
+            setError(t("documentEditor.invalidJson"))
         }
     }
 
@@ -95,11 +97,11 @@ export function DocumentEditorDialog({
                         onSaved()
                     }
                 } else {
-                    setError("Failed to update document")
+                    setError(t("documentEditor.errors.update"))
                 }
             })
             .catch((err: unknown) => {
-                setError(err instanceof Error ? err.message : "Failed to save document")
+                setError(err instanceof Error ? err.message : t("documentEditor.errors.save"))
                 console.error("Failed to save document:", err)
             })
             .finally(() => {
@@ -109,9 +111,12 @@ export function DocumentEditorDialog({
 
     const handleDelete = async (): Promise<void> => {
         const confirmed = await confirm({
-            title: "Delete document?",
-            description: `This document will be permanently removed from ${databaseName}.${collectionName}.`,
-            confirmLabel: "Delete",
+            title: t("documentEditor.deleteConfirmTitle"),
+            description: t("documentEditor.deleteConfirmDescription", {
+                db: databaseName,
+                coll: collectionName,
+            }),
+            confirmLabel: t("common.delete"),
             destructive: true,
         })
         if (!confirmed) {
@@ -122,7 +127,7 @@ export function DocumentEditorDialog({
             .deleteDocument(connectionId, databaseName, collectionName, documentId)
             .then((success) => {
                 if (success) {
-                    toast.success("Document deleted")
+                    toast.success(t("documentEditor.deleted"))
                     onOpenChange(false)
                     if (onSaved) {
                         onSaved()
@@ -130,10 +135,10 @@ export function DocumentEditorDialog({
                 }
             })
             .catch((err: unknown) => {
-                setError(err instanceof Error ? err.message : "Failed to delete document")
+                setError(err instanceof Error ? err.message : t("documentEditor.errors.delete"))
                 console.error("Failed to delete document:", err)
-                toast.error("Failed to delete document", {
-                    description: err instanceof Error ? err.message : "Unknown error",
+                toast.error(t("documentEditor.errors.delete"), {
+                    description: err instanceof Error ? err.message : t("common.unknownError"),
                 })
             })
     }
@@ -148,14 +153,14 @@ export function DocumentEditorDialog({
                 }
             })
             .catch((err: unknown) => {
-                setError(err instanceof Error ? err.message : "Failed to clone document")
+                setError(err instanceof Error ? err.message : t("documentEditor.errors.clone"))
                 console.error("Failed to clone document:", err)
             })
     }
 
     const renderFormEditor = (): JSX.Element => {
         if (!document) {
-            return <div>No document loaded</div>
+            return <div>{t("documentEditor.noDocumentLoaded")}</div>
         }
 
         return (
@@ -205,7 +210,7 @@ export function DocumentEditorDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[700px]">
                 <DialogHeader>
-                    <DialogTitle>Edit Document</DialogTitle>
+                    <DialogTitle>{t("documentEditor.title")}</DialogTitle>
                     <DialogDescription>
                         {databaseName} / {collectionName}
                     </DialogDescription>
@@ -236,8 +241,8 @@ export function DocumentEditorDialog({
                 ) : (
                     <Tabs defaultValue="form" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="form">Form</TabsTrigger>
-                            <TabsTrigger value="json">JSON</TabsTrigger>
+                            <TabsTrigger value="form">{t("documentEditor.tabs.form")}</TabsTrigger>
+                            <TabsTrigger value="json">{t("documentEditor.tabs.json")}</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="form" className="mt-4">
@@ -266,14 +271,14 @@ export function DocumentEditorDialog({
                             }}
                             disabled={isSaving || isLoading}
                         >
-                            Delete
+                            {t("common.delete")}
                         </Button>
                         <Button
                             variant="outline"
                             onClick={handleClone}
                             disabled={isSaving || isLoading}
                         >
-                            Clone
+                            {t("documentEditor.cloneButton")}
                         </Button>
                     </div>
                     <div className="flex gap-2">
@@ -284,7 +289,7 @@ export function DocumentEditorDialog({
                             }}
                             disabled={isSaving}
                         >
-                            Cancel
+                            {t("common.cancel")}
                         </Button>
                         <Button
                             onClick={() => {
@@ -296,7 +301,7 @@ export function DocumentEditorDialog({
                             }}
                             disabled={isSaving || isLoading}
                         >
-                            {isSaving ? "Saving…" : "Save"}
+                            {isSaving ? t("common.saving") : t("common.save")}
                         </Button>
                     </div>
                 </DialogFooter>

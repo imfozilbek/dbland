@@ -173,6 +173,26 @@ export const ru: Translations = {
         creating: "Создание...",
         defaultError: "Не удалось создать индекс",
     },
+    documentEditor: {
+        title: "Редактировать документ",
+        tabs: {
+            form: "Форма",
+            json: "JSON",
+        },
+        invalidJson: "Некорректный JSON",
+        noDocumentLoaded: "Документ не загружен",
+        deleteConfirmTitle: "Удалить документ?",
+        deleteConfirmDescription: "Документ будет безвозвратно удалён из {{db}}.{{coll}}.",
+        deleted: "Документ удалён",
+        cloneButton: "Клонировать",
+        errors: {
+            load: "Не удалось загрузить документ",
+            update: "Не удалось обновить документ",
+            save: "Не удалось сохранить документ",
+            delete: "Не удалось удалить документ",
+            clone: "Не удалось клонировать документ",
+        },
+    },
     settings: {
         title: "Настройки",
         description: "Настройте параметры DBLand",
