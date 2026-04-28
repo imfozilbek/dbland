@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use mongodb::{
     bson::{doc, Document},
-    options::ClientOptions,
+    options::{ClientOptions, Credential},
     Client,
 };
 use std::sync::Arc;
@@ -24,21 +24,19 @@ pub struct MongoDbConfig {
 }
 
 impl MongoDbConfig {
-    /// Build MongoDB connection URI
+    /// Build a credential-free MongoDB connection URI.
+    ///
+    /// Credentials are intentionally **not** embedded in the URI — they
+    /// are attached to `ClientOptions::credential` separately (see
+    /// `build_client_options`). Keeping them out of the string means:
+    /// - errors from `ClientOptions::parse` cannot echo the password
+    ///   back to the user as part of "invalid connection string: …"
+    /// - logs that capture the URI for debugging never carry secrets
+    /// - URL-encoding edge cases (special chars in passwords like `@`,
+    ///   `:`, `/`) cannot break the parser
     pub fn to_uri(&self) -> String {
-        let mut uri = String::from("mongodb://");
+        let mut uri = format!("mongodb://{}:{}", self.host, self.port);
 
-        // Add credentials if provided
-        if let (Some(username), Some(password)) = (&self.username, &self.password) {
-            let encoded_user = urlencoding::encode(username);
-            let encoded_pass = urlencoding::encode(password);
-            uri.push_str(&format!("{}:{}@", encoded_user, encoded_pass));
-        }
-
-        // Add host and port
-        uri.push_str(&format!("{}:{}", self.host, self.port));
-
-        // Add options
         let mut options = Vec::new();
 
         if let Some(ref auth_db) = self.auth_database {
@@ -59,6 +57,33 @@ impl MongoDbConfig {
         }
 
         uri
+    }
+
+    /// Build the credential block to attach to `ClientOptions` after
+    /// parsing. Returns `None` when no username is configured — in that
+    /// case the driver connects without authentication.
+    ///
+    /// `Credential` is `#[non_exhaustive]` so we mutate the built value
+    /// directly instead of trying to thread optional setters through
+    /// `typed_builder`'s type-state encoding (each setter changes the
+    /// builder's type, so a let-mut cascade doesn't compile).
+    fn credential(&self) -> Option<Credential> {
+        let username = self.username.clone()?;
+        let mut credential = Credential::builder().username(username).build();
+        credential.password = self.password.clone();
+        credential.source = self.auth_database.clone();
+        Some(credential)
+    }
+
+    /// Parse a credential-free URI and attach the credential block.
+    /// Centralised so test/connect paths cannot drift out of sync.
+    async fn build_client_options(&self) -> Result<ClientOptions, AdapterError> {
+        let uri = self.to_uri();
+        let mut options = ClientOptions::parse(&uri)
+            .await
+            .map_err(|e| AdapterError::ConnectionFailed(e.to_string()))?;
+        options.credential = self.credential();
+        Ok(options)
     }
 }
 
@@ -150,47 +175,49 @@ impl MongoDbAdapter {
 impl DatabaseAdapter for MongoDbAdapter {
     async fn test_connection(&self) -> Result<TestResult, AdapterError> {
         let start = std::time::Instant::now();
-        let uri = self.config.to_uri();
 
-        match ClientOptions::parse(&uri).await {
-            Ok(options) => match Client::with_options(options) {
-                Ok(client) => {
-                    // Try to ping the server
-                    match client.database("admin").run_command(doc! { "ping": 1 }).await {
-                        Ok(_) => {
-                            // Get server version
-                            let version = client
-                                .database("admin")
-                                .run_command(doc! { "buildInfo": 1 })
-                                .await
-                                .ok()
-                                .and_then(|doc| doc.get_str("version").ok().map(|s| s.to_string()));
-
-                            Ok(TestResult {
-                                success: true,
-                                message: "Connection successful".to_string(),
-                                latency_ms: Some(start.elapsed().as_millis() as u64),
-                                server_version: version,
-                            })
-                        }
-                        Err(e) => Ok(TestResult {
-                            success: false,
-                            message: format!("Ping failed: {}", e),
-                            latency_ms: None,
-                            server_version: None,
-                        }),
-                    }
-                }
-                Err(e) => Ok(TestResult {
+        let options = match self.config.build_client_options().await {
+            Ok(o) => o,
+            Err(e) => {
+                return Ok(TestResult {
                     success: false,
-                    message: format!("Client creation failed: {}", e),
+                    message: format!("Invalid connection options: {}", e),
                     latency_ms: None,
                     server_version: None,
-                }),
-            },
+                });
+            }
+        };
+
+        match Client::with_options(options) {
+            Ok(client) => {
+                // Try to ping the server
+                match client.database("admin").run_command(doc! { "ping": 1 }).await {
+                    Ok(_) => {
+                        let version = client
+                            .database("admin")
+                            .run_command(doc! { "buildInfo": 1 })
+                            .await
+                            .ok()
+                            .and_then(|doc| doc.get_str("version").ok().map(|s| s.to_string()));
+
+                        Ok(TestResult {
+                            success: true,
+                            message: "Connection successful".to_string(),
+                            latency_ms: Some(start.elapsed().as_millis() as u64),
+                            server_version: version,
+                        })
+                    }
+                    Err(e) => Ok(TestResult {
+                        success: false,
+                        message: format!("Ping failed: {}", e),
+                        latency_ms: None,
+                        server_version: None,
+                    }),
+                }
+            }
             Err(e) => Ok(TestResult {
                 success: false,
-                message: format!("Invalid connection string: {}", e),
+                message: format!("Client creation failed: {}", e),
                 latency_ms: None,
                 server_version: None,
             }),
@@ -198,11 +225,7 @@ impl DatabaseAdapter for MongoDbAdapter {
     }
 
     async fn connect(&mut self) -> Result<(), AdapterError> {
-        let uri = self.config.to_uri();
-
-        let options = ClientOptions::parse(&uri)
-            .await
-            .map_err(|e| AdapterError::ConnectionFailed(e.to_string()))?;
+        let options = self.config.build_client_options().await?;
 
         let client = Client::with_options(options)
             .map_err(|e| AdapterError::ConnectionFailed(e.to_string()))?;
@@ -432,5 +455,56 @@ mod tests {
     #[test]
     fn parse_find_query_rejects_invalid_json() {
         assert!(parse(r#"{not valid"#).is_err());
+    }
+
+    fn config_with_creds() -> MongoDbConfig {
+        MongoDbConfig {
+            host: "db.example.com".to_string(),
+            port: 27017,
+            username: Some("dbuser".to_string()),
+            password: Some("p@ss:word/with#special!".to_string()),
+            auth_database: Some("admin".to_string()),
+            replica_set: None,
+            tls: false,
+        }
+    }
+
+    #[test]
+    fn uri_does_not_contain_password() {
+        let uri = config_with_creds().to_uri();
+        assert!(
+            !uri.contains("p@ss:word"),
+            "password leaked into URI: {}",
+            uri
+        );
+    }
+
+    #[test]
+    fn uri_does_not_contain_username() {
+        // Without creds in the URI, parse errors cannot echo them back.
+        let uri = config_with_creds().to_uri();
+        assert!(
+            !uri.contains("dbuser"),
+            "username leaked into URI: {}",
+            uri
+        );
+    }
+
+    #[test]
+    fn credential_is_built_from_config() {
+        let cred = config_with_creds().credential().expect("creds present");
+        assert_eq!(cred.username.as_deref(), Some("dbuser"));
+        assert_eq!(cred.password.as_deref(), Some("p@ss:word/with#special!"));
+        assert_eq!(cred.source.as_deref(), Some("admin"));
+    }
+
+    #[test]
+    fn credential_returns_none_without_username() {
+        let cfg = MongoDbConfig {
+            username: None,
+            password: None,
+            ..MongoDbConfig::default()
+        };
+        assert!(cfg.credential().is_none());
     }
 }
