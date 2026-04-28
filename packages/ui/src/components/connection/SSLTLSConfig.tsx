@@ -1,53 +1,54 @@
-import { useState } from "react"
 import { Label } from "../ui/label"
 import { Input } from "../ui/input"
 import { Switch } from "../ui/switch"
 
-interface SSLTLSConfigProps {
-    value: {
-        enabled: boolean
-        rejectUnauthorized: boolean
-        caPath?: string
-        certPath?: string
-        keyPath?: string
-    }
-    onChange: (value: SSLTLSConfigProps["value"]) => void
+interface SSLTLSValue {
+    enabled: boolean
+    rejectUnauthorized: boolean
+    caPath?: string
+    certPath?: string
+    keyPath?: string
 }
 
-export function SSLTLSConfig({ value, onChange }: SSLTLSConfigProps): JSX.Element {
-    const [enabled, setEnabled] = useState(value.enabled)
-    const [rejectUnauthorized, setRejectUnauthorized] = useState(value.rejectUnauthorized)
-    const [caPath, setCaPath] = useState(value.caPath ?? "")
-    const [certPath, setCertPath] = useState(value.certPath ?? "")
-    const [keyPath, setKeyPath] = useState(value.keyPath ?? "")
+interface SSLTLSConfigProps {
+    value: SSLTLSValue
+    onChange: (value: SSLTLSValue) => void
+}
 
-    const handleUpdate = (updates: Partial<SSLTLSConfigProps["value"]>): void => {
-        const newValue = { ...value, ...updates }
-        onChange(newValue)
+/**
+ * Fully controlled SSL / TLS form. Each input reads from `value` and writes
+ * through `onChange`; no local mirror state, so a parent reset (the
+ * connection dialog re-opening with a different connection) flows through.
+ */
+export function SSLTLSConfig({ value, onChange }: SSLTLSConfigProps): JSX.Element {
+    const update = (patch: Partial<SSLTLSValue>): void => {
+        onChange({ ...value, ...patch })
     }
 
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <Label>Enable SSL/TLS</Label>
+                <Label htmlFor="ssl-enabled">Enable SSL/TLS</Label>
                 <Switch
-                    checked={enabled}
+                    id="ssl-enabled"
+                    checked={value.enabled}
                     onCheckedChange={(checked) => {
-                        setEnabled(checked)
-                        handleUpdate({ enabled: checked })
+                        update({ enabled: checked })
                     }}
                 />
             </div>
 
-            {enabled && (
+            {value.enabled && (
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <Label>Reject Unauthorized Certificates</Label>
+                        <Label htmlFor="ssl-reject-unauthorized">
+                            Reject Unauthorized Certificates
+                        </Label>
                         <Switch
-                            checked={rejectUnauthorized}
+                            id="ssl-reject-unauthorized"
+                            checked={value.rejectUnauthorized}
                             onCheckedChange={(checked) => {
-                                setRejectUnauthorized(checked)
-                                handleUpdate({ rejectUnauthorized: checked })
+                                update({ rejectUnauthorized: checked })
                             }}
                         />
                     </div>
@@ -57,10 +58,9 @@ export function SSLTLSConfig({ value, onChange }: SSLTLSConfigProps): JSX.Elemen
                         <Input
                             id="ca-path"
                             placeholder="/path/to/ca.pem"
-                            value={caPath}
+                            value={value.caPath ?? ""}
                             onChange={(e) => {
-                                setCaPath(e.target.value)
-                                handleUpdate({ caPath: e.target.value })
+                                update({ caPath: e.target.value || undefined })
                             }}
                         />
                     </div>
@@ -70,10 +70,9 @@ export function SSLTLSConfig({ value, onChange }: SSLTLSConfigProps): JSX.Elemen
                         <Input
                             id="cert-path"
                             placeholder="/path/to/client-cert.pem"
-                            value={certPath}
+                            value={value.certPath ?? ""}
                             onChange={(e) => {
-                                setCertPath(e.target.value)
-                                handleUpdate({ certPath: e.target.value })
+                                update({ certPath: e.target.value || undefined })
                             }}
                         />
                     </div>
@@ -83,10 +82,9 @@ export function SSLTLSConfig({ value, onChange }: SSLTLSConfigProps): JSX.Elemen
                         <Input
                             id="key-path"
                             placeholder="/path/to/client-key.pem"
-                            value={keyPath}
+                            value={value.keyPath ?? ""}
                             onChange={(e) => {
-                                setKeyPath(e.target.value)
-                                handleUpdate({ keyPath: e.target.value })
+                                update({ keyPath: e.target.value || undefined })
                             }}
                         />
                     </div>
