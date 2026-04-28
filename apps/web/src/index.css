@@ -73,8 +73,10 @@
     --primary: #58A6FF;
     --primary-foreground: #0D1117;
 
-    /* Secondary — elevated surface */
-    --secondary: #161B22;
+    /* Secondary — one tier above --card so segmented controls
+       (TabsList, chips, secondary buttons) read as elevated surface
+       instead of collapsing into the card body. */
+    --secondary: #21262D;
     --secondary-foreground: #E6EDF3;
 
     /* Muted — text-secondary / subtle elements */
