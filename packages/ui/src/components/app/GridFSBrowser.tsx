@@ -10,6 +10,7 @@ import { ScrollArea } from "../ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import { Download, File, FolderOpen, Loader2, RefreshCw, Trash2 } from "lucide-react"
 import { EmptyState } from "../ui/empty-state"
+import { useT } from "../../i18n"
 
 export interface GridFSBrowserProps {
     connectionId: string | null
@@ -17,6 +18,7 @@ export interface GridFSBrowserProps {
 }
 
 export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [confirm, confirmDialog] = useConfirm()
     const [files, setFiles] = useState<GridFSFile[]>([])
@@ -50,8 +52,8 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
                 // visible result otherwise — surface the underlying error so
                 // the user knows whether their bucket is empty or unreachable.
                 setFiles([])
-                toast.error("Couldn't load GridFS files", {
-                    description: err instanceof Error ? err.message : "Unknown error",
+                toast.error(t("gridfs.loadFailed"), {
+                    description: err instanceof Error ? err.message : t("common.unknownError"),
                 })
             })
             .finally(() => {
@@ -71,13 +73,13 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
             }
 
             await platform.downloadGridFSFile(connectionId, databaseName, file.id, savePath, bucket)
-            toast.success("Download complete", {
+            toast.success(t("gridfs.downloadComplete"), {
                 description: savePath,
             })
         } catch (err: unknown) {
             console.error("Failed to download file:", err)
-            toast.error("Download failed", {
-                description: err instanceof Error ? err.message : "Unknown error",
+            toast.error(t("gridfs.downloadFailed"), {
+                description: err instanceof Error ? err.message : t("common.unknownError"),
             })
         }
     }
@@ -88,9 +90,9 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
         }
 
         const confirmed = await confirm({
-            title: "Delete file?",
-            description: `"${file.filename}" will be permanently removed from the GridFS bucket.`,
-            confirmLabel: "Delete",
+            title: t("gridfs.deleteConfirmTitle"),
+            description: t("gridfs.deleteConfirmDescription", { name: file.filename }),
+            confirmLabel: t("common.delete"),
             destructive: true,
         })
         if (!confirmed) {
@@ -101,12 +103,12 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
             .deleteGridFSFile(connectionId, databaseName, file.id, bucket)
             .then(() => {
                 setFiles((prev) => prev.filter((f) => f.id !== file.id))
-                toast.success("File deleted", { description: file.filename })
+                toast.success(t("gridfs.deleted"), { description: file.filename })
             })
             .catch((err: unknown) => {
                 console.error("Failed to delete file:", err)
-                toast.error("Delete failed", {
-                    description: err instanceof Error ? err.message : "Unknown error",
+                toast.error(t("gridfs.deleteFailed"), {
+                    description: err instanceof Error ? err.message : t("common.unknownError"),
                 })
             })
     }
@@ -137,7 +139,7 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
         return (
             <div className="flex h-full items-center justify-center text-muted-foreground">
                 <File className="mr-2 h-5 w-5" />
-                Select a database to browse GridFS files
+                {t("gridfs.selectPrompt")}
             </div>
         )
     }
@@ -147,37 +149,37 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
             {/* Controls */}
             <div className="flex items-end gap-4">
                 <div className="flex-1 space-y-2">
-                    <Label htmlFor="bucket">Bucket</Label>
+                    <Label htmlFor="bucket">{t("gridfs.bucketLabel")}</Label>
                     <Input
                         id="bucket"
                         value={bucket}
                         onChange={(e) => {
                             setBucket(e.target.value)
                         }}
-                        placeholder="fs"
+                        placeholder={t("gridfs.bucketPlaceholder")}
                     />
                 </div>
                 <div className="flex-1 space-y-2">
-                    <Label htmlFor="filter">Filter by filename</Label>
+                    <Label htmlFor="filter">{t("gridfs.filterLabel")}</Label>
                     <Input
                         id="filter"
                         value={filterText}
                         onChange={(e) => {
                             setFilterText(e.target.value)
                         }}
-                        placeholder="Search files..."
+                        placeholder={t("gridfs.filterPlaceholder")}
                     />
                 </div>
                 <Button onClick={loadFiles} variant="outline">
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Refresh
+                    {t("gridfs.refresh")}
                 </Button>
             </div>
 
             {/* File count */}
             {files.length > 0 && (
                 <div className="text-sm text-muted-foreground">
-                    Showing {filteredFiles.length} of {files.length} files
+                    {t("gridfs.showing", { shown: filteredFiles.length, total: files.length })}
                 </div>
             )}
 
@@ -187,17 +189,24 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
                     {isLoading ? (
                         <div className="flex h-32 items-center justify-center gap-2 text-[var(--muted-foreground)]">
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            <span className="text-sm">Loading GridFS files…</span>
+                            <span className="text-sm">{t("gridfs.loading")}</span>
                         </div>
                     ) : filteredFiles.length === 0 ? (
                         <div className="flex h-40 items-center justify-center">
                             <EmptyState
                                 icon={<FolderOpen className="h-5 w-5" />}
-                                title={filterText ? "No matches" : "Bucket is empty"}
+                                title={
+                                    filterText
+                                        ? t("gridfs.emptyMatchTitle")
+                                        : t("gridfs.emptyBucketTitle")
+                                }
                                 description={
                                     filterText
-                                        ? `Nothing in "${bucket}" matches "${filterText}". Try a shorter prefix.`
-                                        : `The "${bucket}" bucket has no files yet. Upload one through your application or change buckets above.`
+                                        ? t("gridfs.emptyMatchDescription", {
+                                              bucket,
+                                              filter: filterText,
+                                          })
+                                        : t("gridfs.emptyBucketDescription", { bucket })
                                 }
                             />
                         </div>
@@ -205,12 +214,14 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Filename</TableHead>
-                                    <TableHead>Size</TableHead>
-                                    <TableHead>Upload Date</TableHead>
-                                    <TableHead>Content Type</TableHead>
-                                    <TableHead>MD5</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead>{t("gridfs.columns.filename")}</TableHead>
+                                    <TableHead>{t("gridfs.columns.size")}</TableHead>
+                                    <TableHead>{t("gridfs.columns.uploadDate")}</TableHead>
+                                    <TableHead>{t("gridfs.columns.contentType")}</TableHead>
+                                    <TableHead>{t("gridfs.columns.md5")}</TableHead>
+                                    <TableHead className="text-right">
+                                        {t("gridfs.columns.actions")}
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -245,7 +256,9 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    aria-label={`Download ${file.filename}`}
+                                                    aria-label={t("gridfs.downloadAria", {
+                                                        name: file.filename,
+                                                    })}
                                                     onClick={() => {
                                                         void handleDownload(file)
                                                     }}
@@ -255,7 +268,9 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
                                                 <Button
                                                     size="sm"
                                                     variant="destructive"
-                                                    aria-label={`Delete ${file.filename}`}
+                                                    aria-label={t("gridfs.deleteAria", {
+                                                        name: file.filename,
+                                                    })}
                                                     onClick={() => {
                                                         void handleDelete(file)
                                                     }}
