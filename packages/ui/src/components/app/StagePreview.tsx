@@ -19,7 +19,13 @@ export function StagePreview({ result, onClose }: StagePreviewProps): JSX.Elemen
                         {result.documentsReturned} documents ({result.executionTimeMs}ms)
                     </p>
                 </div>
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onClose}>
+                <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    aria-label="Close stage preview"
+                    onClick={onClose}
+                >
                     <X className="h-4 w-4" />
                 </Button>
             </div>

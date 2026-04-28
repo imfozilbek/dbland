@@ -39,13 +39,19 @@ export interface StageEditorProps {
 }
 
 export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element {
-    const [jsonContent, setJsonContent] = useState(JSON.stringify(stage.stageData, null, 2))
+    const stageDataJson = JSON.stringify(stage.stageData, null, 2)
+    const [jsonContent, setJsonContent] = useState(stageDataJson)
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
         setJsonContent(JSON.stringify(stage.stageData, null, 2))
         setError(null)
     }, [stage])
+
+    // If the textarea no longer matches the saved stageData, the user has
+    // pending edits — surface that so the Apply button isn't a no-op (or,
+    // worse, the user doesn't realise their edits weren't applied yet).
+    const hasUnsavedChanges = jsonContent !== stageDataJson
 
     const handleSave = (): void => {
         try {
@@ -166,8 +172,12 @@ export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element 
                                 </p>
                             )}
 
-                            <Button onClick={handleSave} className="w-full">
-                                Apply Changes
+                            <Button
+                                onClick={handleSave}
+                                disabled={!hasUnsavedChanges}
+                                className="w-full"
+                            >
+                                {hasUnsavedChanges ? "Apply Changes" : "No changes"}
                             </Button>
                         </>
                     )}
