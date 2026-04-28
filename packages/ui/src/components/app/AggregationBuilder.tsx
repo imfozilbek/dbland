@@ -76,12 +76,29 @@ export function AggregationBuilder({
     const handleRemoveStage = (index: number): void => {
         const updated = pipeline.filter((_, i) => i !== index)
         setPipeline(updated)
+        // Keep `selectedStageIndex` pointing at the same logical stage:
+        // - removing the selected one → drop the selection
+        // - removing one *before* the selected one → shift left by 1
+        // - removing one *after* the selected one → unchanged
         if (selectedStageIndex === index) {
             setSelectedStageIndex(null)
+        } else if (selectedStageIndex !== null && index < selectedStageIndex) {
+            setSelectedStageIndex(selectedStageIndex - 1)
         }
     }
 
     const handleReorderStages = (newPipeline: AggregationPipelineStage[]): void => {
+        // Drag-and-drop moved the selected stage; keep the selection on the
+        // same stage by finding its new position in the reordered array.
+        // Without this, dragging stage 2 to position 0 would leave
+        // `selectedStageIndex === 2` pointing at whatever stage now sits
+        // there — the wrong card would appear selected and the editor on
+        // the right would silently target a different stage.
+        if (selectedStageIndex !== null) {
+            const previouslySelected = pipeline[selectedStageIndex]
+            const newSelectedIndex = newPipeline.indexOf(previouslySelected)
+            setSelectedStageIndex(newSelectedIndex === -1 ? null : newSelectedIndex)
+        }
         setPipeline(newPipeline)
     }
 
