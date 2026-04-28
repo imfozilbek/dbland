@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react"
 import { Database, HardDrive, Table2 } from "lucide-react"
+import { toast } from "sonner"
 import { cn } from "../../lib/utils"
 import { Tree, TreeEmpty, TreeGroup, TreeItem } from "../ui/tree"
 import { type Connection, useConnectionStore } from "../../stores/connection-store"
@@ -47,20 +48,35 @@ export function ConnectionTree({
                     try {
                         await connect(connection.id)
                         await loadDatabases(connection.id)
-                    } catch {
-                        // Error is handled in store
+                    } catch (err: unknown) {
+                        // Store mutates connection.status → "error" so the dot
+                        // turns red, but the user also needs to know *why* —
+                        // surface the error message as a toast.
+                        toast.error(`Couldn't connect to ${connection.name}`, {
+                            description: err instanceof Error ? err.message : String(err),
+                        })
                     }
                 } else if (isConnected && databases.length === 0) {
                     // Already connected but no databases loaded
                     try {
                         await loadDatabases(connection.id)
-                    } catch {
-                        // Error is handled in store
+                    } catch (err: unknown) {
+                        toast.error(`Couldn't load databases for ${connection.name}`, {
+                            description: err instanceof Error ? err.message : String(err),
+                        })
                     }
                 }
             }
         },
-        [connection.id, isConnected, isConnecting, databases.length, connect, loadDatabases],
+        [
+            connection.id,
+            connection.name,
+            isConnected,
+            isConnecting,
+            databases.length,
+            connect,
+            loadDatabases,
+        ],
     )
 
     // Handle database expand
@@ -72,8 +88,10 @@ export function ConnectionTree({
                 // Load collections if not loaded
                 try {
                     await loadCollections(connection.id, dbName)
-                } catch {
-                    // Error is handled in store
+                } catch (err: unknown) {
+                    toast.error(`Couldn't load collections for ${dbName}`, {
+                        description: err instanceof Error ? err.message : String(err),
+                    })
                 }
             } else {
                 newExpanded.delete(dbName)
