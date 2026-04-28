@@ -1,6 +1,7 @@
 import { BrowserRouter, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom"
 import { useState } from "react"
 import {
+    type Connection,
     ConnectionManagerDialog,
     PlatformProvider,
     Sidebar,
@@ -21,6 +22,9 @@ function AppLayout(): JSX.Element {
     const navigate = useNavigate()
     const location = useLocation()
     const [dialogOpen, setDialogOpen] = useState(false)
+    // When set, the connection-manager dialog opens in edit mode for this
+    // connection. `null` means "add new" (the existing flow).
+    const [editingConnection, setEditingConnection] = useState<Connection | null>(null)
     const { loadConnections } = useConnectionStore()
 
     // Initialize stores with platform API
@@ -40,6 +44,11 @@ function AppLayout(): JSX.Element {
                         navigate("/settings")
                     }}
                     onAddConnectionClick={() => {
+                        setEditingConnection(null)
+                        setDialogOpen(true)
+                    }}
+                    onEditConnection={(connection) => {
+                        setEditingConnection(connection)
                         setDialogOpen(true)
                     }}
                     onConnectionSelect={(connectionId) => {
@@ -69,10 +78,16 @@ function AppLayout(): JSX.Element {
             {/* Status bar */}
             <StatusBar />
 
-            {/* Connection Manager Dialog */}
+            {/* Connection Manager Dialog (single instance for both add + edit) */}
             <ConnectionManagerDialog
                 open={dialogOpen}
-                onOpenChange={setDialogOpen}
+                onOpenChange={(open) => {
+                    setDialogOpen(open)
+                    if (!open) {
+                        setEditingConnection(null)
+                    }
+                }}
+                connection={editingConnection ?? undefined}
                 onSaved={() => {
                     void loadConnections()
                 }}

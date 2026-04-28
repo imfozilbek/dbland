@@ -3,7 +3,7 @@ import { ChevronDown, ChevronRight, FolderTree, Plus, Settings, Sparkles } from 
 import { cn } from "../../lib/utils"
 import { Button } from "../ui/button"
 import { ScrollArea } from "../ui/scroll-area"
-import { useConnectionStore } from "../../stores/connection-store"
+import { type Connection, useConnectionStore } from "../../stores/connection-store"
 import { ConnectionTree } from "./ConnectionTree"
 
 export interface SidebarProps {
@@ -13,6 +13,8 @@ export interface SidebarProps {
     onSettingsClick?: () => void
     /** Callback when add connection is clicked */
     onAddConnectionClick?: () => void
+    /** Callback when the user picks "Edit" on a connection's context menu. */
+    onEditConnection?: (connection: Connection) => void
     /** Callback when a connection is selected */
     onConnectionSelect?: (connectionId: string) => void
     /** Callback when a collection is selected */
@@ -23,6 +25,7 @@ export function Sidebar({
     activePath = "",
     onSettingsClick,
     onAddConnectionClick,
+    onEditConnection,
     onConnectionSelect,
     onCollectionSelect,
 }: SidebarProps): JSX.Element {
@@ -132,6 +135,7 @@ export function Sidebar({
                                             isActive={activePath.includes(conn.id)}
                                             onConnectionSelect={onConnectionSelect}
                                             onCollectionSelect={onCollectionSelect}
+                                            onEditConnection={onEditConnection}
                                         />
                                     </div>
                                 ))}

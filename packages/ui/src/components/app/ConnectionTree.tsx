@@ -1,7 +1,15 @@
 import { useCallback, useState } from "react"
-import { Database, HardDrive, Table2 } from "lucide-react"
+import { Database, HardDrive, Pencil, Plug, PlugZap, Table2, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "../../lib/utils"
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuSeparator,
+    ContextMenuTrigger,
+} from "../ui/context-menu"
+import { useConfirm } from "../../hooks/use-confirm"
 import { Tree, TreeEmpty, TreeGroup, TreeItem } from "../ui/tree"
 import { type Connection, useConnectionStore } from "../../stores/connection-store"
 import {
@@ -16,6 +24,8 @@ export interface ConnectionTreeProps {
     isActive: boolean
     onConnectionSelect?: (connectionId: string) => void
     onCollectionSelect?: (connectionId: string, database: string, collection: string) => void
+    /** Open the connection editor for this connection. */
+    onEditConnection?: (connection: Connection) => void
 }
 
 export function ConnectionTree({
@@ -23,12 +33,14 @@ export function ConnectionTree({
     isActive,
     onConnectionSelect,
     onCollectionSelect,
+    onEditConnection,
 }: ConnectionTreeProps): JSX.Element {
+    const [confirm, confirmDialog] = useConfirm()
     const [isOpen, setIsOpen] = useState(false)
     const [expandedDatabases, setExpandedDatabases] = useState<Set<string>>(new Set())
 
     // Connection store
-    const { connect } = useConnectionStore()
+    const { connect, disconnect, deleteConnection } = useConnectionStore()
 
     // Schema store
     const { loadDatabases, loadCollections, isLoading: schemaLoading } = useSchemaStore()
@@ -148,64 +160,146 @@ export function ConnectionTree({
         )
     }
 
+    const handleDisconnect = async (): Promise<void> => {
+        try {
+            await disconnect(connection.id)
+        } catch (err: unknown) {
+            toast.error(`Couldn't disconnect ${connection.name}`, {
+                description: err instanceof Error ? err.message : String(err),
+            })
+        }
+    }
+
+    const handleDelete = async (): Promise<void> => {
+        const confirmed = await confirm({
+            title: `Delete connection "${connection.name}"?`,
+            description:
+                "The connection definition and its stored credentials will be removed from this machine. The remote database is not touched.",
+            confirmLabel: "Delete",
+            destructive: true,
+        })
+        if (!confirmed) {
+            return
+        }
+        try {
+            await deleteConnection(connection.id)
+            toast.success(`Connection "${connection.name}" deleted`)
+        } catch (err: unknown) {
+            toast.error(`Couldn't delete ${connection.name}`, {
+                description: err instanceof Error ? err.message : String(err),
+            })
+        }
+    }
+
     return (
-        <Tree>
-            <TreeGroup
-                icon={getTypeIcon()}
-                label={connection.name}
-                statusIndicator={getStatusIndicator()}
-                open={isOpen}
-                isLoading={isConnecting}
-                isActive={isActive}
-                level={0}
-                onOpenChange={(open) => {
-                    void handleConnectionOpenChange(open)
-                }}
-                onLabelClick={handleConnectionLabelClick}
-            >
-                {/* Loading state */}
-                {isConnecting && <TreeEmpty level={1}>Connecting…</TreeEmpty>}
-
-                {/* Error state */}
-                {connection.status === "error" && (
-                    <TreeEmpty level={1}>
-                        <span className="text-destructive">Connection failed</span>
-                    </TreeEmpty>
-                )}
-
-                {/* Connected but loading databases */}
-                {isConnected && schemaLoading && databases.length === 0 && (
-                    <TreeEmpty level={1}>Loading databases...</TreeEmpty>
-                )}
-
-                {/* Connected with no databases */}
-                {isConnected && !schemaLoading && databases.length === 0 && (
-                    <TreeEmpty level={1}>No databases found</TreeEmpty>
-                )}
-
-                {/* Database list */}
-                {isConnected &&
-                    databases.map((db, index) => (
-                        <div
-                            key={db.name}
-                            className="animate-fadeInUp"
-                            style={{ animationDelay: `${index * 30}ms` }}
-                        >
-                            <DatabaseNode
-                                connectionId={connection.id}
-                                database={db}
-                                isExpanded={expandedDatabases.has(db.name)}
+        <>
+            <ContextMenu>
+                <ContextMenuTrigger asChild>
+                    <div>
+                        <Tree>
+                            <TreeGroup
+                                icon={getTypeIcon()}
+                                label={connection.name}
+                                statusIndicator={getStatusIndicator()}
+                                open={isOpen}
+                                isLoading={isConnecting}
+                                isActive={isActive}
+                                level={0}
                                 onOpenChange={(open) => {
-                                    void handleDatabaseOpenChange(db.name, open)
+                                    void handleConnectionOpenChange(open)
                                 }}
-                                onCollectionClick={(collName) => {
-                                    handleCollectionClick(db.name, collName)
-                                }}
-                            />
-                        </div>
-                    ))}
-            </TreeGroup>
-        </Tree>
+                                onLabelClick={handleConnectionLabelClick}
+                            >
+                                {/* Loading state */}
+                                {isConnecting && <TreeEmpty level={1}>Connecting…</TreeEmpty>}
+
+                                {/* Error state */}
+                                {connection.status === "error" && (
+                                    <TreeEmpty level={1}>
+                                        <span className="text-destructive">Connection failed</span>
+                                    </TreeEmpty>
+                                )}
+
+                                {/* Connected but loading databases */}
+                                {isConnected && schemaLoading && databases.length === 0 && (
+                                    <TreeEmpty level={1}>Loading databases…</TreeEmpty>
+                                )}
+
+                                {/* Connected with no databases */}
+                                {isConnected && !schemaLoading && databases.length === 0 && (
+                                    <TreeEmpty level={1}>No databases found</TreeEmpty>
+                                )}
+
+                                {/* Database list */}
+                                {isConnected &&
+                                    databases.map((db, index) => (
+                                        <div
+                                            key={db.name}
+                                            className="animate-fadeInUp"
+                                            style={{ animationDelay: `${index * 30}ms` }}
+                                        >
+                                            <DatabaseNode
+                                                connectionId={connection.id}
+                                                database={db}
+                                                isExpanded={expandedDatabases.has(db.name)}
+                                                onOpenChange={(open) => {
+                                                    void handleDatabaseOpenChange(db.name, open)
+                                                }}
+                                                onCollectionClick={(collName) => {
+                                                    handleCollectionClick(db.name, collName)
+                                                }}
+                                            />
+                                        </div>
+                                    ))}
+                            </TreeGroup>
+                        </Tree>
+                    </div>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                    {onEditConnection && (
+                        <ContextMenuItem
+                            onSelect={() => {
+                                onEditConnection(connection)
+                            }}
+                        >
+                            <Pencil className="h-4 w-4" />
+                            Edit connection
+                        </ContextMenuItem>
+                    )}
+                    {isConnected ? (
+                        <ContextMenuItem
+                            onSelect={() => {
+                                void handleDisconnect()
+                            }}
+                        >
+                            <Plug className="h-4 w-4" />
+                            Disconnect
+                        </ContextMenuItem>
+                    ) : (
+                        <ContextMenuItem
+                            onSelect={() => {
+                                void handleConnectionOpenChange(true)
+                            }}
+                            disabled={isConnecting}
+                        >
+                            <PlugZap className="h-4 w-4" />
+                            Connect
+                        </ContextMenuItem>
+                    )}
+                    <ContextMenuSeparator />
+                    <ContextMenuItem
+                        onSelect={() => {
+                            void handleDelete()
+                        }}
+                        className="text-[var(--destructive)] focus:text-[var(--destructive)]"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                        Delete connection
+                    </ContextMenuItem>
+                </ContextMenuContent>
+            </ContextMenu>
+            {confirmDialog}
+        </>
     )
 }
 
