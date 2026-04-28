@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Database, Sparkles } from "lucide-react"
 import { cn } from "../../lib/utils"
+import { useT } from "../../i18n"
 
 export interface ToolbarProps {
     title?: string
@@ -10,11 +11,13 @@ export interface ToolbarProps {
 }
 
 export function Toolbar({
-    title = "DBLand",
+    title,
     connectionName,
     databaseType,
     rightContent,
 }: ToolbarProps): JSX.Element {
+    const t = useT()
+    const resolvedTitle = title ?? t("toolbar.title")
     return (
         <header className="flex h-14 items-center justify-between border-b border-[var(--border)] bg-[var(--background)] px-4">
             {/* Logo */}
@@ -23,7 +26,7 @@ export function Toolbar({
                     <Database className="h-5 w-5 text-[var(--primary)]" />
                 </div>
                 <span className="text-base font-semibold tracking-tight text-[var(--foreground)]">
-                    {title}
+                    {resolvedTitle}
                 </span>
             </div>
 
@@ -46,7 +49,7 @@ export function Toolbar({
                 ) : (
                     <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]/70">
                         <Sparkles className="h-4 w-4" />
-                        <span>No connection</span>
+                        <span>{t("toolbar.noConnection")}</span>
                     </div>
                 )}
             </div>

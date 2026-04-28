@@ -3,6 +3,7 @@ import { useState } from "react"
 import {
     type Connection,
     ConnectionManagerDialog,
+    I18nProvider,
     PlatformProvider,
     Sidebar,
     StatusBar,
@@ -99,37 +100,39 @@ function AppLayout(): JSX.Element {
 function App(): JSX.Element {
     return (
         <ThemeProvider defaultTheme="system">
-            <PlatformProvider api={tauriPlatformAPI}>
-                <BrowserRouter>
-                    <Routes>
-                        <Route path="/" element={<AppLayout />}>
-                            <Route index element={<HomePage />} />
-                            <Route path="workspace/:connectionId" element={<WorkspacePage />} />
-                            <Route path="redis/:connectionId" element={<RedisWorkspacePage />} />
-                            <Route path="settings" element={<SettingsPage />} />
-                        </Route>
-                    </Routes>
-                </BrowserRouter>
-                <Toaster
-                    theme="dark"
-                    position="bottom-right"
-                    richColors
-                    closeButton
-                    toastOptions={{
-                        // Pull sonner's default cards into the brand token surface so
-                        // toasts read as part of the workspace, not as a third-party
-                        // overlay.
-                        classNames: {
-                            toast: "border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] shadow-lg",
-                            description: "text-[var(--muted-foreground)]",
-                            actionButton:
-                                "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90",
-                            cancelButton:
-                                "bg-[var(--muted)] text-[var(--muted-foreground)] hover:bg-[var(--accent)]",
-                        },
-                    }}
-                />
-            </PlatformProvider>
+            <I18nProvider>
+                <PlatformProvider api={tauriPlatformAPI}>
+                    <BrowserRouter>
+                        <Routes>
+                            <Route path="/" element={<AppLayout />}>
+                                <Route index element={<HomePage />} />
+                                <Route path="workspace/:connectionId" element={<WorkspacePage />} />
+                                <Route
+                                    path="redis/:connectionId"
+                                    element={<RedisWorkspacePage />}
+                                />
+                                <Route path="settings" element={<SettingsPage />} />
+                            </Route>
+                        </Routes>
+                    </BrowserRouter>
+                    <Toaster
+                        theme="dark"
+                        position="bottom-right"
+                        richColors
+                        closeButton
+                        toastOptions={{
+                            classNames: {
+                                toast: "border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] shadow-lg",
+                                description: "text-[var(--muted-foreground)]",
+                                actionButton:
+                                    "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90",
+                                cancelButton:
+                                    "bg-[var(--muted)] text-[var(--muted-foreground)] hover:bg-[var(--accent)]",
+                            },
+                        }}
+                    />
+                </PlatformProvider>
+            </I18nProvider>
         </ThemeProvider>
     )
 }

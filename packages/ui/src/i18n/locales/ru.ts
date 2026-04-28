@@ -1,0 +1,117 @@
+import type { Translations } from "./en"
+
+/**
+ * Russian translations. Keep the shape exactly in sync with `en.ts` —
+ * the `Translations` type is the contract.
+ */
+export const ru: Translations = {
+    common: {
+        loading: "Загрузка…",
+        cancel: "Отмена",
+        save: "Сохранить",
+        saving: "Сохранение…",
+        delete: "Удалить",
+        edit: "Изменить",
+        close: "Закрыть",
+        retry: "Повторить",
+        refresh: "Обновить",
+        connect: "Подключиться",
+        disconnect: "Отключиться",
+        connected: "Подключено",
+        connecting: "Подключение…",
+        disconnected: "Отключено",
+        error: "Ошибка",
+        ready: "Готово",
+        more: "Ещё",
+        unknownError: "Неизвестная ошибка",
+    },
+    sidebar: {
+        connections: "Подключения",
+        allConnections: "Все подключения",
+        addConnection: "Добавить подключение",
+        loadingConnections: "Загрузка подключений",
+        noConnectionsYet: "Подключений пока нет",
+        addFirstConnection: "+ Добавьте первое подключение",
+        settings: "Настройки",
+    },
+    toolbar: {
+        title: "DBLand",
+        noConnection: "Нет подключения",
+    },
+    status: {
+        connected: "Подключено",
+        disconnected: "Отключено",
+        connecting: "Подключение…",
+        error: "Ошибка",
+        ready: "Готово",
+    },
+    home: {
+        tagline:
+            "NoSQL-клиент для разработчиков с поддержкой MongoDB и Redis. Лаконичный, заточенный под клавиатуру, не мешает работать.",
+        ready: "v1.1.0 · готов",
+        newConnection: "Новое подключение",
+        newConnectionDescription:
+            "Подключитесь к MongoDB или Redis — локально, удалённо или через SSH-туннель.",
+        recent: "Недавние",
+        noRecent: "Нет недавних подключений.",
+        noRecentHint: "Сохранённые подключения появятся здесь для быстрого открытия.",
+    },
+    connectionTree: {
+        connecting: "Подключение…",
+        connectionFailed: "Не удалось подключиться",
+        loadingDatabases: "Загрузка баз данных…",
+        noDatabases: "Базы данных не найдены",
+        loadingCollections: "Загрузка коллекций…",
+        noCollections: "Коллекций нет",
+        connect: "Подключиться",
+        disconnect: "Отключиться",
+        editConnection: "Изменить подключение",
+        deleteConnection: "Удалить подключение",
+        deleteConfirmTitle: 'Удалить подключение "{{name}}"?',
+        deleteConfirmDescription:
+            "Описание подключения и сохранённые учётные данные будут удалены с этой машины. Удалённая база не будет затронута.",
+        deleted: 'Подключение "{{name}}" удалено',
+        couldNotConnect: "Не удалось подключиться к {{name}}",
+        couldNotDisconnect: "Не удалось отключить {{name}}",
+        couldNotDelete: "Не удалось удалить {{name}}",
+        couldNotLoadDatabases: "Не удалось загрузить базы для {{name}}",
+        couldNotLoadCollections: "Не удалось загрузить коллекции для {{db}}",
+        statusConnected: "Подключено",
+        statusConnecting: "Подключение",
+        statusDisconnected: "Отключено",
+        statusError: "Ошибка подключения",
+    },
+    settings: {
+        title: "Настройки",
+        description: "Настройте параметры DBLand",
+        tabs: {
+            general: "Общие",
+            editor: "Редактор",
+            about: "О программе",
+        },
+        general: {
+            theme: "Тема",
+            themeLight: "Светлая",
+            themeDark: "Тёмная",
+            themeSystem: "Системная",
+            language: "Язык",
+            languageEnglish: "English",
+            languageRussian: "Русский",
+            autoSave: "Авто-сохранение запросов",
+            confirmDelete: "Подтверждать удаление",
+        },
+        editor: {
+            fontSize: "Размер шрифта",
+            tabSize: "Размер табуляции",
+            wordWrap: "Перенос строк",
+            showMinimap: "Миникарта",
+        },
+        about: {
+            tagline: "NoSQL-клиент для MongoDB и Redis.",
+            version: "Версия {{version}}",
+            features: "Что внутри",
+            reset: "Сбросить настройки",
+            resetCaveat: "Сбрасываются только настройки — сохранённые подключения остаются.",
+        },
+    },
+}

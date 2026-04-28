@@ -49,3 +49,6 @@ export type { ConfirmOptions } from "./hooks/use-confirm"
 
 // Toast (re-export sonner so consumers don't depend on it directly)
 export { Toaster, toast } from "sonner"
+
+// i18n
+export { I18nProvider, useT, initI18n, i18n, type Locale } from "./i18n"

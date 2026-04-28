@@ -1,5 +1,6 @@
 import { Circle, Loader2, Wifi, WifiOff } from "lucide-react"
 import { cn } from "../../lib/utils"
+import { useT } from "../../i18n"
 
 export type StatusBarStatus = "connected" | "disconnected" | "connecting" | "error" | "ready"
 
@@ -13,44 +14,47 @@ export interface StatusBarProps {
 interface StatusConfig {
     icon: React.ReactNode
     color: string
-    text: string
+    /** i18n key under `status.*` */
+    textKey: "connected" | "disconnected" | "connecting" | "error" | "ready"
 }
 
 const STATUS_CONFIGS: Record<StatusBarStatus, StatusConfig> = {
     connected: {
         icon: <Wifi className="h-3 w-3" />,
         color: "text-[var(--success)]",
-        text: "Connected",
+        textKey: "connected",
     },
     disconnected: {
         icon: <WifiOff className="h-3 w-3" />,
         color: "text-[var(--muted-foreground)]",
-        text: "Disconnected",
+        textKey: "disconnected",
     },
     connecting: {
         icon: <Loader2 className="h-3 w-3 animate-spin" />,
         color: "text-[var(--warning)]",
-        text: "Connecting…",
+        textKey: "connecting",
     },
     error: {
         icon: <Circle className="h-2 w-2 fill-current" />,
         color: "text-[var(--destructive)]",
-        text: "Error",
+        textKey: "error",
     },
     ready: {
         icon: <Circle className="h-2 w-2 fill-current" />,
         color: "text-[var(--muted-foreground)]",
-        text: "Ready",
+        textKey: "ready",
     },
 }
 
 export function StatusBar({
     status = "disconnected",
     statusText,
-    centerText = "Ready",
+    centerText,
     version = "v1.1.0",
 }: StatusBarProps): JSX.Element {
+    const t = useT()
     const config = STATUS_CONFIGS[status]
+    const resolvedCenter = centerText ?? t("status.ready")
 
     return (
         <footer
@@ -61,12 +65,12 @@ export function StatusBar({
             {/* Left — connection status */}
             <div className={cn("flex items-center gap-1.5", config.color)}>
                 {config.icon}
-                <span>{statusText ?? config.text}</span>
+                <span>{statusText ?? t(`status.${config.textKey}`)}</span>
             </div>
 
             {/* Center — query / workspace status */}
             <div className="flex items-center gap-2 text-[var(--muted-foreground)]">
-                <span>{centerText}</span>
+                <span>{resolvedCenter}</span>
             </div>
 
             {/* Right — build version */}

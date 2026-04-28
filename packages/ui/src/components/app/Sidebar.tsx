@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { ChevronDown, ChevronRight, FolderTree, Plus, Settings, Sparkles } from "lucide-react"
 import { cn } from "../../lib/utils"
+import { useT } from "../../i18n"
 import { Button } from "../ui/button"
 import { ScrollArea } from "../ui/scroll-area"
 import { type Connection, useConnectionStore } from "../../stores/connection-store"
@@ -29,6 +30,7 @@ export function Sidebar({
     onConnectionSelect,
     onCollectionSelect,
 }: SidebarProps): JSX.Element {
+    const t = useT()
     const [expandedGroups, setExpandedGroups] = useState<string[]>(["connections"])
 
     const { connections, isLoading, loadConnections } = useConnectionStore()
@@ -55,16 +57,16 @@ export function Sidebar({
                         <Sparkles className="h-4 w-4 text-[var(--primary)]" />
                     </div>
                     <span className="text-sm font-semibold text-[var(--foreground)]">
-                        Connections
+                        {t("sidebar.connections")}
                     </span>
                 </div>
                 <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Add connection"
+                    aria-label={t("sidebar.addConnection")}
                     className="h-8 w-8 text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--accent)]"
                     onClick={onAddConnectionClick}
-                    title="Add Connection"
+                    title={t("sidebar.addConnection")}
                 >
                     <Plus className="h-4 w-4" />
                 </Button>
@@ -93,7 +95,7 @@ export function Sidebar({
                                 <ChevronRight className="h-4 w-4 text-[var(--muted-foreground)]" />
                             )}
                             <FolderTree className="h-4 w-4" />
-                            <span className="flex-1 text-left">All Connections</span>
+                            <span className="flex-1 text-left">{t("sidebar.allConnections")}</span>
                             {connections.length > 0 && (
                                 <span className="font-mono text-[10px] text-[var(--muted-foreground)] tabular-nums">
                                     {connections.length}
@@ -102,7 +104,7 @@ export function Sidebar({
                             {isLoading && (
                                 <div
                                     role="status"
-                                    aria-label="Loading connections"
+                                    aria-label={t("sidebar.loadingConnections")}
                                     className="h-3 w-3 rounded-full border-2 border-[var(--primary)] border-t-transparent animate-spin"
                                 />
                             )}
@@ -113,13 +115,13 @@ export function Sidebar({
                                 {connections.length === 0 && !isLoading && (
                                     <div className="px-3 py-6 text-center">
                                         <p className="text-xs text-[var(--muted-foreground)]">
-                                            No connections yet
+                                            {t("sidebar.noConnectionsYet")}
                                         </p>
                                         <button
                                             onClick={onAddConnectionClick}
                                             className="mt-2 text-xs text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors"
                                         >
-                                            + Add your first connection
+                                            {t("sidebar.addFirstConnection")}
                                         </button>
                                     </div>
                                 )}
@@ -160,7 +162,7 @@ export function Sidebar({
                     )}
                 >
                     <Settings className="h-4 w-4" />
-                    <span>Settings</span>
+                    <span>{t("sidebar.settings")}</span>
                 </button>
             </div>
         </aside>

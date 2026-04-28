@@ -1,0 +1,120 @@
+/**
+ * English source strings. Keys are grouped by surface; component code
+ * resolves them via `t("namespace.key")` after picking up the right
+ * namespace from `useTranslation("common")`.
+ *
+ * The shape of this object is the contract every translation file must
+ * mirror — see `ru.ts` next door.
+ */
+export const en = {
+    common: {
+        loading: "Loading…",
+        cancel: "Cancel",
+        save: "Save",
+        saving: "Saving…",
+        delete: "Delete",
+        edit: "Edit",
+        close: "Close",
+        retry: "Retry",
+        refresh: "Refresh",
+        connect: "Connect",
+        disconnect: "Disconnect",
+        connected: "Connected",
+        connecting: "Connecting…",
+        disconnected: "Disconnected",
+        error: "Error",
+        ready: "Ready",
+        more: "More",
+        unknownError: "Unknown error",
+    },
+    sidebar: {
+        connections: "Connections",
+        allConnections: "All Connections",
+        addConnection: "Add connection",
+        loadingConnections: "Loading connections",
+        noConnectionsYet: "No connections yet",
+        addFirstConnection: "+ Add your first connection",
+        settings: "Settings",
+    },
+    toolbar: {
+        title: "DBLand",
+        noConnection: "No connection",
+    },
+    status: {
+        connected: "Connected",
+        disconnected: "Disconnected",
+        connecting: "Connecting…",
+        error: "Error",
+        ready: "Ready",
+    },
+    home: {
+        tagline:
+            "A developer-grade NoSQL client for MongoDB and Redis. Refined, keyboard-first, and built to stay out of your way.",
+        ready: "v1.1.0 · ready",
+        newConnection: "New Connection",
+        newConnectionDescription: "Connect to MongoDB or Redis — local, remote, or via SSH tunnel.",
+        recent: "Recent",
+        noRecent: "No recent connections.",
+        noRecentHint: "Anything you save will land here for one-click reopen.",
+    },
+    connectionTree: {
+        connecting: "Connecting…",
+        connectionFailed: "Connection failed",
+        loadingDatabases: "Loading databases…",
+        noDatabases: "No databases found",
+        loadingCollections: "Loading collections…",
+        noCollections: "No collections",
+        connect: "Connect",
+        disconnect: "Disconnect",
+        editConnection: "Edit connection",
+        deleteConnection: "Delete connection",
+        deleteConfirmTitle: 'Delete connection "{{name}}"?',
+        deleteConfirmDescription:
+            "The connection definition and its stored credentials will be removed from this machine. The remote database is not touched.",
+        deleted: 'Connection "{{name}}" deleted',
+        couldNotConnect: "Couldn't connect to {{name}}",
+        couldNotDisconnect: "Couldn't disconnect {{name}}",
+        couldNotDelete: "Couldn't delete {{name}}",
+        couldNotLoadDatabases: "Couldn't load databases for {{name}}",
+        couldNotLoadCollections: "Couldn't load collections for {{db}}",
+        statusConnected: "Connected",
+        statusConnecting: "Connecting",
+        statusDisconnected: "Disconnected",
+        statusError: "Connection error",
+    },
+    settings: {
+        title: "Settings",
+        description: "Configure your DBLand preferences",
+        tabs: {
+            general: "General",
+            editor: "Editor",
+            about: "About",
+        },
+        general: {
+            theme: "Theme",
+            themeLight: "Light",
+            themeDark: "Dark",
+            themeSystem: "System",
+            language: "Language",
+            languageEnglish: "English",
+            languageRussian: "Russian",
+            autoSave: "Auto-save queries",
+            confirmDelete: "Confirm before delete",
+        },
+        editor: {
+            fontSize: "Font Size",
+            tabSize: "Tab Size",
+            wordWrap: "Word Wrap",
+            showMinimap: "Show Minimap",
+        },
+        about: {
+            tagline: "NoSQL database client for MongoDB and Redis.",
+            version: "Version {{version}}",
+            features: "What's inside",
+            reset: "Reset to defaults",
+            resetCaveat: "Resets preferences only — saved connections stay.",
+        },
+    },
+}
+
+export type Translations = typeof en

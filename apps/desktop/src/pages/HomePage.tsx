@@ -1,8 +1,9 @@
 import { useState } from "react"
 import { ArrowRight, Database, Plus } from "lucide-react"
-import { ConnectionManagerDialog, useConnectionStore } from "@dbland/ui"
+import { ConnectionManagerDialog, useConnectionStore, useT } from "@dbland/ui"
 
 export function HomePage(): JSX.Element {
+    const t = useT()
     const [dialogOpen, setDialogOpen] = useState(false)
     const { connections, loadConnections } = useConnectionStore()
 
@@ -40,12 +41,11 @@ export function HomePage(): JSX.Element {
                             DBLand
                         </h1>
                         <p className="max-w-xl text-base text-[var(--muted-foreground)]">
-                            A developer-grade NoSQL client for MongoDB and Redis. Refined,
-                            keyboard-first, and built to stay out of your way.
+                            {t("home.tagline")}
                         </p>
                         <div className="flex items-center gap-3 pt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--muted-foreground)]/70">
                             <span className="h-px w-8 bg-[var(--border)]" />
-                            <span>v1.1.0 · ready</span>
+                            <span>{t("home.ready")}</span>
                             <span className="h-px flex-1 bg-[var(--border)]" />
                         </div>
                     </div>
@@ -64,11 +64,11 @@ export function HomePage(): JSX.Element {
                         </div>
                         <div className="flex-1">
                             <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-[var(--foreground)]">
-                                New Connection
+                                {t("home.newConnection")}
                                 <ArrowRight className="h-4 w-4 -translate-x-2 text-[var(--primary)] opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
                             </h2>
                             <p className="text-sm text-[var(--muted-foreground)]">
-                                Connect to MongoDB or Redis — local, remote, or via SSH tunnel.
+                                {t("home.newConnectionDescription")}
                             </p>
                         </div>
                     </button>
@@ -77,15 +77,15 @@ export function HomePage(): JSX.Element {
                 {/* Recent connections — actionable, not decorative */}
                 <div className="space-y-4 animate-fadeInUp" style={{ animationDelay: "200ms" }}>
                     <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--muted-foreground)]/80">
-                        Recent
+                        {t("home.recent")}
                     </h3>
                     {recent.length === 0 ? (
                         <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--card)]/40 p-6 text-center">
                             <p className="text-sm text-[var(--muted-foreground)]">
-                                No recent connections.
+                                {t("home.noRecent")}
                             </p>
                             <p className="mt-1 text-xs text-[var(--muted-foreground)]/70">
-                                Anything you save will land here for one-click reopen.
+                                {t("home.noRecentHint")}
                             </p>
                         </div>
                     ) : (
