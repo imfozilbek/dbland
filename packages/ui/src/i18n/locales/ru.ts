@@ -325,6 +325,26 @@ export const ru: Translations = {
         deleteDocSuccess: "Документ удалён",
         deleteDocFailed: "Не удалось удалить документ",
     },
+    redis: {
+        page: {
+            label: "Redis",
+            unknownConnection: "Неизвестное подключение",
+            tabs: {
+                browser: "Ключи",
+                slowlog: "Slow Log",
+            },
+            noKeyTitle: "Ключ не выбран",
+            noKeyDescription:
+                "Выберите ключ в браузере слева, чтобы посмотреть его значение, тип и TTL.",
+        },
+        keyBrowser: {
+            patternPlaceholder: "Шаблон (например, user:*)",
+            scanAria: "Сканировать ключи Redis",
+            emptyTitle: "Ключей нет",
+            emptyDescription:
+                'Шаблон "{{pattern}}" не совпал ни с одним ключом. Попробуйте более широкий шаблон, например "*" или "user:*".',
+        },
+    },
     settings: {
         title: "Настройки",
         description: "Настройте параметры DBLand",

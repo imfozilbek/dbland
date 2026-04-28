@@ -13,15 +13,17 @@ import {
     TabsList,
     TabsTrigger,
     useConnectionStore,
+    useT,
 } from "@dbland/ui"
 import { Clock, Database, Key, MousePointerClick } from "lucide-react"
 
 export function RedisWorkspacePage(): JSX.Element {
+    const t = useT()
     const { connectionId } = useParams()
     const [selectedKey, setSelectedKey] = useState<string | null>(null)
     const { connections } = useConnectionStore()
     const connection = connections.find((c) => c.id === connectionId)
-    const connectionLabel = connection?.name ?? "Unknown connection"
+    const connectionLabel = connection?.name ?? t("redis.page.unknownConnection")
     const connectionTarget = connection ? `${connection.host}:${connection.port}` : null
 
     // The selected key belongs to a specific connection — when the user
@@ -39,7 +41,7 @@ export function RedisWorkspacePage(): JSX.Element {
             <div className="border-b border-[var(--border)]">
                 <div className="flex items-center gap-2 px-4 py-3 text-sm">
                     <Database className="h-4 w-4 text-[var(--redis)]" />
-                    <span className="text-[var(--muted-foreground)]">Redis</span>
+                    <span className="text-[var(--muted-foreground)]">{t("redis.page.label")}</span>
                     <span className="font-medium text-[var(--foreground)]">{connectionLabel}</span>
                     {connectionTarget && (
                         <span className="font-mono text-xs text-[var(--muted-foreground)]/70">
@@ -54,11 +56,11 @@ export function RedisWorkspacePage(): JSX.Element {
                 <TabsList className="mx-4 mt-2">
                     <TabsTrigger value="browser" className="gap-2">
                         <Key className="h-4 w-4" />
-                        Key Browser
+                        {t("redis.page.tabs.browser")}
                     </TabsTrigger>
                     <TabsTrigger value="slowlog" className="gap-2">
                         <Clock className="h-4 w-4" />
-                        Slow Log
+                        {t("redis.page.tabs.slowlog")}
                     </TabsTrigger>
                 </TabsList>
 
@@ -86,8 +88,8 @@ export function RedisWorkspacePage(): JSX.Element {
                                 <div className="flex h-full items-center justify-center">
                                     <EmptyState
                                         icon={<MousePointerClick className="h-5 w-5" />}
-                                        title="No key selected"
-                                        description="Pick a key from the browser on the left to inspect its value, type, and TTL."
+                                        title={t("redis.page.noKeyTitle")}
+                                        description={t("redis.page.noKeyDescription")}
                                     />
                                 </div>
                             )}

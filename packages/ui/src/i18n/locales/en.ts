@@ -327,6 +327,26 @@ export const en = {
         deleteDocSuccess: "Document deleted",
         deleteDocFailed: "Failed to delete document",
     },
+    redis: {
+        page: {
+            label: "Redis",
+            unknownConnection: "Unknown connection",
+            tabs: {
+                browser: "Key Browser",
+                slowlog: "Slow Log",
+            },
+            noKeyTitle: "No key selected",
+            noKeyDescription:
+                "Pick a key from the browser on the left to inspect its value, type, and TTL.",
+        },
+        keyBrowser: {
+            patternPlaceholder: "Pattern (e.g., user:*)",
+            scanAria: "Scan Redis keys",
+            emptyTitle: "No keys",
+            emptyDescription:
+                'Pattern "{{pattern}}" matched zero keys. Try a wider glob like "*" or "user:*".',
+        },
+    },
     settings: {
         title: "Settings",
         description: "Configure your DBLand preferences",

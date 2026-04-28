@@ -5,6 +5,7 @@ import { Button } from "../ui/button"
 import { EmptyState } from "../ui/empty-state"
 import { ScrollArea } from "../ui/scroll-area"
 import { usePlatform } from "../../contexts/PlatformContext"
+import { useT } from "../../i18n"
 
 interface RedisKeyBrowserProps {
     connectionId: string
@@ -19,6 +20,7 @@ export function RedisKeyBrowser({
     onKeySelect,
     selectedKey,
 }: RedisKeyBrowserProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [pattern, setPattern] = useState("*")
     const [keys, setKeys] = useState<string[]>([])
@@ -45,7 +47,7 @@ export function RedisKeyBrowser({
         <div className="flex h-full flex-col gap-2">
             <div className="flex gap-2">
                 <Input
-                    placeholder="Pattern (e.g., user:*)"
+                    placeholder={t("redis.keyBrowser.patternPlaceholder")}
                     value={pattern}
                     onChange={(e) => {
                         setPattern(e.target.value)
@@ -60,7 +62,7 @@ export function RedisKeyBrowser({
                     onClick={() => void handleScan()}
                     disabled={isLoading}
                     size="icon"
-                    aria-label="Scan Redis keys"
+                    aria-label={t("redis.keyBrowser.scanAria")}
                 >
                     {isLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -76,8 +78,8 @@ export function RedisKeyBrowser({
                         <EmptyState
                             size="compact"
                             icon={<Key className="h-4 w-4" />}
-                            title="No keys"
-                            description={`Pattern "${pattern}" matched zero keys. Try a wider glob like "*" or "user:*".`}
+                            title={t("redis.keyBrowser.emptyTitle")}
+                            description={t("redis.keyBrowser.emptyDescription", { pattern })}
                         />
                     )}
                     {keys.map((key) => (
