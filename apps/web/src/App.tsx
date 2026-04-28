@@ -18,15 +18,25 @@ function AppLayout(): JSX.Element {
     const navigate = useNavigate()
     const location = useLocation()
     const [dialogOpen, setDialogOpen] = useState(false)
-    const { loadConnections } = useConnectionStore()
+    const { loadConnections, connections } = useConnectionStore()
 
     // Initialize stores with platform API
     usePlatformInit()
 
+    // Derive the active connection from the URL so the global toolbar shows
+    // its name + type pill instead of permanently saying "No connection".
+    const activeConnectionMatch = /^\/(?:workspace|redis)\/([^/?#]+)/.exec(location.pathname)
+    const activeConnection = activeConnectionMatch
+        ? connections.find((c) => c.id === activeConnectionMatch[1])
+        : undefined
+
     return (
         <div className="flex h-screen flex-col overflow-hidden">
             {/* Toolbar */}
-            <Toolbar />
+            <Toolbar
+                connectionName={activeConnection?.name}
+                databaseType={activeConnection?.type}
+            />
 
             {/* Main content */}
             <div className="flex flex-1 overflow-hidden">

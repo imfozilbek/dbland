@@ -26,15 +26,27 @@ function AppLayout(): JSX.Element {
     // When set, the connection-manager dialog opens in edit mode for this
     // connection. `null` means "add new" (the existing flow).
     const [editingConnection, setEditingConnection] = useState<Connection | null>(null)
-    const { loadConnections } = useConnectionStore()
+    const { loadConnections, connections } = useConnectionStore()
 
     // Initialize stores with platform API
     usePlatformInit()
 
+    // Derive the active connection from the URL so the global toolbar shows
+    // its name + type pill instead of permanently saying "No connection".
+    // Routes are `/workspace/:id` and `/redis/:id`; for `/`, `/settings`, etc.
+    // the regex doesn't match and we fall back to undefined.
+    const activeConnectionMatch = /^\/(?:workspace|redis)\/([^/?#]+)/.exec(location.pathname)
+    const activeConnection = activeConnectionMatch
+        ? connections.find((c) => c.id === activeConnectionMatch[1])
+        : undefined
+
     return (
         <div className="flex h-screen flex-col overflow-hidden">
             {/* Toolbar */}
-            <Toolbar />
+            <Toolbar
+                connectionName={activeConnection?.name}
+                databaseType={activeConnection?.type}
+            />
 
             {/* Main content */}
             <div className="flex flex-1 overflow-hidden">
