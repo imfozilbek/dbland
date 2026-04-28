@@ -161,6 +161,20 @@ impl SavedQueriesStorage {
         Ok(())
     }
 
+    /// Delete every saved query bound to `connection_id`. Called when
+    /// the connection itself is deleted — without this cascade the
+    /// rows orphaned in `saved_queries.db` were invisible to the user
+    /// (no UI), kept growing forever, and would resurface as someone
+    /// else's saved queries the moment a connection ID got reused.
+    pub fn delete_by_connection(&self, connection_id: &str) -> Result<()> {
+        let conn = self.conn.lock();
+        conn.execute(
+            "DELETE FROM saved_queries WHERE connection_id = ?1",
+            params![connection_id],
+        )?;
+        Ok(())
+    }
+
     pub fn search_by_name(
         &self,
         connection_id: &str,
@@ -225,5 +239,62 @@ impl SavedQueriesStorage {
             .collect::<Result<Vec<_>>>()?;
 
         Ok(entries)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    fn fresh_storage() -> (TempDir, SavedQueriesStorage) {
+        // `NamedTempFile` would race-create the file with 0 bytes and
+        // then `Connection::open` saw it as read-only. A `TempDir` plus
+        // a non-existent filename inside lets SQLite create the file
+        // itself with the right permissions.
+        let dir = TempDir::new().expect("temp dir");
+        let storage = SavedQueriesStorage::new(dir.path().join("saved.db")).expect("storage");
+        (dir, storage)
+    }
+
+    fn entry(connection_id: &str, name: &str) -> NewSavedQuery {
+        NewSavedQuery {
+            connection_id: connection_id.to_string(),
+            name: name.to_string(),
+            description: None,
+            query: "{}".to_string(),
+            language: "mongodb".to_string(),
+            database_name: None,
+            collection_name: None,
+            tags: None,
+        }
+    }
+
+    #[test]
+    fn delete_by_connection_only_drops_matching_rows() {
+        let (_dir, storage) = fresh_storage();
+
+        storage.insert(&entry("conn-a", "q1")).unwrap();
+        storage.insert(&entry("conn-a", "q2")).unwrap();
+        storage.insert(&entry("conn-b", "kept")).unwrap();
+
+        storage.delete_by_connection("conn-a").unwrap();
+
+        assert!(storage.get_by_connection("conn-a").unwrap().is_empty());
+        let kept = storage.get_by_connection("conn-b").unwrap();
+        assert_eq!(kept.len(), 1);
+        assert_eq!(kept[0].name, "kept");
+    }
+
+    #[test]
+    fn delete_by_connection_is_a_noop_when_no_rows_match() {
+        let (_dir, storage) = fresh_storage();
+        storage.insert(&entry("conn-a", "q1")).unwrap();
+
+        // No row for conn-zzz; the call must succeed without affecting
+        // unrelated rows or returning an error.
+        storage.delete_by_connection("conn-zzz").unwrap();
+
+        assert_eq!(storage.get_by_connection("conn-a").unwrap().len(), 1);
     }
 }

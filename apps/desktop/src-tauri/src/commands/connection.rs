@@ -235,7 +235,23 @@ pub async fn save_connection(
     Ok(saved.into())
 }
 
-/// Delete a connection
+/// Delete a connection.
+///
+/// Performs a best-effort cascade:
+///   1. Tear down the live driver / SSH tunnel if active.
+///   2. Delete the connection row.
+///   3. Clear its query history.
+///   4. Drop its saved queries.
+///
+/// Steps 3 and 4 are best-effort — a failure there leaves the
+/// connection record gone but the dependent rows behind, which is
+/// strictly preferable to refusing the delete and leaving the user
+/// stuck with a connection they can't remove. Errors are logged but
+/// not surfaced to the IPC caller.
+///
+/// Without the cascade those rows used to orphan invisibly (no UI to
+/// reach them), accumulate over time, and — worse — resurface as
+/// someone else's history if a connection_id ever got reused.
 #[command]
 pub async fn delete_connection(
     state: State<'_, Arc<AppState>>,
@@ -244,9 +260,17 @@ pub async fn delete_connection(
     // Disconnect if connected
     let _ = state.pool.disconnect(&connection_id).await;
 
-    // Delete from storage
-    state
+    let deleted = state
         .storage
         .delete(&connection_id)
-        .map_err(|e| crate::redact_error(e.to_string()))
+        .map_err(|e| crate::redact_error(e.to_string()))?;
+
+    if let Err(e) = state.query_history.clear_by_connection(&connection_id) {
+        log::warn!("failed to clear query history on delete: {}", e);
+    }
+    if let Err(e) = state.saved_queries.delete_by_connection(&connection_id) {
+        log::warn!("failed to drop saved queries on delete: {}", e);
+    }
+
+    Ok(deleted)
 }
