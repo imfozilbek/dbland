@@ -95,9 +95,11 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
     if (Array.isArray(value)) {
         return (
             <div>
-                <div
+                <button
+                    type="button"
                     style={{ paddingLeft }}
-                    className="py-1 text-sm font-mono cursor-pointer hover:bg-muted/50 flex items-center gap-1"
+                    className="flex w-full items-center gap-1 py-1 text-left font-mono text-sm hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                    aria-expanded={isExpanded}
                     onClick={() => {
                         setIsExpanded(!isExpanded)
                     }}
@@ -111,7 +113,7 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
                     <span className="text-muted-foreground">: [</span>
                     <span className="text-muted-foreground text-xs">{value.length} items</span>
                     <span className="text-muted-foreground">]</span>
-                </div>
+                </button>
                 {isExpanded &&
                     (value as unknown[]).map((item: unknown, index) => (
                         <TreeNode key={index} label={`[${index}]`} value={item} level={level + 1} />
@@ -125,9 +127,11 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
         const entries = Object.entries(value as Record<string, unknown>)
         return (
             <div>
-                <div
+                <button
+                    type="button"
                     style={{ paddingLeft }}
-                    className="py-1 text-sm font-mono cursor-pointer hover:bg-muted/50 flex items-center gap-1"
+                    className="flex w-full items-center gap-1 py-1 text-left font-mono text-sm hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                    aria-expanded={isExpanded}
                     onClick={() => {
                         setIsExpanded(!isExpanded)
                     }}
@@ -143,7 +147,7 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
                         {entries.length} properties
                     </span>
                     <span className="text-muted-foreground">{"}"}</span>
-                </div>
+                </button>
                 {isExpanded &&
                     entries.map(([key, val]) => (
                         <TreeNode key={key} label={key} value={val} level={level + 1} />
