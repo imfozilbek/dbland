@@ -57,7 +57,7 @@ pub async fn get_databases(
         .pool
         .get_databases(&connection_id)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     Ok(databases.into_iter().map(DatabaseDto::from).collect())
 }
@@ -73,7 +73,7 @@ pub async fn get_collections(
         .pool
         .get_collections(&connection_id, &database_name)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     Ok(collections.into_iter().map(CollectionDto::from).collect())
 }

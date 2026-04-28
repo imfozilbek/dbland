@@ -35,7 +35,7 @@ pub async fn execute_query(
             &query,
         )
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     // Resolve the actual database type from the pool so the history entry
     // is tagged with the correct language (was hardcoded to "mongodb"
@@ -80,7 +80,7 @@ pub async fn get_query_history(
     let entries = state
         .query_history
         .get_by_connection(&connection_id, limit.unwrap_or(100))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     Ok(entries)
 }
@@ -94,7 +94,7 @@ pub async fn delete_query_history(
     state
         .query_history
         .delete(id)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     Ok(())
 }
@@ -108,7 +108,7 @@ pub async fn clear_query_history(
     state
         .query_history
         .clear_by_connection(&connection_id)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     Ok(())
 }
@@ -124,7 +124,7 @@ pub async fn search_query_history(
     let entries = state
         .query_history
         .search(&connection_id, &search_query, limit.unwrap_or(100))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     Ok(entries)
 }

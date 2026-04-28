@@ -38,7 +38,7 @@ pub async fn get_profiler_level(
         .pool
         .execute_query(&connection_id, &database_name, None, &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     if result.documents.is_empty() {
         return Err("No result from profiler command".to_string());
@@ -84,7 +84,7 @@ pub async fn set_profiler_level(
         .pool
         .execute_query(&connection_id, &database_name, None, &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     if result.success {
         Ok(())
@@ -113,7 +113,7 @@ pub async fn get_profiler_data(
         .pool
         .execute_query(&connection_id, &database_name, Some("system.profile"), &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     let mut entries = Vec::new();
 
@@ -183,7 +183,7 @@ pub async fn clear_profiler_data(
         .pool
         .execute_query(&connection_id, &database_name, Some("system.profile"), &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     if result.success {
         Ok(())

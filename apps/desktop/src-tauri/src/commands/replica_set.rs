@@ -40,7 +40,7 @@ pub async fn get_replica_set_status(
         .pool
         .execute_query(&connection_id, "admin", None, &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     if result.documents.is_empty() {
         return Err("No replica set status returned".to_string());
@@ -166,7 +166,7 @@ pub async fn get_replica_set_config(
         .pool
         .execute_query(&connection_id, "admin", None, &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     if result.documents.is_empty() {
         return Err("No replica set config returned".to_string());

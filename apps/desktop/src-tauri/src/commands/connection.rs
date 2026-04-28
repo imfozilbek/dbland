@@ -115,7 +115,11 @@ pub async fn test_connection(
         }),
         Err(e) => Ok(TestConnectionResult {
             success: false,
-            message: e.to_string(),
+            // Test-connection is the highest credential-leak risk
+            // path: a malformed URI from the user almost guarantees
+            // the driver echoes the input string verbatim. Redact
+            // before it crosses IPC into a frontend toast.
+            message: crate::redact_error(e.to_string()),
             latency_ms: None,
             server_version: None,
         }),
@@ -132,7 +136,7 @@ pub async fn connect(
     let saved = state
         .storage
         .get(&connection_id)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     let db_type = DatabaseType::from_str(&saved.db_type)
         .ok_or_else(|| format!("Unsupported database type: {}", saved.db_type))?;
@@ -151,7 +155,7 @@ pub async fn connect(
         ssh: saved.ssh,
     };
 
-    state.pool.connect(config).await.map_err(|e| e.to_string())?;
+    state.pool.connect(config).await.map_err(|e| crate::redact_error(e.to_string()))?;
 
     // Update last connected time
     let _ = state.storage.update_last_connected(&connection_id);
@@ -169,7 +173,7 @@ pub async fn disconnect(
         .pool
         .disconnect(&connection_id)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     Ok(true)
 }
@@ -179,7 +183,7 @@ pub async fn disconnect(
 pub async fn get_connections(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<ConnectionDto>, String> {
-    let saved = state.storage.get_all().map_err(|e| e.to_string())?;
+    let saved = state.storage.get_all().map_err(|e| crate::redact_error(e.to_string()))?;
 
     let active = state.pool.get_active_connections().await;
 
@@ -226,7 +230,7 @@ pub async fn save_connection(
         last_connected_at: None,
     };
 
-    state.storage.save(&saved).map_err(|e| e.to_string())?;
+    state.storage.save(&saved).map_err(|e| crate::redact_error(e.to_string()))?;
 
     Ok(saved.into())
 }
@@ -244,5 +248,5 @@ pub async fn delete_connection(
     state
         .storage
         .delete(&connection_id)
-        .map_err(|e| e.to_string())
+        .map_err(|e| crate::redact_error(e.to_string()))
 }

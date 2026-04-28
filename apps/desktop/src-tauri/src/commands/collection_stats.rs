@@ -50,7 +50,7 @@ pub async fn get_detailed_collection_stats(
         .pool
         .execute_query(&connection_id, &database_name, None, &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     if result.documents.is_empty() {
         return Err("No stats returned".to_string());

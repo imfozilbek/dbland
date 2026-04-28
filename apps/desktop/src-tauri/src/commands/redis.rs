@@ -74,7 +74,7 @@ pub async fn redis_scan_keys(
             ),
         )
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     // Parse result
     let keys: Vec<String> = result
@@ -100,7 +100,7 @@ pub async fn redis_get_value(
         .pool
         .execute_query(&request.connection_id, "0", None, &format!("TYPE {}", request.key))
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     let key_type = type_result
         .documents
@@ -113,7 +113,7 @@ pub async fn redis_get_value(
         .pool
         .execute_query(&request.connection_id, "0", None, &format!("TTL {}", request.key))
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     let ttl = ttl_result
         .documents
@@ -127,7 +127,7 @@ pub async fn redis_get_value(
                 .pool
                 .execute_query(&request.connection_id, "0", None, &format!("GET {}", request.key))
                 .await
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| crate::redact_error(e.to_string()))?;
 
             let string_value = result
                 .documents
@@ -143,7 +143,7 @@ pub async fn redis_get_value(
                 .pool
                 .execute_query(&request.connection_id, "0", None, &format!("LRANGE {} 0 -1", request.key))
                 .await
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| crate::redact_error(e.to_string()))?;
 
             let values: Vec<String> = result
                 .documents
@@ -158,7 +158,7 @@ pub async fn redis_get_value(
                 .pool
                 .execute_query(&request.connection_id, "0", None, &format!("SMEMBERS {}", request.key))
                 .await
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| crate::redact_error(e.to_string()))?;
 
             let values: Vec<String> = result
                 .documents
@@ -173,7 +173,7 @@ pub async fn redis_get_value(
                 .pool
                 .execute_query(&request.connection_id, "0", None, &format!("ZRANGE {} 0 -1 WITHSCORES", request.key))
                 .await
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| crate::redact_error(e.to_string()))?;
 
             let values: Vec<(String, f64)> = result
                 .documents
@@ -196,7 +196,7 @@ pub async fn redis_get_value(
                 .pool
                 .execute_query(&request.connection_id, "0", None, &format!("HGETALL {}", request.key))
                 .await
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| crate::redact_error(e.to_string()))?;
 
             let fields: Vec<(String, String)> = result
                 .documents
@@ -236,7 +236,7 @@ pub async fn redis_set_ttl(
             &format!("EXPIRE {} {}", request.key, request.seconds),
         )
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     Ok(true)
 }
@@ -253,7 +253,7 @@ pub async fn redis_slow_log(
         .pool
         .execute_query(&connection_id, "0", None, &format!("SLOWLOG GET {}", count.unwrap_or(10)))
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     // Parse slow log entries
     let entries: Vec<SlowLogEntry> = result

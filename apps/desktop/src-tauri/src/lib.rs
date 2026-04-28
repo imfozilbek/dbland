@@ -1,8 +1,13 @@
 mod adapters;
 mod commands;
+mod error;
 mod state;
 mod storage;
 mod tunnel;
+
+// Re-export the IPC redactor so command handlers can pull it from a
+// stable path. Keeps `mod error` private; callers see `crate::redact_error`.
+pub(crate) use error::redact_error;
 
 use state::ConnectionPool;
 use storage::{ConnectionStorage, Crypto, QueryHistoryStorage, SavedQueriesStorage};

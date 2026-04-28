@@ -19,7 +19,7 @@ pub async fn get_document(
         .pool
         .execute_query(&connection_id, &database_name, Some(&collection_name), &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     if result.documents.is_empty() {
         return Err("Document not found".to_string());
@@ -39,7 +39,7 @@ pub async fn update_document(
     update: Value,
 ) -> Result<bool, String> {
     // Build update query
-    let update_doc = serde_json::to_string(&update).map_err(|e| e.to_string())?;
+    let update_doc = serde_json::to_string(&update).map_err(|e| crate::redact_error(e.to_string()))?;
     let query = format!(
         r#"db.{}.updateOne({{"_id": {{"$oid": "{}"}}}}, {{"$set": {}}})"#,
         collection_name, document_id, update_doc
@@ -49,7 +49,7 @@ pub async fn update_document(
         .pool
         .execute_query(&connection_id, &database_name, Some(&collection_name), &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     Ok(result.success)
 }
@@ -73,7 +73,7 @@ pub async fn delete_document(
         .pool
         .execute_query(&connection_id, &database_name, Some(&collection_name), &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     Ok(result.success)
 }
@@ -94,7 +94,7 @@ pub async fn clone_document(
         .pool
         .execute_query(&connection_id, &database_name, Some(&collection_name), &get_query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     if result.documents.is_empty() {
         return Err("Document not found".to_string());
@@ -107,7 +107,7 @@ pub async fn clone_document(
     }
 
     // Insert the cloned document
-    let doc_str = serde_json::to_string(&doc_value).map_err(|e| e.to_string())?;
+    let doc_str = serde_json::to_string(&doc_value).map_err(|e| crate::redact_error(e.to_string()))?;
     let insert_query = format!(r#"db.{}.insertOne({})"#, collection_name, doc_str);
 
     let insert_result = state
@@ -119,7 +119,7 @@ pub async fn clone_document(
             &insert_query,
         )
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     if insert_result.success && !insert_result.documents.is_empty() {
         // Extract new _id from result

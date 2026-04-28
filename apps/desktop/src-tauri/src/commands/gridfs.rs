@@ -40,7 +40,7 @@ pub async fn list_gridfs_files(
         .pool
         .execute_query(&connection_id, &database_name, Some(&collection_name), &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     let files = result
         .documents
@@ -123,7 +123,7 @@ pub async fn get_gridfs_file_metadata(
         .pool
         .execute_query(&connection_id, &database_name, Some(&collection_name), &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     if result.documents.is_empty() {
         return Err("File not found".to_string());

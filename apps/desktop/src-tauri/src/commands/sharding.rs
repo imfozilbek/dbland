@@ -42,7 +42,7 @@ pub async fn get_sharding_status(
         .pool
         .execute_query(&connection_id, "admin", None, &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     if result.documents.is_empty() {
         return Err("No sharding status returned".to_string());
@@ -63,7 +63,7 @@ pub async fn list_shards(
         .pool
         .execute_query(&connection_id, "config", Some("shards"), &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     let shards = result
         .documents
@@ -120,7 +120,7 @@ pub async fn list_sharded_collections(
         .pool
         .execute_query(&connection_id, "config", Some("collections"), &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     let collections = result
         .documents
@@ -179,7 +179,7 @@ pub async fn get_chunk_distribution(
         .pool
         .execute_query(&connection_id, "config", Some("chunks"), &query)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     // Count chunks per shard
     let mut distribution: std::collections::HashMap<String, i64> = std::collections::HashMap::new();

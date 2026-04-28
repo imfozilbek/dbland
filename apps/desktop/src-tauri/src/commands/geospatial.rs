@@ -121,7 +121,7 @@ pub async fn execute_geospatial_query(
             &query,
         )
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     let execution_time_ms = start.elapsed().as_millis() as u64;
     let documents_returned = result.documents.len();

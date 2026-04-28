@@ -74,7 +74,7 @@ async fn import_json(
     connection_id: &str,
     options: &ImportOptions,
 ) -> Result<ImportResult, String> {
-    let file = File::open(&options.file_path).map_err(|e| e.to_string())?;
+    let file = File::open(&options.file_path).map_err(|e| crate::redact_error(e.to_string()))?;
     let reader = BufReader::new(file);
 
     let mut imported = 0u64;
@@ -82,7 +82,7 @@ async fn import_json(
     let mut errors = Vec::new();
 
     // Read file content
-    let content: Value = serde_json::from_reader(reader).map_err(|e| e.to_string())?;
+    let content: Value = serde_json::from_reader(reader).map_err(|e| crate::redact_error(e.to_string()))?;
 
     // Handle both single document and array of documents
     let documents: Vec<Value> = if content.is_array() {
@@ -94,7 +94,7 @@ async fn import_json(
     // Insert documents in chunks
     const CHUNK_SIZE: usize = 100;
     for chunk in documents.chunks(CHUNK_SIZE) {
-        let docs_json = serde_json::to_string(&chunk).map_err(|e| e.to_string())?;
+        let docs_json = serde_json::to_string(&chunk).map_err(|e| crate::redact_error(e.to_string()))?;
         let insert_query = format!(
             "db.{}.insertMany({})",
             options.collection_name, docs_json
@@ -153,7 +153,7 @@ async fn export_json(
             &query,
         )
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     if !result.success {
         return Ok(ExportResult {
@@ -165,11 +165,11 @@ async fn export_json(
 
     // Write to file
     let path = PathBuf::from(&options.file_path);
-    let mut file = File::create(path).map_err(|e| e.to_string())?;
+    let mut file = File::create(path).map_err(|e| crate::redact_error(e.to_string()))?;
 
-    let json = serde_json::to_string_pretty(&result.documents).map_err(|e| e.to_string())?;
+    let json = serde_json::to_string_pretty(&result.documents).map_err(|e| crate::redact_error(e.to_string()))?;
     file.write_all(json.as_bytes())
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     Ok(ExportResult {
         success: true,

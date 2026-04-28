@@ -12,7 +12,7 @@ pub async fn get_saved_queries(
     state
         .saved_queries
         .get_by_connection(&connection_id)
-        .map_err(|e| e.to_string())
+        .map_err(|e| crate::redact_error(e.to_string()))
 }
 
 /// Save a new query
@@ -24,13 +24,13 @@ pub async fn save_query(
     let id = state
         .saved_queries
         .insert(&query)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     // Get the saved query
     let queries = state
         .saved_queries
         .get_by_connection(&query.connection_id)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::redact_error(e.to_string()))?;
 
     queries
         .into_iter()
@@ -47,7 +47,7 @@ pub async fn update_saved_query(
     state
         .saved_queries
         .update(&query)
-        .map_err(|e| e.to_string())
+        .map_err(|e| crate::redact_error(e.to_string()))
 }
 
 /// Delete a saved query
@@ -59,7 +59,7 @@ pub async fn delete_saved_query(
     state
         .saved_queries
         .delete(id)
-        .map_err(|e| e.to_string())
+        .map_err(|e| crate::redact_error(e.to_string()))
 }
 
 /// Search saved queries by name
@@ -72,7 +72,7 @@ pub async fn search_saved_queries(
     state
         .saved_queries
         .search_by_name(&connection_id, &search_query)
-        .map_err(|e| e.to_string())
+        .map_err(|e| crate::redact_error(e.to_string()))
 }
 
 /// Get saved queries by tag
@@ -85,5 +85,5 @@ pub async fn get_saved_queries_by_tag(
     state
         .saved_queries
         .get_by_tag(&connection_id, &tag)
-        .map_err(|e| e.to_string())
+        .map_err(|e| crate::redact_error(e.to_string()))
 }
