@@ -302,16 +302,22 @@ impl DatabaseAdapter for RedisAdapter {
             .await
             .map_err(|e| AdapterError::QueryFailed(e.to_string()))?;
 
-        // Parse and execute Redis command
-        let parts: Vec<&str> = query.split_whitespace().collect();
+        // Parse and execute Redis command. We tokenize like a shell so that
+        // quoted arguments survive intact — `SET key "value with spaces"`
+        // and `HSET h field 'a b c'` were previously split by
+        // `split_whitespace()`, which silently truncated string values at
+        // the first space and produced bizarre wrong-arity errors instead
+        // of obvious quoting feedback.
+        let parts = tokenize_redis_command(query)
+            .map_err(|e| AdapterError::QueryFailed(e.to_string()))?;
 
         if parts.is_empty() {
             return Err(AdapterError::QueryFailed("Empty command".to_string()));
         }
 
-        let mut cmd = redis::cmd(parts[0]);
+        let mut cmd = redis::cmd(&parts[0]);
         for arg in parts.iter().skip(1) {
-            cmd.arg(*arg);
+            cmd.arg(arg.as_str());
         }
 
         let result: redis::Value = cmd
@@ -378,5 +384,130 @@ fn redis_value_to_json(value: redis::Value) -> serde_json::Value {
             serde_json::Value::Array(data.into_iter().map(redis_value_to_json).collect())
         }
         redis::Value::ServerError(e) => serde_json::json!({ "error": format!("{:?}", e) }),
+    }
+}
+
+/// Tokenize a Redis command string the way `redis-cli` does: whitespace
+/// separates tokens, single and double quotes wrap a single token (allowing
+/// embedded whitespace), and `\` inside double quotes escapes the next
+/// character. Mirrors the subset of POSIX shell quoting that real users
+/// actually reach for when typing values like `SET k "hello world"` or
+/// `HSET h field 'a b c'`.
+///
+/// Errors on an unterminated quote — silently swallowing the trailing
+/// argument used to produce wrong-arity replies that looked like server
+/// bugs.
+fn tokenize_redis_command(input: &str) -> Result<Vec<String>, RedisTokenError> {
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut chars = input.chars().peekable();
+    let mut in_token = false;
+    let mut quote: Option<char> = None;
+
+    while let Some(c) = chars.next() {
+        match (quote, c) {
+            (Some('"'), '\\') => {
+                // Inside double quotes — \X drops the slash and keeps X.
+                // If the input ends with a stray backslash, fall through
+                // to push the literal `\`.
+                if let Some(&next) = chars.peek() {
+                    chars.next();
+                    current.push(next);
+                } else {
+                    current.push('\\');
+                }
+            }
+            (Some(q), c) if c == q => {
+                quote = None;
+                // Closing quote ends the current token boundary even
+                // if the literal value was empty (e.g. `SET k ""`).
+                in_token = true;
+            }
+            (Some(_), c) => {
+                current.push(c);
+            }
+            (None, c) if c.is_whitespace() => {
+                if in_token {
+                    tokens.push(std::mem::take(&mut current));
+                    in_token = false;
+                }
+            }
+            (None, '"') | (None, '\'') => {
+                quote = Some(c);
+                in_token = true;
+            }
+            (None, c) => {
+                current.push(c);
+                in_token = true;
+            }
+        }
+    }
+
+    if quote.is_some() {
+        return Err(RedisTokenError::UnterminatedQuote);
+    }
+
+    if in_token {
+        tokens.push(current);
+    }
+
+    Ok(tokens)
+}
+
+#[derive(Debug, thiserror::Error)]
+enum RedisTokenError {
+    #[error("Unterminated quoted string in Redis command")]
+    UnterminatedQuote,
+}
+
+#[cfg(test)]
+mod tokenizer_tests {
+    use super::tokenize_redis_command;
+
+    #[test]
+    fn splits_on_whitespace() {
+        let tokens = tokenize_redis_command("SET key value").unwrap();
+        assert_eq!(tokens, vec!["SET", "key", "value"]);
+    }
+
+    #[test]
+    fn collapses_consecutive_whitespace() {
+        let tokens = tokenize_redis_command("  SET   key    value  ").unwrap();
+        assert_eq!(tokens, vec!["SET", "key", "value"]);
+    }
+
+    #[test]
+    fn double_quoted_value_keeps_spaces() {
+        let tokens = tokenize_redis_command(r#"SET k "value with spaces""#).unwrap();
+        assert_eq!(tokens, vec!["SET", "k", "value with spaces"]);
+    }
+
+    #[test]
+    fn single_quoted_value_keeps_spaces() {
+        let tokens = tokenize_redis_command("HSET h field 'a b c'").unwrap();
+        assert_eq!(tokens, vec!["HSET", "h", "field", "a b c"]);
+    }
+
+    #[test]
+    fn double_quote_escapes_inner_quote() {
+        let tokens = tokenize_redis_command(r#"SET k "say \"hi\"""#).unwrap();
+        assert_eq!(tokens, vec!["SET", "k", r#"say "hi""#]);
+    }
+
+    #[test]
+    fn empty_quoted_string_is_a_token() {
+        let tokens = tokenize_redis_command(r#"SET k """#).unwrap();
+        assert_eq!(tokens, vec!["SET", "k", ""]);
+    }
+
+    #[test]
+    fn rejects_unterminated_quote() {
+        assert!(tokenize_redis_command(r#"SET k "oops"#).is_err());
+    }
+
+    #[test]
+    fn empty_input_yields_empty_vec() {
+        let tokens = tokenize_redis_command("   ").unwrap();
+        assert!(tokens.is_empty());
     }
 }
