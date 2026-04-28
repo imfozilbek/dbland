@@ -10,6 +10,9 @@ import { ScrollArea } from "../ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import { Activity, ChevronDown, ChevronRight, Loader2, Trash2 } from "lucide-react"
+import { useT } from "../../i18n"
+
+type T = ReturnType<typeof useT>
 
 export interface DatabaseProfilerProps {
     connectionId: string | null
@@ -39,6 +42,7 @@ interface ProfilerTableSectionProps {
     toggleRowExpansion: (index: number) => void
     formatTimestamp: (ts: string) => string
     getDurationBadgeColor: (millis: number) => "default" | "secondary" | "destructive" | "outline"
+    t: T
 }
 
 /**
@@ -53,12 +57,13 @@ function ProfilerTableSection({
     toggleRowExpansion,
     formatTimestamp,
     getDurationBadgeColor,
+    t,
 }: ProfilerTableSectionProps): JSX.Element {
     if (isLoading) {
         return (
             <div className="flex h-32 items-center justify-center gap-2 text-[var(--muted-foreground)]">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Loading profiler data…</span>
+                <span className="text-sm">{t("databaseProfiler.loading")}</span>
             </div>
         )
     }
@@ -67,11 +72,11 @@ function ProfilerTableSection({
             <div className="flex h-40 items-center justify-center">
                 <EmptyState
                     icon={<Activity className="h-5 w-5" />}
-                    title="No profiler entries"
+                    title={t("databaseProfiler.emptyTitle")}
                     description={
                         profilerLevel?.level === 0
-                            ? "Profiler is off. Enable level 1 (slow ops) or 2 (all ops) above to start collecting data."
-                            : "Run a few queries on this database — they will appear here as system.profile records them."
+                            ? t("databaseProfiler.emptyDescriptionOff")
+                            : t("databaseProfiler.emptyDescriptionOn")
                     }
                 />
             </div>
@@ -82,12 +87,12 @@ function ProfilerTableSection({
             <TableHeader>
                 <TableRow>
                     <TableHead className="w-12"></TableHead>
-                    <TableHead>Timestamp</TableHead>
-                    <TableHead>Operation</TableHead>
-                    <TableHead>Namespace</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Yields</TableHead>
-                    <TableHead>Response Size</TableHead>
+                    <TableHead>{t("databaseProfiler.columns.timestamp")}</TableHead>
+                    <TableHead>{t("databaseProfiler.columns.operation")}</TableHead>
+                    <TableHead>{t("databaseProfiler.columns.namespace")}</TableHead>
+                    <TableHead>{t("databaseProfiler.columns.duration")}</TableHead>
+                    <TableHead>{t("databaseProfiler.columns.yields")}</TableHead>
+                    <TableHead>{t("databaseProfiler.columns.responseSize")}</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -123,19 +128,23 @@ function ProfilerTableSection({
                             <TableCell className="font-mono text-xs">{entry.ns}</TableCell>
                             <TableCell>
                                 <Badge variant={getDurationBadgeColor(entry.millis)}>
-                                    {entry.millis}ms
+                                    {t("databaseProfiler.durationMs", { ms: entry.millis })}
                                 </Badge>
                             </TableCell>
                             <TableCell className="text-right">{entry.numYield}</TableCell>
                             <TableCell className="text-right">
-                                {(entry.responseLength / 1024).toFixed(2)}KB
+                                {t("databaseProfiler.responseKb", {
+                                    kb: (entry.responseLength / 1024).toFixed(2),
+                                })}
                             </TableCell>
                         </TableRow>
                         {expandedRows.has(index) && (
                             <TableRow key={`${index}-detail`}>
                                 <TableCell colSpan={7} className="bg-muted/50">
                                     <div className="p-4">
-                                        <div className="mb-2 text-sm font-medium">Command:</div>
+                                        <div className="mb-2 text-sm font-medium">
+                                            {t("databaseProfiler.commandHeading")}
+                                        </div>
                                         <pre className="overflow-auto rounded bg-background p-3 text-xs">
                                             {JSON.stringify(entry.command, null, 2)}
                                         </pre>
@@ -154,6 +163,7 @@ export function DatabaseProfiler({
     connectionId,
     databaseName,
 }: DatabaseProfilerProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [confirm, confirmDialog] = useConfirm()
     const [profilerLevel, setProfilerLevel] = useState<ProfilerLevel | null>(null)
@@ -230,7 +240,7 @@ export function DatabaseProfiler({
         platform
             .setProfilerLevel(connectionId, databaseName, level, slowMsValue)
             .then(() => {
-                toast.success("Profiler level updated")
+                toast.success(t("databaseProfiler.setLevelSuccess"))
                 loadProfilerLevel()
                 if (level > 0) {
                     loadProfilerData(100)
@@ -238,8 +248,8 @@ export function DatabaseProfiler({
             })
             .catch((err: unknown) => {
                 console.error("Failed to set profiler level:", err)
-                toast.error("Failed to set profiler level", {
-                    description: err instanceof Error ? err.message : "Unknown error",
+                toast.error(t("databaseProfiler.setLevelFailed"), {
+                    description: err instanceof Error ? err.message : t("common.unknownError"),
                 })
             })
     }
@@ -250,9 +260,9 @@ export function DatabaseProfiler({
         }
 
         const confirmed = await confirm({
-            title: "Clear profiler data?",
-            description: `All collected profile entries for "${databaseName}" will be removed. The profiler level itself stays untouched.`,
-            confirmLabel: "Clear",
+            title: t("databaseProfiler.clearConfirmTitle"),
+            description: t("databaseProfiler.clearConfirmDescription", { db: databaseName }),
+            confirmLabel: t("databaseProfiler.clearConfirmLabel"),
             destructive: true,
         })
         if (!confirmed) {
@@ -263,12 +273,12 @@ export function DatabaseProfiler({
             .clearProfilerData(connectionId, databaseName)
             .then(() => {
                 setEntries([])
-                toast.success("Profiler data cleared")
+                toast.success(t("databaseProfiler.clearedToast"))
             })
             .catch((err: unknown) => {
                 console.error("Failed to clear profiler data:", err)
-                toast.error("Failed to clear profiler data", {
-                    description: err instanceof Error ? err.message : "Unknown error",
+                toast.error(t("databaseProfiler.clearFailed"), {
+                    description: err instanceof Error ? err.message : t("common.unknownError"),
                 })
             })
     }
@@ -307,7 +317,7 @@ export function DatabaseProfiler({
         return (
             <div className="flex h-full items-center justify-center text-muted-foreground">
                 <Activity className="mr-2 h-5 w-5" />
-                Select a database to view profiler
+                {t("databaseProfiler.selectPrompt")}
             </div>
         )
     }
@@ -317,22 +327,22 @@ export function DatabaseProfiler({
             {/* Profiler Controls */}
             <div className="flex items-end gap-4 rounded-lg border p-4">
                 <div className="flex-1 space-y-2">
-                    <Label htmlFor="profiler-level">Profiler Level</Label>
+                    <Label htmlFor="profiler-level">{t("databaseProfiler.levelLabel")}</Label>
                     <Select value={selectedLevel} onValueChange={setSelectedLevel}>
                         <SelectTrigger id="profiler-level">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="0">0 - Off</SelectItem>
-                            <SelectItem value="1">1 - Slow operations</SelectItem>
-                            <SelectItem value="2">2 - All operations</SelectItem>
+                            <SelectItem value="0">{t("databaseProfiler.levelOff")}</SelectItem>
+                            <SelectItem value="1">{t("databaseProfiler.levelSlow")}</SelectItem>
+                            <SelectItem value="2">{t("databaseProfiler.levelAll")}</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
 
                 {selectedLevel === "1" && (
                     <div className="flex-1 space-y-2">
-                        <Label htmlFor="slow-ms">Slow Query Threshold (ms)</Label>
+                        <Label htmlFor="slow-ms">{t("databaseProfiler.slowMsLabel")}</Label>
                         <input
                             id="slow-ms"
                             type="number"
@@ -346,7 +356,7 @@ export function DatabaseProfiler({
                     </div>
                 )}
 
-                <Button onClick={handleSetProfilerLevel}>Apply</Button>
+                <Button onClick={handleSetProfilerLevel}>{t("databaseProfiler.apply")}</Button>
 
                 {profilerLevel && profilerLevel.level > 0 && (
                     <Button
@@ -355,7 +365,7 @@ export function DatabaseProfiler({
                             loadProfilerData(100)
                         }}
                     >
-                        Refresh
+                        {t("databaseProfiler.refresh")}
                     </Button>
                 )}
 
@@ -367,7 +377,7 @@ export function DatabaseProfiler({
                         }}
                     >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Clear Data
+                        {t("databaseProfiler.clearData")}
                     </Button>
                 )}
             </div>
@@ -376,16 +386,18 @@ export function DatabaseProfiler({
             {profilerLevel && (
                 <div className="rounded-lg border p-4">
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Status:</span>
+                        <span className="text-sm font-medium">
+                            {t("databaseProfiler.statusLabel")}
+                        </span>
                         <Badge variant={profilerLevel.level === 0 ? "secondary" : "default"}>
-                            Level {profilerLevel.level}
-                            {profilerLevel.level === 0 && " (Off)"}
-                            {profilerLevel.level === 1 && " (Slow Ops)"}
-                            {profilerLevel.level === 2 && " (All Ops)"}
+                            {t("databaseProfiler.statusLevel", { level: profilerLevel.level })}
+                            {profilerLevel.level === 0 && t("databaseProfiler.statusOffSuffix")}
+                            {profilerLevel.level === 1 && t("databaseProfiler.statusSlowSuffix")}
+                            {profilerLevel.level === 2 && t("databaseProfiler.statusAllSuffix")}
                         </Badge>
                         {profilerLevel.slowMs && (
                             <span className="text-sm text-muted-foreground">
-                                Threshold: {profilerLevel.slowMs}ms
+                                {t("databaseProfiler.threshold", { ms: profilerLevel.slowMs })}
                             </span>
                         )}
                     </div>
@@ -403,6 +415,7 @@ export function DatabaseProfiler({
                         toggleRowExpansion={toggleRowExpansion}
                         formatTimestamp={formatTimestamp}
                         getDurationBadgeColor={getDurationBadgeColor}
+                        t={t}
                     />
                 </ScrollArea>
             </div>
