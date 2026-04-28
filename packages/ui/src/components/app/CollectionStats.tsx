@@ -5,6 +5,7 @@ import { Button } from "../ui/button"
 import { Card } from "../ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 import { BarChart, Database, RefreshCw } from "lucide-react"
+import { useT } from "../../i18n"
 
 export interface CollectionStatsProps {
     connectionId: string | null
@@ -33,12 +34,22 @@ function StatCard({ label, value }: { label: string; value: string }): JSX.Eleme
 }
 
 function OverviewTab({ stats }: { stats: DetailedCollectionStats }): JSX.Element {
+    const t = useT()
     return (
         <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
-                <StatCard label="Document Count" value={stats.count.toLocaleString()} />
-                <StatCard label="Total Size" value={formatBytes(stats.size)} />
-                <StatCard label="Avg Doc Size" value={formatBytes(stats.avgObjSize)} />
+                <StatCard
+                    label={t("collectionStats.overview.documentCount")}
+                    value={stats.count.toLocaleString()}
+                />
+                <StatCard
+                    label={t("collectionStats.overview.totalSize")}
+                    value={formatBytes(stats.size)}
+                />
+                <StatCard
+                    label={t("collectionStats.overview.avgDocSize")}
+                    value={formatBytes(stats.avgObjSize)}
+                />
             </div>
             {stats.capped && <CappedCard stats={stats} />}
         </TabsContent>
@@ -46,21 +57,26 @@ function OverviewTab({ stats }: { stats: DetailedCollectionStats }): JSX.Element
 }
 
 function CappedCard({ stats }: { stats: DetailedCollectionStats }): JSX.Element {
+    const t = useT()
     return (
         <Card className="p-4">
             <div className="mb-2 flex items-center gap-2">
-                <Badge variant="default">Capped Collection</Badge>
+                <Badge variant="default">{t("collectionStats.overview.cappedBadge")}</Badge>
             </div>
             <div className="grid grid-cols-2 gap-4">
                 {stats.max && (
                     <div>
-                        <div className="text-sm text-muted-foreground">Max Documents</div>
+                        <div className="text-sm text-muted-foreground">
+                            {t("collectionStats.overview.maxDocuments")}
+                        </div>
                         <div className="text-lg font-medium">{stats.max.toLocaleString()}</div>
                     </div>
                 )}
                 {stats.maxSize && (
                     <div>
-                        <div className="text-sm text-muted-foreground">Max Size</div>
+                        <div className="text-sm text-muted-foreground">
+                            {t("collectionStats.overview.maxSize")}
+                        </div>
                         <div className="text-lg font-medium">{formatBytes(stats.maxSize)}</div>
                     </div>
                 )}
@@ -70,14 +86,27 @@ function CappedCard({ stats }: { stats: DetailedCollectionStats }): JSX.Element 
 }
 
 function StorageTab({ stats }: { stats: DetailedCollectionStats }): JSX.Element {
+    const t = useT()
     return (
         <TabsContent value="storage" className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-                <StatCard label="Storage Size" value={formatBytes(stats.storageSize)} />
-                <StatCard label="Index Size" value={formatBytes(stats.totalIndexSize)} />
-                <StatCard label="Extents" value={String(stats.numExtents)} />
+                <StatCard
+                    label={t("collectionStats.storage.storageSize")}
+                    value={formatBytes(stats.storageSize)}
+                />
+                <StatCard
+                    label={t("collectionStats.storage.indexSize")}
+                    value={formatBytes(stats.totalIndexSize)}
+                />
+                <StatCard
+                    label={t("collectionStats.storage.extents")}
+                    value={String(stats.numExtents)}
+                />
                 {stats.numOrphanDocs !== undefined && (
-                    <StatCard label="Orphan Docs" value={String(stats.numOrphanDocs)} />
+                    <StatCard
+                        label={t("collectionStats.storage.orphanDocs")}
+                        value={String(stats.numOrphanDocs)}
+                    />
                 )}
             </div>
         </TabsContent>
@@ -85,12 +114,17 @@ function StorageTab({ stats }: { stats: DetailedCollectionStats }): JSX.Element 
 }
 
 function IndexesTab({ stats }: { stats: DetailedCollectionStats }): JSX.Element {
+    const t = useT()
     return (
         <TabsContent value="indexes" className="space-y-4">
             <div className="rounded-lg border p-4">
                 <div className="mb-4 flex items-center justify-between">
-                    <h3 className="font-semibold">Index Sizes</h3>
-                    <Badge variant="secondary">Total: {formatBytes(stats.totalIndexSize)}</Badge>
+                    <h3 className="font-semibold">{t("collectionStats.indexes.sizesHeading")}</h3>
+                    <Badge variant="secondary">
+                        {t("collectionStats.indexes.totalBadge", {
+                            size: formatBytes(stats.totalIndexSize),
+                        })}
+                    </Badge>
                 </div>
                 <div className="space-y-2">
                     {Object.entries(stats.indexSizes).map(([name, size]) => (
@@ -109,20 +143,25 @@ function IndexesTab({ stats }: { stats: DetailedCollectionStats }): JSX.Element 
 }
 
 function ValidationTab({ stats }: { stats: DetailedCollectionStats }): JSX.Element {
+    const t = useT()
     return (
         <TabsContent value="validation" className="space-y-4">
             <Card className="p-4">
-                <h3 className="mb-4 font-semibold">Validation Rules</h3>
+                <h3 className="mb-4 font-semibold">{t("collectionStats.validation.heading")}</h3>
                 <div className="space-y-3">
                     {stats.validationLevel && (
                         <div>
-                            <div className="text-sm text-muted-foreground">Level</div>
+                            <div className="text-sm text-muted-foreground">
+                                {t("collectionStats.validation.level")}
+                            </div>
                             <Badge variant="outline">{stats.validationLevel}</Badge>
                         </div>
                     )}
                     {stats.validationAction && (
                         <div>
-                            <div className="text-sm text-muted-foreground">Action</div>
+                            <div className="text-sm text-muted-foreground">
+                                {t("collectionStats.validation.action")}
+                            </div>
                             <Badge variant="outline">{stats.validationAction}</Badge>
                         </div>
                     )}
@@ -133,13 +172,14 @@ function ValidationTab({ stats }: { stats: DetailedCollectionStats }): JSX.Eleme
 }
 
 function ShardingTab({ distribution }: { distribution: Record<string, number> }): JSX.Element {
+    const t = useT()
     return (
         <TabsContent value="sharding" className="space-y-4">
             <Card className="p-4">
                 <div className="mb-4 flex items-center gap-2">
-                    <Badge variant="default">Sharded Collection</Badge>
+                    <Badge variant="default">{t("collectionStats.sharding.badge")}</Badge>
                 </div>
-                <h3 className="mb-4 font-semibold">Shard Distribution</h3>
+                <h3 className="mb-4 font-semibold">{t("collectionStats.sharding.heading")}</h3>
                 <div className="space-y-2">
                     {Object.entries(distribution).map(([shard, count]) => (
                         <div
@@ -147,7 +187,9 @@ function ShardingTab({ distribution }: { distribution: Record<string, number> })
                             className="flex items-center justify-between rounded-md border p-3"
                         >
                             <div className="font-mono text-sm">{shard}</div>
-                            <Badge variant="secondary">{count.toLocaleString()} chunks</Badge>
+                            <Badge variant="secondary">
+                                {t("collectionStats.sharding.chunks", { count })}
+                            </Badge>
                         </div>
                     ))}
                 </div>
@@ -177,6 +219,7 @@ function useCollectionStats(
     collectionName: string | null,
 ): UseCollectionStats {
     const platform = usePlatform()
+    const t = useT()
     const [state, setState] = useState<StatsState>({
         stats: null,
         isLoading: false,
@@ -199,7 +242,7 @@ function useCollectionStats(
                 setState({
                     stats: null,
                     isLoading: false,
-                    error: err instanceof Error ? err.message : "Failed to load stats",
+                    error: err instanceof Error ? err.message : t("collectionStats.loadFailed"),
                 })
             })
     }
@@ -230,6 +273,7 @@ export function CollectionStats({
     databaseName,
     collectionName,
 }: CollectionStatsProps): JSX.Element {
+    const t = useT()
     const { stats, isLoading, error, reload } = useCollectionStats(
         connectionId,
         databaseName,
@@ -240,7 +284,7 @@ export function CollectionStats({
         return (
             <EmptyMessage>
                 <BarChart className="mr-2 h-5 w-5" />
-                Select a collection to view statistics
+                {t("collectionStats.selectPrompt")}
             </EmptyMessage>
         )
     }
@@ -251,18 +295,18 @@ export function CollectionStats({
                 <div className="text-destructive">{error}</div>
                 <Button onClick={reload} variant="outline">
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Retry
+                    {t("collectionStats.retry")}
                 </Button>
             </div>
         )
     }
 
     if (isLoading) {
-        return <EmptyMessage>Loading collection statistics...</EmptyMessage>
+        return <EmptyMessage>{t("collectionStats.loading")}</EmptyMessage>
     }
 
     if (!stats) {
-        return <EmptyMessage>No statistics available</EmptyMessage>
+        return <EmptyMessage>{t("collectionStats.noStats")}</EmptyMessage>
     }
 
     const showValidation = !!(stats.validationLevel || stats.validationAction)
@@ -279,17 +323,25 @@ export function CollectionStats({
                 </div>
                 <Button onClick={reload} variant="outline" size="sm">
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Refresh
+                    {t("collectionStats.refresh")}
                 </Button>
             </div>
 
             <Tabs defaultValue="overview" className="flex-1">
                 <TabsList>
-                    <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="storage">Storage</TabsTrigger>
-                    <TabsTrigger value="indexes">Indexes</TabsTrigger>
-                    {showValidation && <TabsTrigger value="validation">Validation</TabsTrigger>}
-                    {showSharding && <TabsTrigger value="sharding">Sharding</TabsTrigger>}
+                    <TabsTrigger value="overview">{t("collectionStats.tabs.overview")}</TabsTrigger>
+                    <TabsTrigger value="storage">{t("collectionStats.tabs.storage")}</TabsTrigger>
+                    <TabsTrigger value="indexes">{t("collectionStats.tabs.indexes")}</TabsTrigger>
+                    {showValidation && (
+                        <TabsTrigger value="validation">
+                            {t("collectionStats.tabs.validation")}
+                        </TabsTrigger>
+                    )}
+                    {showSharding && (
+                        <TabsTrigger value="sharding">
+                            {t("collectionStats.tabs.sharding")}
+                        </TabsTrigger>
+                    )}
                 </TabsList>
 
                 <OverviewTab stats={stats} />
