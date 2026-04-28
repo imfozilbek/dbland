@@ -12,6 +12,7 @@ import {
     Toolbar,
     useConnectionStore,
     usePlatformInit,
+    useTheme,
 } from "@dbland/ui"
 import { tauriPlatformAPI } from "./lib/tauri-platform"
 import { HomePage } from "./pages/HomePage"
@@ -109,6 +110,34 @@ function AppLayout(): JSX.Element {
     )
 }
 
+/**
+ * Toaster wired to the theme context. Sonner accepts `"light" | "dark" |
+ * "system"` directly, which is the same shape `useTheme()` returns, so we
+ * just pipe it through. Was previously hardcoded to `"dark"` and ignored
+ * the user's Settings → Theme pick.
+ */
+function ThemedToaster(): JSX.Element {
+    const { theme } = useTheme()
+    return (
+        <Toaster
+            theme={theme}
+            position="bottom-right"
+            richColors
+            closeButton
+            toastOptions={{
+                classNames: {
+                    toast: "border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] shadow-lg",
+                    description: "text-[var(--muted-foreground)]",
+                    actionButton:
+                        "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90",
+                    cancelButton:
+                        "bg-[var(--muted)] text-[var(--muted-foreground)] hover:bg-[var(--accent)]",
+                },
+            }}
+        />
+    )
+}
+
 function App(): JSX.Element {
     return (
         <ThemeProvider defaultTheme="system">
@@ -127,22 +156,7 @@ function App(): JSX.Element {
                             </Route>
                         </Routes>
                     </BrowserRouter>
-                    <Toaster
-                        theme="dark"
-                        position="bottom-right"
-                        richColors
-                        closeButton
-                        toastOptions={{
-                            classNames: {
-                                toast: "border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] shadow-lg",
-                                description: "text-[var(--muted-foreground)]",
-                                actionButton:
-                                    "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90",
-                                cancelButton:
-                                    "bg-[var(--muted)] text-[var(--muted-foreground)] hover:bg-[var(--accent)]",
-                            },
-                        }}
-                    />
+                    <ThemedToaster />
                 </PlatformProvider>
             </I18nProvider>
         </ThemeProvider>
