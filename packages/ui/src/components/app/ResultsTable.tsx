@@ -11,6 +11,7 @@ import {
 } from "../ui/context-menu"
 import { EmptyState } from "../ui/empty-state"
 import { Copy, Edit, Inbox, Trash2 } from "lucide-react"
+import { useT } from "../../i18n"
 
 export interface ResultsTableProps {
     documents: ResultDocument[]
@@ -29,6 +30,7 @@ export function ResultsTable({
     onCloneDocument,
     onDeleteDocument,
 }: ResultsTableProps): JSX.Element {
+    const t = useT()
     const parentRef = useRef<HTMLDivElement>(null)
 
     const getDocumentId = (doc: ResultDocument): string | null => {
@@ -48,8 +50,8 @@ export function ResultsTable({
             <div className="flex h-full items-center justify-center">
                 <EmptyState
                     icon={<Inbox className="h-5 w-5" />}
-                    title="No documents"
-                    description="The query ran successfully but the result set is empty. Adjust the filter or check the collection."
+                    title={t("resultsTable.emptyTitle")}
+                    description={t("resultsTable.emptyDescription")}
                 />
             </div>
         )
@@ -146,7 +148,7 @@ export function ResultsTable({
                                                 }}
                                             >
                                                 <Edit className="mr-2 h-4 w-4" />
-                                                Edit
+                                                {t("resultsTable.editAction")}
                                             </ContextMenuItem>
                                         )}
                                         {onCloneDocument && (
@@ -156,7 +158,7 @@ export function ResultsTable({
                                                 }}
                                             >
                                                 <Copy className="mr-2 h-4 w-4" />
-                                                Clone
+                                                {t("resultsTable.cloneAction")}
                                             </ContextMenuItem>
                                         )}
                                         {onDeleteDocument && (
@@ -167,7 +169,7 @@ export function ResultsTable({
                                                 className="text-destructive"
                                             >
                                                 <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete
+                                                {t("resultsTable.deleteAction")}
                                             </ContextMenuItem>
                                         )}
                                     </ContextMenuContent>

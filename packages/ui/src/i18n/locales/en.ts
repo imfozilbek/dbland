@@ -366,6 +366,28 @@ export const en = {
             "Redis hasn't recorded any commands above the slowlog threshold yet. Lower SLOWLOG GET on the server, or wait — this is a good thing.",
         idPrefix: "ID: {{id}}",
     },
+    resultsTable: {
+        emptyTitle: "No documents",
+        emptyDescription:
+            "The query ran successfully but the result set is empty. Adjust the filter or check the collection.",
+        editAction: "Edit",
+        cloneAction: "Clone",
+        deleteAction: "Delete",
+    },
+    resultsTree: {
+        emptyTitle: "No documents",
+        emptyDescription:
+            "The result set is empty — nothing to expand. Adjust the query and re-run.",
+        documentLabel: "Document {{n}}",
+        items_one: "{{count}} item",
+        items_few: "{{count}} items",
+        items_many: "{{count}} items",
+        items_other: "{{count}} items",
+        properties_one: "{{count}} property",
+        properties_few: "{{count}} properties",
+        properties_many: "{{count}} properties",
+        properties_other: "{{count}} properties",
+    },
     settings: {
         title: "Settings",
         description: "Configure your DBLand preferences",

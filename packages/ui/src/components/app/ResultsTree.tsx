@@ -3,6 +3,9 @@ import { useState } from "react"
 import { EmptyState } from "../ui/empty-state"
 import { ScrollArea } from "../ui/scroll-area"
 import type { ResultDocument } from "../../contexts/PlatformContext"
+import { useT } from "../../i18n"
+
+type T = ReturnType<typeof useT>
 
 export interface ResultsTreeProps {
     documents: ResultDocument[]
@@ -13,13 +16,14 @@ export interface ResultsTreeProps {
  * Displays documents in a collapsible tree structure.
  */
 export function ResultsTree({ documents }: ResultsTreeProps): JSX.Element {
+    const t = useT()
     if (documents.length === 0) {
         return (
             <div className="flex h-full items-center justify-center">
                 <EmptyState
                     icon={<FolderTree className="h-5 w-5" />}
-                    title="No documents"
-                    description="The result set is empty — nothing to expand. Adjust the query and re-run."
+                    title={t("resultsTree.emptyTitle")}
+                    description={t("resultsTree.emptyDescription")}
                 />
             </div>
         )
@@ -29,7 +33,12 @@ export function ResultsTree({ documents }: ResultsTreeProps): JSX.Element {
         <ScrollArea className="h-full">
             <div className="p-2">
                 {documents.map((doc, index) => (
-                    <TreeNode key={index} label={`Document ${index + 1}`} value={doc} />
+                    <TreeNode
+                        key={index}
+                        label={t("resultsTree.documentLabel", { n: index + 1 })}
+                        value={doc}
+                        t={t}
+                    />
                 ))}
             </div>
         </ScrollArea>
@@ -40,9 +49,10 @@ interface TreeNodeProps {
     label: string
     value: unknown
     level?: number
+    t: T
 }
 
-function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
+function TreeNode({ label, value, level = 0, t }: TreeNodeProps): JSX.Element {
     const [isExpanded, setIsExpanded] = useState(level < 2) // Auto-expand first 2 levels
 
     const paddingLeft = `${level * 20}px`
@@ -111,12 +121,20 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
                     )}
                     <span className="syntax-property">{label}</span>
                     <span className="text-muted-foreground">: [</span>
-                    <span className="text-muted-foreground text-xs">{value.length} items</span>
+                    <span className="text-muted-foreground text-xs">
+                        {t("resultsTree.items", { count: value.length })}
+                    </span>
                     <span className="text-muted-foreground">]</span>
                 </button>
                 {isExpanded &&
                     (value as unknown[]).map((item: unknown, index) => (
-                        <TreeNode key={index} label={`[${index}]`} value={item} level={level + 1} />
+                        <TreeNode
+                            key={index}
+                            label={`[${index}]`}
+                            value={item}
+                            level={level + 1}
+                            t={t}
+                        />
                     ))}
             </div>
         )
@@ -144,13 +162,13 @@ function TreeNode({ label, value, level = 0 }: TreeNodeProps): JSX.Element {
                     <span className="syntax-property">{label}</span>
                     <span className="text-muted-foreground">: {"{"}</span>
                     <span className="text-muted-foreground text-xs">
-                        {entries.length} properties
+                        {t("resultsTree.properties", { count: entries.length })}
                     </span>
                     <span className="text-muted-foreground">{"}"}</span>
                 </button>
                 {isExpanded &&
                     entries.map(([key, val]) => (
-                        <TreeNode key={key} label={key} value={val} level={level + 1} />
+                        <TreeNode key={key} label={key} value={val} level={level + 1} t={t} />
                     ))}
             </div>
         )

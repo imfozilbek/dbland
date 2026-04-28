@@ -364,6 +364,28 @@ export const ru: Translations = {
             "Redis ещё не записал ни одной команды, превысившей порог slowlog. Понизьте порог через SLOWLOG GET на сервере или просто подождите — это хороший знак.",
         idPrefix: "ID: {{id}}",
     },
+    resultsTable: {
+        emptyTitle: "Документов нет",
+        emptyDescription:
+            "Запрос выполнен успешно, но результат пуст. Скорректируйте фильтр или проверьте коллекцию.",
+        editAction: "Изменить",
+        cloneAction: "Клонировать",
+        deleteAction: "Удалить",
+    },
+    resultsTree: {
+        emptyTitle: "Документов нет",
+        emptyDescription:
+            "Результат пуст — раскрывать нечего. Скорректируйте запрос и запустите снова.",
+        documentLabel: "Документ {{n}}",
+        items_one: "{{count}} элемент",
+        items_few: "{{count}} элемента",
+        items_many: "{{count}} элементов",
+        items_other: "{{count}} элементов",
+        properties_one: "{{count}} свойство",
+        properties_few: "{{count}} свойства",
+        properties_many: "{{count}} свойств",
+        properties_other: "{{count}} свойств",
+    },
     settings: {
         title: "Настройки",
         description: "Настройте параметры DBLand",
