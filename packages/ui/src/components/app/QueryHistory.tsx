@@ -8,6 +8,9 @@ import { Input } from "../ui/input"
 import { ScrollArea } from "../ui/scroll-area"
 import { Skeleton } from "../ui/skeleton"
 import { CheckCircle, Clock, Database, Search, Trash2, XCircle } from "lucide-react"
+import { useT } from "../../i18n"
+
+type T = ReturnType<typeof useT>
 
 export interface QueryHistoryProps {
     connectionId: string | null
@@ -15,6 +18,7 @@ export interface QueryHistoryProps {
 }
 
 export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [confirm, confirmDialog] = useConfirm()
     const [entries, setEntries] = useState<QueryHistoryEntry[]>([])
@@ -88,8 +92,8 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
             })
             .catch((err: unknown) => {
                 console.error("Failed to delete query history:", err)
-                toast.error("Couldn't delete query", {
-                    description: err instanceof Error ? err.message : "Unknown error",
+                toast.error(t("queryHistory.deleteFailed"), {
+                    description: err instanceof Error ? err.message : t("common.unknownError"),
                 })
             })
     }
@@ -100,10 +104,9 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
         }
 
         const confirmed = await confirm({
-            title: "Clear query history?",
-            description:
-                "All saved queries for this connection will be removed. This cannot be undone.",
-            confirmLabel: "Clear",
+            title: t("queryHistory.clearConfirmTitle"),
+            description: t("queryHistory.clearConfirmDescription"),
+            confirmLabel: t("queryHistory.clearConfirmLabel"),
             destructive: true,
         })
         if (!confirmed) {
@@ -114,34 +117,34 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
             .clearQueryHistory(connectionId)
             .then(() => {
                 setEntries([])
-                toast.success("Query history cleared")
+                toast.success(t("queryHistory.cleared"))
             })
             .catch((err: unknown) => {
                 console.error("Failed to clear query history:", err)
-                toast.error("Failed to clear history", {
-                    description: err instanceof Error ? err.message : "Unknown error",
+                toast.error(t("queryHistory.clearFailed"), {
+                    description: err instanceof Error ? err.message : t("common.unknownError"),
                 })
             })
     }
 
-    const formatTimestamp = (timestamp: string): string => {
+    const formatTimestamp = (timestamp: string, tt: T): string => {
         const date = new Date(timestamp)
         const now = new Date()
         const diffMs = now.getTime() - date.getTime()
         const diffMins = Math.floor(diffMs / 60000)
 
         if (diffMins < 1) {
-            return "Just now"
+            return tt("queryHistory.timeJustNow")
         }
         if (diffMins < 60) {
-            return `${diffMins}m ago`
+            return tt("queryHistory.timeMinutesAgo", { count: diffMins })
         }
         const diffHours = Math.floor(diffMins / 60)
         if (diffHours < 24) {
-            return `${diffHours}h ago`
+            return tt("queryHistory.timeHoursAgo", { count: diffHours })
         }
         const diffDays = Math.floor(diffHours / 24)
-        return `${diffDays}d ago`
+        return tt("queryHistory.timeDaysAgo", { count: diffDays })
     }
 
     return (
@@ -149,7 +152,7 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
             <div className="flex items-center gap-2 border-b p-4">
                 <div className="flex flex-1 items-center gap-2">
                     <Input
-                        placeholder="Search query history..."
+                        placeholder={t("queryHistory.searchPlaceholder")}
                         value={searchQuery}
                         onChange={(e) => {
                             setSearchQuery(e.target.value)
@@ -163,7 +166,7 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
                     />
                     {searchQuery && (
                         <Button variant="ghost" size="sm" onClick={handleClearSearch}>
-                            Clear
+                            {t("queryHistory.clear")}
                         </Button>
                     )}
                     <Button
@@ -183,7 +186,7 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
                     }}
                     disabled={entries.length === 0}
                 >
-                    Clear All
+                    {t("queryHistory.clearAll")}
                 </Button>
             </div>
 
@@ -196,7 +199,7 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
                     </div>
                 ) : entries.length === 0 ? (
                     <div className="flex items-center justify-center p-8 text-muted-foreground">
-                        {searchQuery ? "No matching queries found" : "No query history"}
+                        {searchQuery ? t("queryHistory.emptyNoMatch") : t("queryHistory.emptyAll")}
                     </div>
                 ) : (
                     <div className="space-y-2 p-4">
@@ -210,12 +213,12 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
                                         {entry.success ? (
                                             <CheckCircle
                                                 className="h-4 w-4 text-[var(--success)]"
-                                                aria-label="Query succeeded"
+                                                aria-label={t("queryHistory.succeededAria")}
                                             />
                                         ) : (
                                             <XCircle
                                                 className="h-4 w-4 text-[var(--destructive)]"
-                                                aria-label="Query failed"
+                                                aria-label={t("queryHistory.failedAria")}
                                             />
                                         )}
                                         <Badge variant="outline">{entry.language}</Badge>
@@ -231,7 +234,7 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        aria-label="Delete this query from history"
+                                        aria-label={t("queryHistory.deleteAria")}
                                         className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
                                         onClick={() => {
                                             handleDelete(entry.id)
@@ -264,11 +267,19 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
                                 <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
                                     <div className="flex items-center gap-1">
                                         <Clock className="h-3 w-3" />
-                                        {formatTimestamp(entry.executedAt)}
+                                        {formatTimestamp(entry.executedAt, t)}
                                     </div>
-                                    <div>{entry.executionTimeMs}ms</div>
+                                    <div>
+                                        {t("queryHistory.executionTime", {
+                                            ms: entry.executionTimeMs,
+                                        })}
+                                    </div>
                                     {entry.resultCount > 0 && (
-                                        <div>{entry.resultCount} results</div>
+                                        <div>
+                                            {t("queryHistory.results", {
+                                                count: entry.resultCount,
+                                            })}
+                                        </div>
                                     )}
                                 </div>
                             </div>

@@ -10,6 +10,7 @@ import { Badge } from "../ui/badge"
 import { Database, Plus, RefreshCw, Trash2 } from "lucide-react"
 import { EmptyState } from "../ui/empty-state"
 import { CreateIndexDialog } from "./CreateIndexDialog"
+import { useT } from "../../i18n"
 
 export interface IndexManagerProps {
     connectionId: string
@@ -22,6 +23,7 @@ export function IndexManager({
     databaseName,
     collectionName,
 }: IndexManagerProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [confirm, confirmDialog] = useConfirm()
     const [indexes, setIndexes] = useState<Index[]>([])
@@ -53,9 +55,13 @@ export function IndexManager({
 
     const handleDropIndex = async (indexName: string): Promise<void> => {
         const confirmed = await confirm({
-            title: "Drop index?",
-            description: `"${indexName}" will be dropped from ${databaseName}.${collectionName}. Queries that relied on it may slow down.`,
-            confirmLabel: "Drop",
+            title: t("indexManager.dropConfirmTitle"),
+            description: t("indexManager.dropConfirmDescription", {
+                name: indexName,
+                db: databaseName,
+                coll: collectionName,
+            }),
+            confirmLabel: t("indexManager.dropConfirmLabel"),
             destructive: true,
         })
         if (!confirmed) {
@@ -66,12 +72,12 @@ export function IndexManager({
             .dropIndex(connectionId, databaseName, collectionName, indexName)
             .then(() => {
                 loadIndexes()
-                toast.success("Index dropped", { description: indexName })
+                toast.success(t("indexManager.dropped"), { description: indexName })
             })
             .catch((err: unknown) => {
                 console.error("Failed to drop index:", err)
-                toast.error("Failed to drop index", {
-                    description: err instanceof Error ? err.message : "Unknown error",
+                toast.error(t("indexManager.dropFailed"), {
+                    description: err instanceof Error ? err.message : t("common.unknownError"),
                 })
             })
     }
@@ -84,7 +90,7 @@ export function IndexManager({
         <div className="flex h-full flex-col">
             <div className="flex items-center justify-between border-b p-3">
                 <div>
-                    <h2 className="text-lg font-semibold">Index Manager</h2>
+                    <h2 className="text-lg font-semibold">{t("indexManager.title")}</h2>
                     <p className="text-sm text-muted-foreground">
                         {databaseName}.{collectionName}
                     </p>
@@ -98,7 +104,7 @@ export function IndexManager({
                         disabled={isLoading}
                     >
                         <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-                        Refresh
+                        {t("indexManager.refresh")}
                     </Button>
                     <Button
                         size="sm"
@@ -108,7 +114,7 @@ export function IndexManager({
                         }}
                     >
                         <Plus className="h-4 w-4" />
-                        Create Index
+                        {t("indexManager.createButton")}
                     </Button>
                 </div>
             </div>
@@ -119,8 +125,10 @@ export function IndexManager({
                         <Card className="p-2">
                             <EmptyState
                                 icon={<Database className="h-5 w-5" />}
-                                title="No indexes"
-                                description={`Only the default _id index exists on ${collectionName}. Create one to speed up frequent filters.`}
+                                title={t("indexManager.emptyTitle")}
+                                description={t("indexManager.emptyDescription", {
+                                    coll: collectionName,
+                                })}
                                 action={
                                     <Button
                                         size="sm"
@@ -129,7 +137,7 @@ export function IndexManager({
                                         }}
                                     >
                                         <Plus className="mr-2 h-4 w-4" />
-                                        Create index
+                                        {t("indexManager.emptyAction")}
                                     </Button>
                                 }
                             />
@@ -138,11 +146,13 @@ export function IndexManager({
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Keys</TableHead>
-                                    <TableHead>Properties</TableHead>
-                                    <TableHead>Usage</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead>{t("indexManager.columns.name")}</TableHead>
+                                    <TableHead>{t("indexManager.columns.keys")}</TableHead>
+                                    <TableHead>{t("indexManager.columns.properties")}</TableHead>
+                                    <TableHead>{t("indexManager.columns.usage")}</TableHead>
+                                    <TableHead className="text-right">
+                                        {t("indexManager.columns.actions")}
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -159,19 +169,25 @@ export function IndexManager({
                                             <TableCell>
                                                 <div className="flex gap-1">
                                                     {index.unique && (
-                                                        <Badge variant="secondary">Unique</Badge>
+                                                        <Badge variant="secondary">
+                                                            {t("indexManager.badges.unique")}
+                                                        </Badge>
                                                     )}
                                                     {index.sparse && (
-                                                        <Badge variant="secondary">Sparse</Badge>
+                                                        <Badge variant="secondary">
+                                                            {t("indexManager.badges.sparse")}
+                                                        </Badge>
                                                     )}
                                                     {index.ttl && (
                                                         <Badge variant="secondary">
-                                                            TTL: {index.ttl}s
+                                                            {t("indexManager.badges.ttl", {
+                                                                seconds: index.ttl,
+                                                            })}
                                                         </Badge>
                                                     )}
                                                     {index.background && (
                                                         <Badge variant="secondary">
-                                                            Background
+                                                            {t("indexManager.badges.background")}
                                                         </Badge>
                                                     )}
                                                 </div>
@@ -180,25 +196,31 @@ export function IndexManager({
                                                 {indexStats ? (
                                                     <div>
                                                         <div>
-                                                            {indexStats.accesses?.toLocaleString() ||
-                                                                0}{" "}
-                                                            accesses
+                                                            {t("indexManager.accesses", {
+                                                                count:
+                                                                    indexStats.accesses?.toLocaleString() ||
+                                                                    "0",
+                                                            })}
                                                         </div>
                                                         {indexStats.since && (
                                                             <div className="text-xs">
-                                                                Since: {indexStats.since}
+                                                                {t("indexManager.since", {
+                                                                    date: indexStats.since,
+                                                                })}
                                                             </div>
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <span>No stats</span>
+                                                    <span>{t("indexManager.noStats")}</span>
                                                 )}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    aria-label={`Drop index ${index.name}`}
+                                                    aria-label={t("indexManager.dropAriaLabel", {
+                                                        name: index.name,
+                                                    })}
                                                     className="h-8 text-[var(--destructive)] hover:text-[var(--destructive)]/80"
                                                     onClick={() => {
                                                         void handleDropIndex(index.name)
