@@ -282,17 +282,15 @@ export function WorkspacePage(): JSX.Element {
     const setResultsViewMode = useQueryStore((state) => state.setResultsViewMode)
     const formatQueryAction = useQueryStore((state) => state.formatQuery)
 
-    // Update database/collection when URL params change
+    // Sync database/collection with the URL. We include `connectionId` in the
+    // deps so that switching connections also resets the picks — without it,
+    // navigating from `/workspace/A?db=mydb` to `/workspace/B` (no params)
+    // would leave the old `mydb` selected, and the next query would try to
+    // hit a database that doesn't exist on B.
     useEffect(() => {
-        const db = searchParams.get("db")
-        const coll = searchParams.get("collection")
-        if (db) {
-            setSelectedDatabase(db)
-        }
-        if (coll) {
-            setSelectedCollection(coll)
-        }
-    }, [searchParams])
+        setSelectedDatabase(searchParams.get("db") || "test")
+        setSelectedCollection(searchParams.get("collection") || "test")
+    }, [searchParams, connectionId])
 
     const handleExecuteQuery = (): void => {
         if (!connectionId) {

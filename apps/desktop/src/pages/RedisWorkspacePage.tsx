@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import {
     EmptyState,
@@ -23,6 +23,14 @@ export function RedisWorkspacePage(): JSX.Element {
     const connection = connections.find((c) => c.id === connectionId)
     const connectionLabel = connection?.name ?? "Unknown connection"
     const connectionTarget = connection ? `${connection.host}:${connection.port}` : null
+
+    // The selected key belongs to a specific connection — when the user
+    // navigates to a different one (e.g. via the sidebar), drop the
+    // selection so the right pane doesn't try to load `user:123` from a
+    // server where that key doesn't exist.
+    useEffect(() => {
+        setSelectedKey(null)
+    }, [connectionId])
 
     return (
         <div className="flex h-full flex-col">
