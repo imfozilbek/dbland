@@ -99,3 +99,77 @@ export function markDisconnected(connection: Connection): Connection {
 export function canExecuteQuery(connection: Connection): boolean {
     return connection.status === ConnectionStatus.Connected
 }
+
+/**
+ * Whether the connection can be safely deleted right now.
+ *
+ * A `Connected` or `Connecting` connection has live server-side
+ * resources (driver pool, optional SSH tunnel, optional auth session).
+ * Deleting under those states is asking for resource leaks and
+ * surprised users. Use cases / UI should call `disconnect` first or
+ * surface a confirmation that the connection will be torn down before
+ * the record is removed.
+ *
+ * `Disconnected` and `Error` states are terminal as far as session
+ * resources go — safe to delete.
+ */
+export function canBeDeleted(connection: Connection): boolean {
+    return (
+        connection.status === ConnectionStatus.Disconnected ||
+        connection.status === ConnectionStatus.Error
+    )
+}
+
+/**
+ * Whether the connection's *configuration* (host, port, auth, SSH
+ * tunnel, SSL) can be edited right now. Editing while `Connecting`
+ * is racy — the in-flight handshake holds a snapshot of the previous
+ * config — and editing while `Connected` lies to the user about which
+ * config the live driver is actually using. Force a disconnect first.
+ */
+export function canBeEdited(connection: Connection): boolean {
+    return (
+        connection.status === ConnectionStatus.Disconnected ||
+        connection.status === ConnectionStatus.Error
+    )
+}
+
+/**
+ * State-machine map: which "next" statuses are valid from each
+ * "previous" status. Encoded as a `Record<from, Set<to>>` so the
+ * validator stays a single lookup instead of a sprawling switch.
+ *
+ * The valid transitions:
+ *   Disconnected → Connecting | (idempotent Disconnected)
+ *   Connecting   → Connected | Error | Disconnected (user cancelled)
+ *   Connected    → Disconnected | Error
+ *   Error        → Connecting (retry) | Disconnected
+ *
+ * Anything else is a programming error — for example, jumping straight
+ * from `Disconnected` to `Connected` skips the `Connecting` event the
+ * UI relies on for its loading spinner.
+ */
+const ALLOWED_TRANSITIONS: Record<ConnectionStatus, ReadonlySet<ConnectionStatus>> = {
+    [ConnectionStatus.Disconnected]: new Set([
+        ConnectionStatus.Connecting,
+        ConnectionStatus.Disconnected,
+    ]),
+    [ConnectionStatus.Connecting]: new Set([
+        ConnectionStatus.Connected,
+        ConnectionStatus.Error,
+        ConnectionStatus.Disconnected,
+    ]),
+    [ConnectionStatus.Connected]: new Set([ConnectionStatus.Disconnected, ConnectionStatus.Error]),
+    [ConnectionStatus.Error]: new Set([ConnectionStatus.Connecting, ConnectionStatus.Disconnected]),
+}
+
+/**
+ * Whether `next` is a legal transition from `current`. The
+ * \`mark*\` helpers don't enforce this themselves (so existing call
+ * sites stay backwards-compatible), but use cases / stores can call
+ * this gate before applying a transition that originated from user
+ * input or a Tauri-side event whose source they don't fully trust.
+ */
+export function canTransitionTo(current: ConnectionStatus, next: ConnectionStatus): boolean {
+    return ALLOWED_TRANSITIONS[current].has(next)
+}

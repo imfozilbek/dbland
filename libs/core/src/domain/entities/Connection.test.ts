@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
+    canBeDeleted,
+    canBeEdited,
     canExecuteQuery,
+    canTransitionTo,
     ConnectionStatus,
     createConnection,
     markConnected,
@@ -145,6 +148,98 @@ describe("Connection", () => {
             expect(canExecuteQuery(markConnected(base))).toBe(true)
             expect(canExecuteQuery(markFailed(base))).toBe(false)
             expect(canExecuteQuery(markDisconnected(markConnected(base)))).toBe(false)
+        })
+    })
+
+    describe("canBeDeleted", () => {
+        const config: ConnectionConfig = {
+            type: DatabaseType.MongoDB,
+            name: "T",
+            host: "localhost",
+            port: 27017,
+        }
+
+        it("allows delete only from terminal session states", () => {
+            const base = createConnection(config, "id")
+            expect(canBeDeleted(base)).toBe(true) // Disconnected
+            expect(canBeDeleted(markFailed(base))).toBe(true) // Error
+            expect(canBeDeleted(markConnecting(base))).toBe(false)
+            expect(canBeDeleted(markConnected(base))).toBe(false)
+        })
+    })
+
+    describe("canBeEdited", () => {
+        const config: ConnectionConfig = {
+            type: DatabaseType.MongoDB,
+            name: "T",
+            host: "localhost",
+            port: 27017,
+        }
+
+        it("forbids editing while a live driver/handshake holds a config snapshot", () => {
+            const base = createConnection(config, "id")
+            expect(canBeEdited(base)).toBe(true)
+            expect(canBeEdited(markFailed(base))).toBe(true)
+            expect(canBeEdited(markConnecting(base))).toBe(false)
+            expect(canBeEdited(markConnected(base))).toBe(false)
+        })
+    })
+
+    describe("canTransitionTo", () => {
+        it("allows the canonical happy path: Disconnected → Connecting → Connected → Disconnected", () => {
+            expect(
+                canTransitionTo(ConnectionStatus.Disconnected, ConnectionStatus.Connecting),
+            ).toBe(true)
+            expect(canTransitionTo(ConnectionStatus.Connecting, ConnectionStatus.Connected)).toBe(
+                true,
+            )
+            expect(canTransitionTo(ConnectionStatus.Connected, ConnectionStatus.Disconnected)).toBe(
+                true,
+            )
+        })
+
+        it("allows Connecting → Error and Connected → Error (handshake / session failure)", () => {
+            expect(canTransitionTo(ConnectionStatus.Connecting, ConnectionStatus.Error)).toBe(true)
+            expect(canTransitionTo(ConnectionStatus.Connected, ConnectionStatus.Error)).toBe(true)
+        })
+
+        it("allows Error → Connecting (retry) and Error → Disconnected (give up)", () => {
+            expect(canTransitionTo(ConnectionStatus.Error, ConnectionStatus.Connecting)).toBe(true)
+            expect(canTransitionTo(ConnectionStatus.Error, ConnectionStatus.Disconnected)).toBe(
+                true,
+            )
+        })
+
+        it("allows the user to cancel a Connecting attempt", () => {
+            expect(
+                canTransitionTo(ConnectionStatus.Connecting, ConnectionStatus.Disconnected),
+            ).toBe(true)
+        })
+
+        it("forbids skipping Connecting (Disconnected → Connected)", () => {
+            // The UI relies on the Connecting tick for its loading
+            // spinner; the use case must always pass through it.
+            expect(canTransitionTo(ConnectionStatus.Disconnected, ConnectionStatus.Connected)).toBe(
+                false,
+            )
+            expect(canTransitionTo(ConnectionStatus.Disconnected, ConnectionStatus.Error)).toBe(
+                false,
+            )
+        })
+
+        it("forbids regressing from Connected back to Connecting", () => {
+            expect(canTransitionTo(ConnectionStatus.Connected, ConnectionStatus.Connecting)).toBe(
+                false,
+            )
+        })
+
+        it("treats Disconnected → Disconnected as idempotent (allowed)", () => {
+            // A no-op disconnect on an already-disconnected connection
+            // should be valid — useful for retry logic that doesn't want
+            // to special-case the already-clean path.
+            expect(
+                canTransitionTo(ConnectionStatus.Disconnected, ConnectionStatus.Disconnected),
+            ).toBe(true)
         })
     })
 })
