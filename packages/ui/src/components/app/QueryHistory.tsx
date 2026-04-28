@@ -88,6 +88,9 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
             })
             .catch((err: unknown) => {
                 console.error("Failed to delete query history:", err)
+                toast.error("Couldn't delete query", {
+                    description: err instanceof Error ? err.message : "Unknown error",
+                })
             })
     }
 

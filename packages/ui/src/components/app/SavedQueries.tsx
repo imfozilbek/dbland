@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { type SavedQuery, usePlatform } from "../../contexts/PlatformContext"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
@@ -80,6 +81,9 @@ export function SavedQueries({ connectionId, onLoadQuery }: SavedQueriesProps): 
             })
             .catch((err: unknown) => {
                 console.error("Failed to delete saved query:", err)
+                toast.error("Couldn't delete saved query", {
+                    description: err instanceof Error ? err.message : "Unknown error",
+                })
             })
     }
 
