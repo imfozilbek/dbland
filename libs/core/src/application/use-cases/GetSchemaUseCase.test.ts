@@ -68,6 +68,33 @@ describe("GetSchemaUseCase", () => {
         expect(out.collections?.[0].name).toBe("a")
     })
 
+    it("does not nuke the schema tree when one database's getCollections fails — partial result wins", async () => {
+        // Three databases, and the middle one's collection lookup
+        // rejects (permission denied, e.g.). The previous Promise.all
+        // would throw and the user got nothing; the new Promise.allSettled
+        // path keeps d1 and d3 populated and shows d2 with no children.
+        const useCase = new GetSchemaUseCase(() =>
+            makeAdapterStub({
+                getDatabases: async () => [db("d1"), db("d2"), db("d3")],
+                getCollections: async (name: string) => {
+                    if (name === "d2") {
+                        throw new Error("permission denied")
+                    }
+                    return [coll(`c-${name}`, name)]
+                },
+            }),
+        )
+
+        const out = await useCase.execute({ connectionId: "x" })
+
+        expect(out.success).toBe(true)
+        const dbNodes = out.schema?.children ?? []
+        expect(dbNodes.map((n) => n.name)).toEqual(["d1", "d2", "d3"])
+        expect(dbNodes[0].children).toHaveLength(1)
+        expect(dbNodes[1].children).toEqual([]) // failing one, empty but present
+        expect(dbNodes[2].children).toHaveLength(1)
+    })
+
     it("surfaces adapter errors as failed output instead of throwing", async () => {
         const useCase = new GetSchemaUseCase(() =>
             makeAdapterStub({
