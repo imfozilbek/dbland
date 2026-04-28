@@ -75,42 +75,31 @@ impl ConnectionPool {
         }
     }
 
-    /// Test a connection without storing it
-    pub async fn test_connection(&self, config: &ConnectionConfig) -> Result<TestResult, AdapterError> {
-        let adapter = self.create_adapter(config)?;
+    /// Test a connection without storing it.
+    ///
+    /// Brings up the SSH tunnel (if enabled) for the duration of the
+    /// test so the result reflects the *full* connection path the user
+    /// is about to commit to. Without this, "Test Connection" would
+    /// silently bypass the tunnel — handshaking directly against
+    /// `host:port` from the desktop machine — and report green for
+    /// configurations that will fail at real `connect()` time because
+    /// the SSH jump host is unreachable, the credentials are wrong,
+    /// or the local forward port is already bound.
+    ///
+    /// The tunnel is dropped at the end of the test; nothing is
+    /// stored in the pool.
+    pub async fn test_connection(
+        &self,
+        config: &ConnectionConfig,
+    ) -> Result<TestResult, AdapterError> {
+        let (_tunnel, effective_config) = Self::prepare_effective_config(config.clone())?;
+        let adapter = self.create_adapter(&effective_config)?;
         adapter.test_connection().await
     }
 
     /// Connect and store the connection
     pub async fn connect(&self, config: ConnectionConfig) -> Result<(), AdapterError> {
-        // Check if SSH tunnel is needed
-        let (tunnel, effective_host, effective_port) = if let Some(ssh_config) = &config.ssh {
-            if ssh_config.enabled {
-                // Create and start SSH tunnel
-                let mut tunnel = SSHTunnel::new(
-                    ssh_config.clone(),
-                    config.host.clone(),
-                    config.port,
-                )
-                .map_err(|e: crate::tunnel::ssh::SSHTunnelError| AdapterError::ConnectionFailed(e.to_string()))?;
-
-                tunnel
-                    .start()
-                    .map_err(|e: crate::tunnel::ssh::SSHTunnelError| AdapterError::ConnectionFailed(e.to_string()))?;
-
-                let local_port = tunnel.local_port();
-                (Some(tunnel), "127.0.0.1".to_string(), local_port)
-            } else {
-                (None, config.host.clone(), config.port)
-            }
-        } else {
-            (None, config.host.clone(), config.port)
-        };
-
-        // Create config with effective host/port (tunnel if enabled)
-        let mut effective_config = config.clone();
-        effective_config.host = effective_host;
-        effective_config.port = effective_port;
+        let (tunnel, effective_config) = Self::prepare_effective_config(config.clone())?;
 
         let mut adapter = self.create_adapter(&effective_config)?;
         adapter.connect().await?;
@@ -217,6 +206,55 @@ impl ConnectionPool {
             .ok_or(AdapterError::NotConnected)?;
 
         active.adapter.execute_query(database, collection, query).await
+    }
+
+    /// If the config asks for an SSH tunnel, bring it up and return a
+    /// rewritten config that points at the local forwarded port. The
+    /// tunnel handle must outlive the resulting adapter — drop it and
+    /// the forward closes mid-handshake.
+    ///
+    /// Centralises the tunnel-bring-up so `connect` and
+    /// `test_connection` follow exactly the same code path. Previously
+    /// only `connect` did this, which meant a green "Test Connection"
+    /// said nothing about whether the real `connect()` would actually
+    /// succeed through the tunnel.
+    fn prepare_effective_config(
+        config: ConnectionConfig,
+    ) -> Result<(Option<SSHTunnel>, ConnectionConfig), AdapterError> {
+        let needs_tunnel = config
+            .ssh
+            .as_ref()
+            .map(|s| s.enabled)
+            .unwrap_or(false);
+
+        if !needs_tunnel {
+            return Ok((None, config));
+        }
+
+        let ssh_config = config
+            .ssh
+            .clone()
+            .expect("ssh config presence already checked above");
+
+        let mut tunnel =
+            SSHTunnel::new(ssh_config, config.host.clone(), config.port).map_err(
+                |e: crate::tunnel::ssh::SSHTunnelError| {
+                    AdapterError::ConnectionFailed(e.to_string())
+                },
+            )?;
+
+        tunnel
+            .start()
+            .map_err(|e: crate::tunnel::ssh::SSHTunnelError| {
+                AdapterError::ConnectionFailed(e.to_string())
+            })?;
+
+        let local_port = tunnel.local_port();
+        let mut effective_config = config;
+        effective_config.host = "127.0.0.1".to_string();
+        effective_config.port = local_port;
+
+        Ok((Some(tunnel), effective_config))
     }
 
     /// Create an adapter based on config
