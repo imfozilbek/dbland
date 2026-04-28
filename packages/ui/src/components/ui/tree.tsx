@@ -137,7 +137,18 @@ const TreeGroup = React.forwardRef<HTMLDivElement, TreeGroupProps>(
                 onOpenChange={onOpenChange}
             >
                 <CollapsiblePrimitive.Trigger asChild>
+                    {/*
+                      Radix forwards onClick / aria-expanded / aria-controls
+                      onto the child, but the child is a <div> (we can't use
+                      a real <button> because the actions slot contains
+                      nested buttons, which is invalid HTML). So we have to
+                      manually wire up the rest of the button affordance —
+                      role, tabIndex, and Space/Enter activation — otherwise
+                      keyboard users can't expand connections in the tree.
+                    */}
                     <div
+                        role="button"
+                        tabIndex={0}
                         className={cn(
                             "group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px]",
                             "transition-all duration-150",
@@ -147,6 +158,12 @@ const TreeGroup = React.forwardRef<HTMLDivElement, TreeGroupProps>(
                             isActive && ["bg-accent", "border-l-2 border-l-primary"],
                         )}
                         style={{ paddingLeft }}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault()
+                                onOpenChange?.(!open)
+                            }
+                        }}
                     >
                         {/* Chevron */}
                         <ChevronRight
