@@ -46,6 +46,13 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
             })
             .catch((err: unknown) => {
                 console.error("Failed to load GridFS files:", err)
+                // An empty file list and "request rejected" produce the same
+                // visible result otherwise — surface the underlying error so
+                // the user knows whether their bucket is empty or unreachable.
+                setFiles([])
+                toast.error("Couldn't load GridFS files", {
+                    description: err instanceof Error ? err.message : "Unknown error",
+                })
             })
             .finally(() => {
                 setIsLoading(false)
