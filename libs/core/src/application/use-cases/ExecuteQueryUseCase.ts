@@ -88,9 +88,12 @@ export class ExecuteQueryUseCase {
         }
 
         try {
-            // Execute query
+            // Execute query — pass language explicitly so the adapter can
+            // route to the right parser and reject obvious mismatches with
+            // a typed error rather than a vendor stack trace.
             const result = await adapter.executeQuery(
                 input.query,
+                input.language,
                 input.databaseName,
                 input.collectionName,
             )

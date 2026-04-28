@@ -1,5 +1,6 @@
 import { Collection } from "../../domain/entities/Collection"
 import { Database } from "../../domain/entities/Database"
+import { QueryLanguage } from "../../domain/entities/Query"
 import { ConnectionConfig } from "../../domain/value-objects/ConnectionConfig"
 import { DatabaseType } from "../../domain/value-objects/DatabaseType"
 import { QueryResult, ResultDocument } from "../../domain/value-objects/QueryResult"
@@ -82,10 +83,21 @@ export interface DatabaseAdapterPort {
     getCollectionStats(databaseName: string, collectionName: string): Promise<Collection>
 
     /**
-     * Execute a query
+     * Execute a query.
+     *
+     * The `language` argument is required even though most adapters could
+     * "guess" it from `this.type` — the same MongoDB connection will soon
+     * accept both classic find/aggregate JSON and Atlas Search expressions,
+     * and Redis Stack accepts both RESP commands and JSON-on-key syntax.
+     * Threading the language through the call gives the adapter (or a
+     * shared validator above it) a single place to reject mismatches like
+     * "Redis adapter, MongoDB query string" with a typed
+     * `QueryError.languageMismatch` instead of a vendor parser error
+     * leaking up.
      */
     executeQuery(
         query: string,
+        language: QueryLanguage,
         databaseName?: string,
         collectionName?: string,
     ): Promise<QueryResult>

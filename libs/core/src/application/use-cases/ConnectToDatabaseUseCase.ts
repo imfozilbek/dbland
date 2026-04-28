@@ -122,12 +122,16 @@ export class ConnectToDatabaseUseCase {
             // Connect
             await adapter.connect(config)
 
-            // Update status to connected
+            // Update status to connected. One atomic write — previously
+            // the use case wrote the "connecting" state and the success
+            // state in two separate `updateConnection` calls, leaving a
+            // window where a crash mid-transition persisted state that
+            // disagreed with what the in-memory aggregate would replay.
             updatedConnection = updateConnectionStatus(
                 updatedConnection,
                 ConnectionStatus.Connected,
             )
-            await this.storage.updateConnection(connection.id, {
+            await this.storage.persistConnectionTransition(connection.id, {
                 status: ConnectionStatus.Connected,
                 lastConnectedAt: new Date(),
             })
@@ -146,10 +150,12 @@ export class ConnectToDatabaseUseCase {
 
             this.logger.error("Connect failed", error, { connectionId: connection.id })
 
-            // Update status to error
+            // Update status to error — atomic write so the persisted
+            // status and the failure reason land together.
             updatedConnection = updateConnectionStatus(updatedConnection, ConnectionStatus.Error)
-            await this.storage.updateConnection(connection.id, {
+            await this.storage.persistConnectionTransition(connection.id, {
                 status: ConnectionStatus.Error,
+                error: errorMessage,
             })
 
             events.push(createConnectionFailedEvent(connection.id, errorMessage))

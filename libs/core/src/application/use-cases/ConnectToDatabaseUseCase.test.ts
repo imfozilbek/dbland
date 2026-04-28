@@ -31,6 +31,7 @@ function makeStorage(overrides: Partial<ConnectionStoragePort> = {}): Connection
         getConnection: async () => null,
         saveConnection: async () => undefined,
         updateConnection: async () => undefined,
+        persistConnectionTransition: async () => undefined,
         deleteConnection: async () => undefined,
         getCredentials: async () => null,
         saveCredentials: async () => undefined,
@@ -57,11 +58,11 @@ describe("ConnectToDatabaseUseCase", () => {
 
     it("transitions Disconnected → Connecting → Connected and emits the events in order", async () => {
         const stored = makeConnection()
-        const updated = vi.fn().mockResolvedValue(undefined)
+        const transition = vi.fn().mockResolvedValue(undefined)
         const useCase = new ConnectToDatabaseUseCase(
             makeStorage({
                 getConnection: async () => stored,
-                updateConnection: updated,
+                persistConnectionTransition: transition,
             }),
             () => makeAdapterStub({ isConnected: false }),
         )
@@ -75,8 +76,9 @@ describe("ConnectToDatabaseUseCase", () => {
         expect(types[0]).toBe("connection.status_changed")
         expect(types[types.length - 1]).toBe("connection.established")
 
-        // updateConnection is called with the final Connected status + lastConnectedAt
-        expect(updated).toHaveBeenCalledWith(
+        // The success path now writes a single atomic transition with
+        // status + lastConnectedAt, instead of two separate updates.
+        expect(transition).toHaveBeenCalledWith(
             "c1",
             expect.objectContaining({
                 status: ConnectionStatus.Connected,
@@ -87,9 +89,12 @@ describe("ConnectToDatabaseUseCase", () => {
 
     it("falls into the Error status and emits connection.failed when adapter.connect throws", async () => {
         const stored = makeConnection()
-        const updated = vi.fn().mockResolvedValue(undefined)
+        const transition = vi.fn().mockResolvedValue(undefined)
         const useCase = new ConnectToDatabaseUseCase(
-            makeStorage({ getConnection: async () => stored, updateConnection: updated }),
+            makeStorage({
+                getConnection: async () => stored,
+                persistConnectionTransition: transition,
+            }),
             () =>
                 makeAdapterStub({
                     connect: async () => {
@@ -107,9 +112,13 @@ describe("ConnectToDatabaseUseCase", () => {
         const lastEvent = out.events[out.events.length - 1]
         expect(lastEvent.type).toBe("connection.failed")
 
-        // updateConnection should be called with Error status (no lastConnectedAt)
-        const lastCall = updated.mock.calls[updated.mock.calls.length - 1]
-        expect(lastCall[1]).toEqual({ status: ConnectionStatus.Error })
+        // Failure transition lands status + the failure reason in a single
+        // write — the persisted record can never reflect "Error" without
+        // its accompanying message, or vice versa.
+        expect(transition).toHaveBeenCalledWith("c1", {
+            status: ConnectionStatus.Error,
+            error: "DNS resolution failed",
+        })
     })
 
     it("merges decrypted credentials into the adapter config when storage has them", async () => {
