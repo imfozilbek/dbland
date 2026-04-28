@@ -25,6 +25,7 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
     const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
     const [chunkDist, setChunkDist] = useState<ChunkDistribution[]>([])
     const [isLoading, setIsLoading] = useState(false)
+    const [isLoadingChunks, setIsLoadingChunks] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
@@ -72,7 +73,12 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
             return
         }
 
+        // Reset both pieces of state so a previous selection's data doesn't
+        // briefly render under the new collection's title before its fetch
+        // resolves.
         setSelectedCollection(namespace)
+        setChunkDist([])
+        setIsLoadingChunks(true)
         platform
             .getChunkDistribution(connectionId, db, coll)
             .then((data) => {
@@ -83,6 +89,9 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
                 toast.error(`Couldn't load chunk distribution for ${namespace}`, {
                     description: err instanceof Error ? err.message : "Unknown error",
                 })
+            })
+            .finally(() => {
+                setIsLoadingChunks(false)
             })
     }
 
@@ -193,9 +202,18 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
                                         {collections.map((coll) => (
                                             <TableRow
                                                 key={coll.namespace}
-                                                className="cursor-pointer hover:bg-muted/50"
+                                                role="button"
+                                                tabIndex={0}
+                                                aria-pressed={selectedCollection === coll.namespace}
+                                                className="cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
                                                 onClick={() => {
                                                     loadChunkDistribution(coll.namespace)
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" || e.key === " ") {
+                                                        e.preventDefault()
+                                                        loadChunkDistribution(coll.namespace)
+                                                    }
                                                 }}
                                             >
                                                 <TableCell className="font-mono text-sm">
@@ -230,9 +248,13 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
                             {selectedCollection ? (
                                 <div className="p-4">
                                     <h3 className="mb-4 font-semibold">{selectedCollection}</h3>
-                                    {chunkDist.length === 0 ? (
+                                    {isLoadingChunks ? (
                                         <div className="flex h-32 items-center justify-center text-muted-foreground">
                                             Loading distribution...
+                                        </div>
+                                    ) : chunkDist.length === 0 ? (
+                                        <div className="flex h-32 items-center justify-center text-muted-foreground">
+                                            No chunks reported for this collection.
                                         </div>
                                     ) : (
                                         <div className="space-y-2">
