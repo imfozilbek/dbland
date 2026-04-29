@@ -16,9 +16,20 @@ export interface AppSettings {
     editor: EditorSettings
 }
 
+/**
+ * Top-level settings excluding the nested `editor` block. Callers
+ * routing through `updateSettings` shallow-merge by design; permitting
+ * a partial `editor` object here would silently nuke the other editor
+ * fields (the spread `{ ...state.settings, editor }` replaces the
+ * whole sub-object, not merges it). The type now blocks that at the
+ * call site — `updateEditorSettings` is the only path that mutates
+ * editor-block fields.
+ */
+type FlatSettings = Omit<AppSettings, "editor">
+
 interface SettingsState {
     settings: AppSettings
-    updateSettings: (settings: Partial<AppSettings>) => void
+    updateSettings: (settings: Partial<FlatSettings>) => void
     updateEditorSettings: (editor: Partial<EditorSettings>) => void
     resetSettings: () => void
 }
@@ -41,7 +52,7 @@ export const useSettingsStore = create<SettingsState>()(
         (set) => ({
             settings: defaultSettings,
 
-            updateSettings: (newSettings: Partial<AppSettings>) => {
+            updateSettings: (newSettings: Partial<FlatSettings>) => {
                 set((state) => ({
                     settings: {
                         ...state.settings,
