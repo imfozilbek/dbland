@@ -23,6 +23,7 @@ import {
     useConnectionStore,
 } from "../../stores/connection-store"
 import { useT } from "../../i18n"
+import { DatabaseType, DEFAULT_PORTS } from "@dbland/core"
 
 type T = ReturnType<typeof useT>
 
@@ -39,8 +40,11 @@ interface FormErrors {
     port?: string
 }
 
-const DEFAULT_MONGODB_PORT = 27017
-const DEFAULT_REDIS_PORT = 6379
+// Single source of truth for engine ports lives in @dbland/core's
+// DEFAULT_PORTS map (also shared with the Rust side). Re-binding here
+// keeps the call sites readable without copy-pasting the literals.
+const DEFAULT_MONGODB_PORT = DEFAULT_PORTS[DatabaseType.MongoDB]
+const DEFAULT_REDIS_PORT = DEFAULT_PORTS[DatabaseType.Redis]
 const DEFAULT_SSH_PORT = 22
 const MAX_NAME_LENGTH = 50
 const MIN_PORT = 1
