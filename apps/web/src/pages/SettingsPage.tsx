@@ -128,7 +128,14 @@ export function SettingsPage(): JSX.Element {
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Version</span>
-                                <span>0.1.0</span>
+                                {/* Read from package.json at build time via
+                                 * Vite's `define` block (see vite.config.ts)
+                                 * so the literal stays in lockstep with the
+                                 * actual shipped version. The previous
+                                 * hard-coded "0.1.0" was stale by ten minor
+                                 * versions and actively misled users about
+                                 * what they were running. */}
+                                <span>{`v${__APP_VERSION__}`}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">License</span>
