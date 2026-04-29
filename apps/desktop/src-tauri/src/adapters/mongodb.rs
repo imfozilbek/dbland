@@ -259,21 +259,6 @@ impl DatabaseAdapter for MongoDbAdapter {
         Ok(())
     }
 
-    fn is_connected(&self) -> bool {
-        // Reflect the actual stored client state instead of always
-        // returning `true`. The previous version was a footgun: any
-        // caller using `is_connected()` as a precondition gate got a
-        // false positive even after `disconnect()` cleared the inner
-        // client. `try_read` keeps the check non-blocking; a concurrent
-        // writer (connect/disconnect mid-flight) reports not-connected,
-        // which matches the user-visible meaning of "is the connection
-        // currently usable".
-        self.client
-            .try_read()
-            .map(|guard| guard.is_some())
-            .unwrap_or(false)
-    }
-
     async fn get_databases(&self) -> Result<Vec<DatabaseInfo>, AdapterError> {
         let client = self.get_client().await?;
 
@@ -399,10 +384,6 @@ impl DatabaseAdapter for MongoDbAdapter {
             documents_affected: count,
             error: None,
         })
-    }
-
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
     }
 }
 

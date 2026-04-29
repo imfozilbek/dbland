@@ -84,9 +84,6 @@ pub trait DatabaseAdapter: Send + Sync {
     /// Close connection
     async fn disconnect(&mut self) -> Result<(), AdapterError>;
 
-    /// Check if connected
-    fn is_connected(&self) -> bool;
-
     /// Get list of databases
     async fn get_databases(&self) -> Result<Vec<DatabaseInfo>, AdapterError>;
 
@@ -100,7 +97,4 @@ pub trait DatabaseAdapter: Send + Sync {
         collection: Option<&str>,
         query: &str,
     ) -> Result<QueryResult, AdapterError>;
-
-    /// Enable downcasting to concrete adapter types
-    fn as_any(&self) -> &dyn std::any::Any;
 }

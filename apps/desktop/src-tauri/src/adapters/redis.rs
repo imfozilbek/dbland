@@ -173,22 +173,6 @@ impl DatabaseAdapter for RedisAdapter {
         Ok(())
     }
 
-    fn is_connected(&self) -> bool {
-        // Reflect the actual stored connection state instead of always
-        // returning `true`. The previous version was a footgun: any caller
-        // using `is_connected()` as a precondition gate (the trait
-        // contract suggests this is what it is for) got a false positive
-        // even after `disconnect()` had cleared the inner client.
-        // `try_read` keeps the check non-blocking; if a writer is in
-        // flight (a concurrent connect/disconnect), we err on the
-        // pessimistic side and report not-connected — which matches the
-        // user-visible meaning of "is the connection currently usable".
-        self.connection
-            .try_read()
-            .map(|guard| guard.is_some())
-            .unwrap_or(false)
-    }
-
     async fn get_databases(&self) -> Result<Vec<DatabaseInfo>, AdapterError> {
         let mut conn = self.get_connection().await?;
 
@@ -361,10 +345,6 @@ impl DatabaseAdapter for RedisAdapter {
             documents_affected: 1,
             error: None,
         })
-    }
-
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
     }
 }
 

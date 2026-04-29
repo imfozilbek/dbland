@@ -147,12 +147,6 @@ impl ConnectionPool {
         driver_result
     }
 
-    /// Check if a connection exists and is active
-    pub async fn is_connected(&self, connection_id: &str) -> bool {
-        let guard = self.connections.read().await;
-        guard.contains_key(connection_id)
-    }
-
     /// Get list of active connection IDs
     pub async fn get_active_connections(&self) -> Vec<String> {
         let guard = self.connections.read().await;
@@ -165,19 +159,6 @@ impl ConnectionPool {
     pub async fn database_type(&self, connection_id: &str) -> Option<DatabaseType> {
         let guard = self.connections.read().await;
         guard.get(connection_id).map(|c| c.config.db_type)
-    }
-
-    /// Execute an operation on a connection
-    pub async fn with_connection<F, T>(&self, connection_id: &str, operation: F) -> Result<T, AdapterError>
-    where
-        F: FnOnce(&dyn DatabaseAdapter) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<T, AdapterError>> + Send + '_>>,
-    {
-        let guard = self.connections.read().await;
-        let active = guard
-            .get(connection_id)
-            .ok_or(AdapterError::NotConnected)?;
-
-        operation(active.adapter.as_ref()).await
     }
 
     /// Get databases for a connection
