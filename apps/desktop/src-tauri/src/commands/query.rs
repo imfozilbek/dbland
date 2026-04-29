@@ -19,12 +19,11 @@ fn clamp_history_limit(input: Option<i64>) -> i64 {
 
 /// Query execution result for frontend
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct QueryResultDto {
     pub success: bool,
     pub documents: Vec<Value>,
-    #[serde(rename = "executionTimeMs")]
     pub execution_time_ms: u64,
-    #[serde(rename = "documentsAffected")]
     pub documents_affected: u64,
     pub error: Option<String>,
 }

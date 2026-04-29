@@ -128,36 +128,10 @@ export const tauriPlatformAPI: PlatformAPI = {
     },
 
     getQueryHistory: async (connectionId: string, limit?: number): Promise<QueryHistoryEntry[]> => {
-        const entries = await invoke<
-            {
-                id: number
-                connection_id: string
-                query: string
-                language: string
-                database_name?: string
-                collection_name?: string
-                executed_at: string
-                execution_time_ms: number
-                success: boolean
-                result_count: number
-                error?: string
-            }[]
-        >("get_query_history", { connectionId, limit: limit ?? 100 })
-
-        // Map snake_case to camelCase
-        return entries.map((entry) => ({
-            id: entry.id,
-            connectionId: entry.connection_id,
-            query: entry.query,
-            language: entry.language,
-            databaseName: entry.database_name,
-            collectionName: entry.collection_name,
-            executedAt: entry.executed_at,
-            executionTimeMs: entry.execution_time_ms,
-            success: entry.success,
-            resultCount: entry.result_count,
-            error: entry.error,
-        }))
+        return invoke<QueryHistoryEntry[]>("get_query_history", {
+            connectionId,
+            limit: limit ?? 100,
+        })
     },
 
     deleteQueryHistory: async (id: number): Promise<void> => {
@@ -173,123 +147,23 @@ export const tauriPlatformAPI: PlatformAPI = {
         searchQuery: string,
         limit?: number,
     ): Promise<QueryHistoryEntry[]> => {
-        const entries = await invoke<
-            {
-                id: number
-                connection_id: string
-                query: string
-                language: string
-                database_name?: string
-                collection_name?: string
-                executed_at: string
-                execution_time_ms: number
-                success: boolean
-                result_count: number
-                error?: string
-            }[]
-        >("search_query_history", { connectionId, searchQuery, limit: limit ?? 100 })
-
-        // Map snake_case to camelCase
-        return entries.map((entry) => ({
-            id: entry.id,
-            connectionId: entry.connection_id,
-            query: entry.query,
-            language: entry.language,
-            databaseName: entry.database_name,
-            collectionName: entry.collection_name,
-            executedAt: entry.executed_at,
-            executionTimeMs: entry.execution_time_ms,
-            success: entry.success,
-            resultCount: entry.result_count,
-            error: entry.error,
-        }))
+        return invoke<QueryHistoryEntry[]>("search_query_history", {
+            connectionId,
+            searchQuery,
+            limit: limit ?? 100,
+        })
     },
 
     getSavedQueries: async (connectionId: string): Promise<SavedQuery[]> => {
-        const queries = await invoke<
-            {
-                id: number
-                connection_id: string
-                name: string
-                description?: string
-                query: string
-                language: string
-                database_name?: string
-                collection_name?: string
-                tags?: string
-                created_at: string
-                updated_at: string
-            }[]
-        >("get_saved_queries", { connectionId })
-
-        return queries.map((q) => ({
-            id: q.id,
-            connectionId: q.connection_id,
-            name: q.name,
-            description: q.description,
-            query: q.query,
-            language: q.language,
-            databaseName: q.database_name,
-            collectionName: q.collection_name,
-            tags: q.tags,
-            createdAt: q.created_at,
-            updatedAt: q.updated_at,
-        }))
+        return invoke<SavedQuery[]>("get_saved_queries", { connectionId })
     },
 
     saveQuery: async (query: NewSavedQuery): Promise<SavedQuery> => {
-        const saved = await invoke<{
-            id: number
-            connection_id: string
-            name: string
-            description?: string
-            query: string
-            language: string
-            database_name?: string
-            collection_name?: string
-            tags?: string
-            created_at: string
-            updated_at: string
-        }>("save_query", {
-            query: {
-                connection_id: query.connectionId,
-                name: query.name,
-                description: query.description,
-                query: query.query,
-                language: query.language,
-                database_name: query.databaseName,
-                collection_name: query.collectionName,
-                tags: query.tags,
-            },
-        })
-
-        return {
-            id: saved.id,
-            connectionId: saved.connection_id,
-            name: saved.name,
-            description: saved.description,
-            query: saved.query,
-            language: saved.language,
-            databaseName: saved.database_name,
-            collectionName: saved.collection_name,
-            tags: saved.tags,
-            createdAt: saved.created_at,
-            updatedAt: saved.updated_at,
-        }
+        return invoke<SavedQuery>("save_query", { query })
     },
 
     updateSavedQuery: async (query: UpdateSavedQuery): Promise<void> => {
-        await invoke("update_saved_query", {
-            query: {
-                id: query.id,
-                name: query.name,
-                description: query.description,
-                query: query.query,
-                database_name: query.databaseName,
-                collection_name: query.collectionName,
-                tags: query.tags,
-            },
-        })
+        await invoke("update_saved_query", { query })
     },
 
     deleteSavedQuery: async (id: number): Promise<void> => {
@@ -300,67 +174,11 @@ export const tauriPlatformAPI: PlatformAPI = {
         connectionId: string,
         searchQuery: string,
     ): Promise<SavedQuery[]> => {
-        const queries = await invoke<
-            {
-                id: number
-                connection_id: string
-                name: string
-                description?: string
-                query: string
-                language: string
-                database_name?: string
-                collection_name?: string
-                tags?: string
-                created_at: string
-                updated_at: string
-            }[]
-        >("search_saved_queries", { connectionId, searchQuery })
-
-        return queries.map((q) => ({
-            id: q.id,
-            connectionId: q.connection_id,
-            name: q.name,
-            description: q.description,
-            query: q.query,
-            language: q.language,
-            databaseName: q.database_name,
-            collectionName: q.collection_name,
-            tags: q.tags,
-            createdAt: q.created_at,
-            updatedAt: q.updated_at,
-        }))
+        return invoke<SavedQuery[]>("search_saved_queries", { connectionId, searchQuery })
     },
 
     getSavedQueriesByTag: async (connectionId: string, tag: string): Promise<SavedQuery[]> => {
-        const queries = await invoke<
-            {
-                id: number
-                connection_id: string
-                name: string
-                description?: string
-                query: string
-                language: string
-                database_name?: string
-                collection_name?: string
-                tags?: string
-                created_at: string
-                updated_at: string
-            }[]
-        >("get_saved_queries_by_tag", { connectionId, tag })
-
-        return queries.map((q) => ({
-            id: q.id,
-            connectionId: q.connection_id,
-            name: q.name,
-            description: q.description,
-            query: q.query,
-            language: q.language,
-            databaseName: q.database_name,
-            collectionName: q.collection_name,
-            tags: q.tags,
-            createdAt: q.created_at,
-            updatedAt: q.updated_at,
-        }))
+        return invoke<SavedQuery[]>("get_saved_queries_by_tag", { connectionId, tag })
     },
 
     getDocument: async (

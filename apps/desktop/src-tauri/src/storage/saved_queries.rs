@@ -29,6 +29,7 @@ fn saved_query_from_sql(row: &Row<'_>) -> Result<SavedQuery> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SavedQuery {
     pub id: i64,
     pub connection_id: String,
@@ -44,6 +45,7 @@ pub struct SavedQuery {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NewSavedQuery {
     pub connection_id: String,
     pub name: String,
@@ -56,6 +58,7 @@ pub struct NewSavedQuery {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateSavedQuery {
     pub id: i64,
     pub name: String,

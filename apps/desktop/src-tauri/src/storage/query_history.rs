@@ -31,6 +31,7 @@ fn entry_from_sql(row: &Row<'_>) -> Result<QueryHistoryEntry> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct QueryHistoryEntry {
     pub id: i64,
     pub connection_id: String,

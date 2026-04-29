@@ -6,8 +6,16 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::{command, State};
 
-/// Connection configuration from frontend
+/// Connection configuration from frontend.
+///
+/// `#[serde(rename_all = "camelCase")]` covers everything except the
+/// `db_type` field, which has to keep its explicit `rename = "type"`
+/// because:
+///   1. Rust forbids `type` as a field name (reserved keyword);
+///   2. the frontend's TS interface uses `type` (not `dbType`) and we
+///      don't want to break that contract.
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ConnectionConfigDto {
     pub id: Option<String>,
     pub name: String,
@@ -18,7 +26,6 @@ pub struct ConnectionConfigDto {
     pub username: Option<String>,
     pub password: Option<String>,
     pub database: Option<String>,
-    #[serde(rename = "authDatabase")]
     pub auth_database: Option<String>,
     pub tls: Option<bool>,
     pub ssh: Option<SSHTunnelConfig>,
@@ -75,8 +82,12 @@ impl ConnectionConfigDto {
     }
 }
 
-/// Connection response for frontend
+/// Connection response for frontend.
+///
+/// Same `db_type` → `type` exception as `ConnectionConfigDto` (see
+/// the docstring there).
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ConnectionDto {
     pub id: String,
     pub name: String,
@@ -86,11 +97,9 @@ pub struct ConnectionDto {
     pub port: u16,
     pub username: Option<String>,
     pub database: Option<String>,
-    #[serde(rename = "authDatabase")]
     pub auth_database: Option<String>,
     pub tls: bool,
     pub status: String,
-    #[serde(rename = "lastConnectedAt")]
     pub last_connected_at: Option<String>,
 }
 
@@ -114,12 +123,11 @@ impl From<SavedConnection> for ConnectionDto {
 
 /// Test connection result
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TestConnectionResult {
     pub success: bool,
     pub message: String,
-    #[serde(rename = "latencyMs")]
     pub latency_ms: Option<u64>,
-    #[serde(rename = "serverVersion")]
     pub server_version: Option<String>,
 }
 
