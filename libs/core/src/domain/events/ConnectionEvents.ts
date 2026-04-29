@@ -50,6 +50,37 @@ export interface ConnectionStatusChangedEvent extends DomainEvent<{
 }
 
 /**
+ * Strip every secret-bearing field from a `Connection` before it
+ * lands on a domain-event payload. Events are routinely structured-
+ * logged, sent through observability sinks, and persisted — without
+ * this scrub, a `connection.established` log line would carry the
+ * database password, the SSH password, the SSH key passphrase, *and*
+ * the inline private-key contents in the clear. The runtime adapters
+ * read credentials from the storage port directly; nobody ever needs
+ * them off the event bus.
+ */
+function redactConnectionForEvent(connection: Connection): Connection {
+    const auth = connection.config.auth
+    const ssh = connection.config.ssh
+    return {
+        ...connection,
+        config: {
+            ...connection.config,
+            auth: auth ? { ...auth, password: undefined } : auth,
+            ssh: ssh
+                ? {
+                      ...ssh,
+                      password: undefined,
+                      passphrase: undefined,
+                      privateKeyPath: ssh.privateKeyPath ? "[REDACTED]" : undefined,
+                  }
+                : ssh,
+            connectionString: connection.config.connectionString ? "[REDACTED]" : undefined,
+        },
+    }
+}
+
+/**
  * Create connection established event
  */
 export function createConnectionEstablishedEvent(
@@ -57,7 +88,7 @@ export function createConnectionEstablishedEvent(
 ): ConnectionEstablishedEvent {
     return {
         type: "connection.established",
-        payload: { connection },
+        payload: { connection: redactConnectionForEvent(connection) },
         timestamp: new Date(),
     }
 }
