@@ -97,8 +97,37 @@ impl ConnectionPool {
         adapter.test_connection().await
     }
 
-    /// Connect and store the connection
+    /// Connect and store the connection.
+    ///
+    /// If an active session already exists for this id, tear it down
+    /// first via the regular `disconnect` path. The previous shape
+    /// dropped the old `ActiveConnection` implicitly via HashMap's
+    /// insert-overwrite, which had two consequences worth avoiding:
+    ///
+    ///   1. The old `adapter.disconnect().await` was never called —
+    ///      driver-level cleanup (close handshakes, session resets)
+    ///      happened only via `Drop`, which for async drivers is at
+    ///      best a best-effort synchronous teardown.
+    ///   2. The old SSHTunnel was dropped while the pool's write lock
+    ///      was still held, blocking every other reader on the
+    ///      tunnel's stop() (which joins the accept thread). Worse,
+    ///      because Drop is synchronous, the local forward port
+    ///      occasionally lingered long enough for the new tunnel's
+    ///      bind() below to race it and fail with EADDRINUSE.
+    ///
+    /// Calling `disconnect` first runs the graceful path under no
+    /// lock and removes the old entry before we start the new tunnel.
     pub async fn connect(&self, config: ConnectionConfig) -> Result<(), AdapterError> {
+        if self.connections.read().await.contains_key(&config.id) {
+            if let Err(e) = self.disconnect(&config.id).await {
+                log::warn!(
+                    "previous session for {} did not shut down cleanly: {}",
+                    config.id,
+                    e
+                );
+            }
+        }
+
         let (tunnel, effective_config) = Self::prepare_effective_config(config.clone())?;
 
         let mut adapter = Self::create_adapter(&effective_config)?;
