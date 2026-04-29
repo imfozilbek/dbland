@@ -29,12 +29,11 @@ export function getDatabaseTypeDisplayName(type: DatabaseType): string {
 }
 
 /**
- * Get default port for a database type
+ * Default port lookup intentionally lives in
+ * `domain/constants/database-defaults` (`DEFAULT_PORTS`) — it's the
+ * single source of truth for engine ports, shared with the Rust side
+ * of the IPC. The earlier copy here re-stated the same numbers and
+ * went stale every time someone updated the constants file. Importers
+ * should reach for `DEFAULT_PORTS[type]` directly; the previous
+ * `getDefaultPort` function was a thin re-export with no callers.
  */
-export function getDefaultPort(type: DatabaseType): number {
-    const defaultPorts: Record<DatabaseType, number> = {
-        [DatabaseType.MongoDB]: 27017,
-        [DatabaseType.Redis]: 6379,
-    }
-    return defaultPorts[type]
-}

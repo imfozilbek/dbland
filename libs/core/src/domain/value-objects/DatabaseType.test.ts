@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-    DatabaseType,
-    getDatabaseTypeDisplayName,
-    getDefaultPort,
-    isDatabaseType,
-} from "./DatabaseType"
+import { DatabaseType, getDatabaseTypeDisplayName, isDatabaseType } from "./DatabaseType"
 
 describe("DatabaseType", () => {
     describe("isDatabaseType", () => {
@@ -25,13 +20,6 @@ describe("DatabaseType", () => {
         it("should return correct display names", () => {
             expect(getDatabaseTypeDisplayName(DatabaseType.MongoDB)).toBe("MongoDB")
             expect(getDatabaseTypeDisplayName(DatabaseType.Redis)).toBe("Redis")
-        })
-    })
-
-    describe("getDefaultPort", () => {
-        it("should return correct default ports", () => {
-            expect(getDefaultPort(DatabaseType.MongoDB)).toBe(27017)
-            expect(getDefaultPort(DatabaseType.Redis)).toBe(6379)
         })
     })
 })
