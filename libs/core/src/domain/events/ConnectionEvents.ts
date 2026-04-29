@@ -19,16 +19,6 @@ export interface ConnectionEstablishedEvent extends DomainEvent<{
 }
 
 /**
- * Connection disconnected event
- */
-export interface ConnectionDisconnectedEvent extends DomainEvent<{
-    connectionId: string
-    reason?: string
-}> {
-    type: "connection.disconnected"
-}
-
-/**
  * Connection failed event
  */
 export interface ConnectionFailedEvent extends DomainEvent<{
@@ -89,20 +79,6 @@ export function createConnectionEstablishedEvent(
     return {
         type: "connection.established",
         payload: { connection: redactConnectionForEvent(connection) },
-        timestamp: new Date(),
-    }
-}
-
-/**
- * Create connection disconnected event
- */
-export function createConnectionDisconnectedEvent(
-    connectionId: string,
-    reason?: string,
-): ConnectionDisconnectedEvent {
-    return {
-        type: "connection.disconnected",
-        payload: { connectionId, reason },
         timestamp: new Date(),
     }
 }
