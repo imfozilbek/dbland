@@ -93,12 +93,32 @@ function createSaveConnection(
     }
 }
 
+/**
+ * Mirror of the domain rule from `Connection.canBeDeleted` (libs/core):
+ * a connection in `connecting` or `connected` state has live driver
+ * resources and an optional SSH tunnel; deleting it on the client
+ * leaves the backend mid-handshake and orphans those resources. The
+ * UI usually disables the delete button — but a stale focus or a
+ * keyboard shortcut can still fire it, so the store enforces too.
+ */
+function canDeleteByStatus(status: ConnectionStatus): boolean {
+    return status === "disconnected" || status === "error"
+}
+
 function createDeleteConnection(get: Get, set: Set): (id: string) => Promise<void> {
     return async (id) => {
-        const { _api } = get()
+        const { _api, connections } = get()
         if (!_api) {
             throw new Error("Platform API not initialized")
         }
+
+        const target = connections.find((c) => c.id === id)
+        if (target && !canDeleteByStatus(target.status)) {
+            const message = "Disconnect the connection before deleting it"
+            set({ error: message })
+            throw new Error(message)
+        }
+
         set({ isLoading: true, error: null })
         try {
             await _api.deleteConnection(id)
