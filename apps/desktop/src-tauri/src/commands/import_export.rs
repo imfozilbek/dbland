@@ -1,4 +1,4 @@
-use crate::AppState;
+use crate::{validate_collection_name, validate_database_name, AppState};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs::File;
@@ -74,6 +74,9 @@ async fn import_json(
     connection_id: &str,
     options: &ImportOptions,
 ) -> Result<ImportResult, String> {
+    validate_database_name(&options.database_name)?;
+    validate_collection_name(&options.collection_name)?;
+
     let file = File::open(&options.file_path).map_err(|e| crate::redact_error(e.to_string()))?;
     let reader = BufReader::new(file);
 
@@ -122,7 +125,7 @@ async fn import_json(
             }
             Err(e) => {
                 failed += chunk.len() as u64;
-                errors.push(e.to_string());
+                errors.push(crate::redact_error(e.to_string()));
             }
         }
     }
@@ -140,6 +143,9 @@ async fn export_json(
     connection_id: &str,
     options: &ExportOptions,
 ) -> Result<ExportResult, String> {
+    validate_database_name(&options.database_name)?;
+    validate_collection_name(&options.collection_name)?;
+
     // Build query
     let query = options.query.clone().unwrap_or_else(|| "{}".to_string());
 

@@ -322,9 +322,15 @@ pub async fn download_gridfs_file(
         }
     }
 
-    // Write to disk
+    // Write to disk. The `filename` here came from MongoDB metadata —
+    // a hostile or compromised server could store a payload like
+    // `../../etc/passwd` and turn this into a local-filesystem
+    // overwrite the moment the user clicks Download. Strip every
+    // path-separator and traversal segment from it before joining,
+    // so we always land on a plain basename inside `save_path`.
+    let safe_basename = sanitise_basename(filename);
     let full_path = if save_path.ends_with('/') || save_path.ends_with('\\') {
-        format!("{}{}", save_path, filename)
+        format!("{}{}", save_path, safe_basename)
     } else {
         save_path.clone()
     };
@@ -333,4 +339,59 @@ pub async fn download_gridfs_file(
         .map_err(|e| format!("Failed to write file: {}", e))?;
 
     Ok(full_path)
+}
+
+/// Drop directory components, traversal segments, and NUL bytes from
+/// a server-supplied filename so it can be safely joined to the
+/// user-chosen save directory. If the result would be empty (or
+/// nothing but dots) we fall back to "download".
+fn sanitise_basename(filename: &str) -> String {
+    // Take the segment after the last `/` or `\`, then forbid `..`
+    // and any remaining separators.
+    let last_slash = filename.rfind(|c: char| c == '/' || c == '\\');
+    let trimmed = match last_slash {
+        Some(idx) => &filename[idx + 1..],
+        None => filename,
+    };
+    let cleaned: String = trimmed
+        .chars()
+        .filter(|c| *c != '\0' && *c != '/' && *c != '\\')
+        .collect();
+    if cleaned.is_empty() || cleaned == "." || cleaned == ".." {
+        "download".to_string()
+    } else {
+        cleaned
+    }
+}
+
+#[cfg(test)]
+mod sanitise_basename_tests {
+    use super::sanitise_basename;
+
+    #[test]
+    fn passes_a_plain_filename_through() {
+        assert_eq!(sanitise_basename("report.pdf"), "report.pdf");
+    }
+
+    #[test]
+    fn strips_unix_path_traversal() {
+        assert_eq!(sanitise_basename("../../etc/passwd"), "passwd");
+    }
+
+    #[test]
+    fn strips_windows_path_traversal() {
+        assert_eq!(sanitise_basename(r"..\..\windows\system32\evil.dll"), "evil.dll");
+    }
+
+    #[test]
+    fn falls_back_to_download_for_dotfiles_or_empty() {
+        assert_eq!(sanitise_basename(""), "download");
+        assert_eq!(sanitise_basename(".."), "download");
+        assert_eq!(sanitise_basename("../"), "download");
+    }
+
+    #[test]
+    fn drops_embedded_nul_bytes() {
+        assert_eq!(sanitise_basename("ok\0evil"), "okevil");
+    }
 }
