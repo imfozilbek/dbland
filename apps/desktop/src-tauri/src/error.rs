@@ -67,10 +67,25 @@ static URI_USERINFO_RE: LazyLock<Regex> = LazyLock::new(|| {
         .expect("URI_USERINFO_RE failed to compile")
 });
 
-/// `password=…` / `password: …` key-value pairs. Covers `password`
-/// (case-insensitive); other secret keywords land in a follow-up.
+/// `password=…` / `password: …` key-value pairs in free-form strings.
+///
+/// Three value shapes are matched:
+///   * double-quoted: `password="hunter2"` (and `password = "hunter2"`)
+///   * single-quoted: `password='hunter2'`
+///   * bare (no quotes), terminated by whitespace, `,`, `;`, or quote
+///
+/// The previous bare-only form silently let the quoted shapes through
+/// because the next character after `=` was `"`, which the bare
+/// character class `[^\s,;\x22']+` excludes — so the `+` failed at
+/// position zero and the whole match was abandoned. A driver that
+/// echoed `Authentication failed (password="hunter2")` would slip the
+/// secret straight into a frontend toast even with the redactor on.
+/// The TS-side `redactString` already had the matching three-arm
+/// alternation; this brings the Rust-side parity-equal so the
+/// boundary covers the same shapes regardless of which side the error
+/// originates on.
 static PASSWORD_KV_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)(?P<key>password)\s*[:=]\s*[^\s,;\x22']+")
+    Regex::new(r#"(?i)(?P<key>password)\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;"']+)"#)
         .expect("PASSWORD_KV_RE failed to compile")
 });
 
@@ -110,6 +125,23 @@ mod tests {
         let input = "Diagnostic: PASSWORD=Sup3rS3cret was rejected";
         let out = redact_error(input);
         assert!(!out.contains("Sup3rS3cret"));
+    }
+
+    /// Regression: the bare-character-class redactor used to silently
+    /// let `password="hunter2"` through, because `"` was in the
+    /// exclusion set so the `+` failed at position zero and the whole
+    /// match was abandoned. Both quoted shapes (double and single) and
+    /// the spaced `key = "value"` form must redact.
+    #[test]
+    fn redacts_quoted_password_values() {
+        let dq = redact_error(r#"Authentication failed (password="hunter2")"#);
+        assert!(!dq.contains("hunter2"), "double-quoted leaked: {}", dq);
+
+        let sq = redact_error("Authentication failed (password='hunter2')");
+        assert!(!sq.contains("hunter2"), "single-quoted leaked: {}", sq);
+
+        let spaced = redact_error(r#"connection { password = "hunter2" }"#);
+        assert!(!spaced.contains("hunter2"), "spaced leaked: {}", spaced);
     }
 
     #[test]
