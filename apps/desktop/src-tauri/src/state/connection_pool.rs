@@ -116,20 +116,35 @@ impl ConnectionPool {
         Ok(())
     }
 
-    /// Disconnect and remove from pool
+    /// Disconnect and remove from pool.
+    ///
+    /// Tear down both the driver and the SSH tunnel even if one of
+    /// them errors. The previous shape used `?` to bail right after
+    /// `adapter.disconnect()` — meaning a driver-side failure left an
+    /// orphaned SSH tunnel running, with the local forwarded port
+    /// still bound, even though the connection had already been
+    /// removed from the pool and the UI marked it disconnected. The
+    /// next reconnect would then fail with "address already in use".
+    /// We now run the tunnel teardown unconditionally and surface
+    /// whichever error happened first to the caller.
     pub async fn disconnect(&self, connection_id: &str) -> Result<(), AdapterError> {
         let mut guard = self.connections.write().await;
 
-        if let Some(mut active) = guard.remove(connection_id) {
-            active.adapter.disconnect().await?;
+        let Some(mut active) = guard.remove(connection_id) else {
+            return Ok(());
+        };
+        // Drop the pool lock before doing the (potentially slow) driver
+        // disconnect — other readers can keep iterating active
+        // connections while one is shutting down.
+        drop(guard);
 
-            // Stop SSH tunnel if exists
-            if let Some(mut tunnel) = active.tunnel {
-                tunnel.stop();
-            }
+        let driver_result = active.adapter.disconnect().await;
+
+        if let Some(mut tunnel) = active.tunnel.take() {
+            tunnel.stop();
         }
 
-        Ok(())
+        driver_result
     }
 
     /// Check if a connection exists and is active
