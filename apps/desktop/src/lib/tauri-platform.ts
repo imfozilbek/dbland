@@ -422,50 +422,11 @@ export const tauriPlatformAPI: PlatformAPI = {
     },
 
     importData: async (connectionId: string, options: ImportOptions): Promise<ImportResult> => {
-        const result = await invoke<{
-            success: boolean
-            imported: number
-            failed: number
-            errors: string[]
-        }>("import_data", {
-            connectionId,
-            options: {
-                file_path: options.filePath,
-                format: options.format,
-                database_name: options.databaseName,
-                collection_name: options.collectionName,
-            },
-        })
-
-        return {
-            success: result.success,
-            imported: result.imported,
-            failed: result.failed,
-            errors: result.errors,
-        }
+        return invoke<ImportResult>("import_data", { connectionId, options })
     },
 
     exportData: async (connectionId: string, options: ExportOptions): Promise<ExportResult> => {
-        const result = await invoke<{
-            success: boolean
-            exported: number
-            error?: string
-        }>("export_data", {
-            connectionId,
-            options: {
-                file_path: options.filePath,
-                format: options.format,
-                database_name: options.databaseName,
-                collection_name: options.collectionName,
-                query: options.query,
-            },
-        })
-
-        return {
-            success: result.success,
-            exported: result.exported,
-            error: result.error,
-        }
+        return invoke<ExportResult>("export_data", { connectionId, options })
     },
 
     openFileDialog: async (filters?: string[]): Promise<string | null> => {
@@ -503,65 +464,11 @@ export const tauriPlatformAPI: PlatformAPI = {
     executeAggregationPipeline: async (
         request: ExecuteAggregationRequest,
     ): Promise<AggregationResult> => {
-        const pipeline = request.pipeline.map((stage) => ({
-            stage_type: stage.stageType,
-            stage_data: stage.stageData,
-        }))
-
-        const result = await invoke<{
-            success: boolean
-            documents: Record<string, unknown>[]
-            execution_time_ms: number
-            documents_returned: number
-            error?: string
-        }>("execute_aggregation_pipeline", {
-            request: {
-                connection_id: request.connectionId,
-                database_name: request.databaseName,
-                collection_name: request.collectionName,
-                pipeline,
-            },
-        })
-
-        return {
-            success: result.success,
-            documents: result.documents,
-            executionTimeMs: result.execution_time_ms,
-            documentsReturned: result.documents_returned,
-            error: result.error,
-        }
+        return invoke<AggregationResult>("execute_aggregation_pipeline", { request })
     },
 
     previewPipelineStage: async (request: PreviewStageRequest): Promise<AggregationResult> => {
-        const pipeline = request.pipeline.map((stage) => ({
-            stage_type: stage.stageType,
-            stage_data: stage.stageData,
-        }))
-
-        const result = await invoke<{
-            success: boolean
-            documents: Record<string, unknown>[]
-            execution_time_ms: number
-            documents_returned: number
-            error?: string
-        }>("preview_pipeline_stage", {
-            request: {
-                connection_id: request.connectionId,
-                database_name: request.databaseName,
-                collection_name: request.collectionName,
-                pipeline,
-                stage_index: request.stageIndex,
-                limit: request.limit,
-            },
-        })
-
-        return {
-            success: result.success,
-            documents: result.documents,
-            executionTimeMs: result.execution_time_ms,
-            documentsReturned: result.documents_returned,
-            error: result.error,
-        }
+        return invoke<AggregationResult>("preview_pipeline_stage", { request })
     },
 
     getIndexes: async (
@@ -577,19 +484,7 @@ export const tauriPlatformAPI: PlatformAPI = {
     },
 
     createIndex: async (request: CreateIndexRequest): Promise<string> => {
-        return invoke<string>("create_index", {
-            request: {
-                connection_id: request.connectionId,
-                database_name: request.databaseName,
-                collection_name: request.collectionName,
-                keys: request.keys,
-                unique: request.unique,
-                sparse: request.sparse,
-                ttl_seconds: request.ttlSeconds,
-                background: request.background,
-                name: request.name,
-            },
-        })
+        return invoke<string>("create_index", { request })
     },
 
     dropIndex: async (

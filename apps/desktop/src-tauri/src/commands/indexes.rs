@@ -14,6 +14,7 @@ fn js_string(input: &str) -> String {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Index {
     pub name: String,
     pub keys: serde_json::Value,
@@ -24,6 +25,7 @@ pub struct Index {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateIndexRequest {
     pub connection_id: String,
     pub database_name: String,
@@ -37,6 +39,7 @@ pub struct CreateIndexRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct IndexStats {
     pub name: String,
     pub accesses: Option<i64>,

@@ -12,12 +12,14 @@ const PREVIEW_LIMIT_MAX: i64 = 500;
 const PREVIEW_LIMIT_DEFAULT: i64 = 100;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AggregationPipelineStage {
     pub stage_type: String,
     pub stage_data: serde_json::Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ExecuteAggregationRequest {
     pub connection_id: String,
     pub database_name: String,
@@ -26,6 +28,7 @@ pub struct ExecuteAggregationRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AggregationResult {
     pub success: bool,
     pub documents: Vec<serde_json::Value>,
@@ -35,6 +38,7 @@ pub struct AggregationResult {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PreviewStageRequest {
     pub connection_id: String,
     pub database_name: String,

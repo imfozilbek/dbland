@@ -8,6 +8,7 @@ use std::sync::Arc;
 use tauri::{command, State};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ImportOptions {
     pub file_path: String,
     pub format: String, // "json", "csv", "bson"
@@ -16,6 +17,7 @@ pub struct ImportOptions {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ExportOptions {
     pub file_path: String,
     pub format: String, // "json", "csv", "bson"
@@ -25,6 +27,7 @@ pub struct ExportOptions {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ImportResult {
     pub success: bool,
     pub imported: u64,
@@ -33,6 +36,7 @@ pub struct ImportResult {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ExportResult {
     pub success: bool,
     pub exported: u64,
