@@ -65,7 +65,20 @@ fn load_or_create_master_key(
                 let mut key = [0u8; 32];
                 key.copy_from_slice(&data[..32]);
                 if entry.set_password(&encode_master_key(&key)).is_ok() {
-                    let _ = std::fs::remove_file(&legacy_path);
+                    // The keychain copy is now authoritative; the
+                    // on-disk file is a duplicate of the master key
+                    // sitting in the user's home dir. If we can't
+                    // delete it, log loudly — leaving a key file behind
+                    // is a security regression even though the
+                    // migration itself succeeded.
+                    if let Err(e) = std::fs::remove_file(&legacy_path) {
+                        log::error!(
+                            "master key migrated to keychain but legacy key file at {} could not be removed: {} \
+                             — delete it manually to avoid keeping the secret on disk",
+                            legacy_path.display(),
+                            e
+                        );
+                    }
                     log::info!("master key migrated from legacy file to OS keychain");
                     return Ok(key);
                 }

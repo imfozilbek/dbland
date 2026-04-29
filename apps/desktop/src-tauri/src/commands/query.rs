@@ -106,7 +106,7 @@ pub async fn execute_query(
                 result_count: result.documents.len() as u64,
                 error: result.error.clone(),
             };
-            let _ = state.query_history.insert(&history_entry);
+            record_history(&state, &history_entry);
 
             Ok(QueryResultDto {
                 success: result.success,
@@ -131,9 +131,27 @@ pub async fn execute_query(
                 result_count: 0,
                 error: Some(safe_error.clone()),
             };
-            let _ = state.query_history.insert(&history_entry);
+            record_history(&state, &history_entry);
             Err(safe_error)
         }
+    }
+}
+
+/// Insert a history row, logging on failure instead of dropping silently.
+///
+/// History is observability data — losing one row should never abort
+/// the underlying query (the result is already on its way back to the
+/// caller and the user expects it). But a `let _ = ...` swallow makes
+/// "history panel mysteriously empty" undebuggable. The two call sites
+/// in `execute_query` used to do exactly that; they now share this
+/// helper so the rule is enforced in one place.
+fn record_history(state: &AppState, entry: &NewQueryHistoryEntry) {
+    if let Err(e) = state.query_history.insert(entry) {
+        log::warn!(
+            "failed to record query history for connection {}: {}",
+            entry.connection_id,
+            e
+        );
     }
 }
 
