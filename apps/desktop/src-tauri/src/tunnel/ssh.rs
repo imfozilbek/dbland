@@ -16,6 +16,14 @@ use thiserror::Error;
 /// host should fail fast and let the user retry.
 const SSH_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 
+/// How long the accept loop sleeps when no client is dialling in.
+/// Has to be short enough that `stop()` tears the tunnel down with no
+/// user-visible delay, but long enough that the polling loop doesn't
+/// burn measurable CPU on an idle tunnel. 200 ms is on the same order
+/// as a typical UI animation frame, so a "Disconnect" click feels
+/// instant without the loop showing up in `top`.
+const ACCEPT_POLL_INTERVAL: Duration = Duration::from_millis(200);
+
 /// Map an SSH tunnel error to a non-sensitive label so the variant kind
 /// can be logged without leaking host, user, or auth details.
 fn error_kind(err: &SSHTunnelError) -> &'static str {
@@ -211,21 +219,41 @@ impl SSHTunnel {
             ));
         }
 
-        // Start listening on local port
+        // Start listening on local port.
+        //
+        // Non-blocking + short poll instead of a blocking `accept()`.
+        // The previous loop only re-checked the `active` flag *after*
+        // an incoming connection completed — so calling `stop()` while
+        // the user wasn't actively using the tunnel left the spawned
+        // accept-loop thread stuck in `accept()` indefinitely (until
+        // process exit, or until one more client happened to dial in
+        // and unblock it). With non-blocking accept and a 200 ms idle
+        // sleep, `stop()` reliably tears the loop down within a tick
+        // without busy-spinning.
         let listener = TcpListener::bind(format!("127.0.0.1:{}", local_port))?;
+        listener.set_nonblocking(true)?;
 
-        // Accept connections and forward through SSH
         while *active.lock() {
-            if let Ok((mut local_stream, _)) = listener.accept() {
-                // Create SSH channel
-                let mut channel = session
-                    .channel_direct_tcpip(&remote_host, remote_port, None)
-                    .map_err(|e| SSHTunnelError::TunnelCreationFailed(e.to_string()))?;
+            match listener.accept() {
+                Ok((mut local_stream, _)) => {
+                    // Reset the per-connection stream to blocking — the
+                    // forward loop reads/writes synchronously on it,
+                    // and inheriting the listener's non-blocking flag
+                    // would turn every read into a busy `WouldBlock`.
+                    let _ = local_stream.set_nonblocking(false);
 
-                // Forward data bidirectionally
-                thread::spawn(move || {
-                    let _ = Self::forward_data(&mut local_stream, &mut channel);
-                });
+                    let mut channel = session
+                        .channel_direct_tcpip(&remote_host, remote_port, None)
+                        .map_err(|e| SSHTunnelError::TunnelCreationFailed(e.to_string()))?;
+
+                    thread::spawn(move || {
+                        let _ = Self::forward_data(&mut local_stream, &mut channel);
+                    });
+                }
+                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                    thread::sleep(ACCEPT_POLL_INTERVAL);
+                }
+                Err(_) => break,
             }
         }
 
