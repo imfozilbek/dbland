@@ -13,6 +13,7 @@ import {
     createConnectionStatusChangedEvent,
 } from "../../domain/events/ConnectionEvents"
 import { ConnectionError } from "../../domain/errors/ConnectionError"
+import { extractErrorMessage } from "../error-extraction"
 import { DatabaseAdapterPort } from "../ports/DatabaseAdapterPort"
 import { ConnectionStoragePort } from "../ports/ConnectionStoragePort"
 import { LoggerPort, NoopLogger } from "../ports/LoggerPort"
@@ -182,7 +183,7 @@ export class ConnectToDatabaseUseCase {
                 events,
             }
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error)
+            const errorMessage = extractErrorMessage(error)
 
             this.logger.error("Connect failed", error, { connectionId: connection.id })
 

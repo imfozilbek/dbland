@@ -1,4 +1,5 @@
 import { useParams, useSearchParams } from "react-router-dom"
+import { extractErrorMessage } from "@dbland/core"
 import {
     BookMarked,
     Code2,
@@ -338,7 +339,7 @@ export function WorkspacePage(): JSX.Element {
             .catch((err: unknown) => {
                 console.error("Failed to clone document:", err)
                 toast.error(t("workspace.cloneDocFailed"), {
-                    description: err instanceof Error ? err.message : t("common.unknownError"),
+                    description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })
     }
@@ -373,7 +374,7 @@ export function WorkspacePage(): JSX.Element {
             .catch((err: unknown) => {
                 console.error("Failed to delete document:", err)
                 toast.error(t("workspace.deleteDocFailed"), {
-                    description: err instanceof Error ? err.message : t("common.unknownError"),
+                    description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })
     }

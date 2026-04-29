@@ -11,6 +11,7 @@ import {
     QueryFailedEvent,
 } from "../../domain/events/QueryEvents"
 import { createErrorQueryResult, QueryResult } from "../../domain/value-objects/QueryResult"
+import { extractErrorMessage } from "../error-extraction"
 import { DatabaseAdapterPort } from "../ports/DatabaseAdapterPort"
 import { LoggerPort, NoopLogger } from "../ports/LoggerPort"
 
@@ -103,7 +104,7 @@ function recordException(
     error: unknown,
     executionTimeMs: number,
 ): ExecuteQueryOutput {
-    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorMessage = extractErrorMessage(error)
     const result = createErrorQueryResult(errorMessage)
     const historyEntry = createQueryHistoryEntry(
         input.query,

@@ -1,5 +1,6 @@
 import { Collection } from "../../domain/entities/Collection"
 import { Database } from "../../domain/entities/Database"
+import { extractErrorMessage } from "../error-extraction"
 import { DatabaseAdapterPort } from "../ports/DatabaseAdapterPort"
 import { LoggerPort, NoopLogger } from "../ports/LoggerPort"
 
@@ -62,7 +63,7 @@ async function runWithAdapter(
         onError(error)
         return {
             success: false,
-            error: error instanceof Error ? error.message : String(error),
+            error: extractErrorMessage(error),
         }
     }
 }
