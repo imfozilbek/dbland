@@ -619,33 +619,20 @@ export const tauriPlatformAPI: PlatformAPI = {
     },
 
     // Redis methods
+    //
+    // The Rust-side request structs all carry `#[serde(rename_all = "camelCase")]`
+    // so the IPC wire format matches the rest of the codebase — no per-method
+    // snake_case mapping needed; the request object passes through verbatim.
     redisScanKeys: async (request: ScanKeysRequest): Promise<ScanKeysResult> => {
-        return invoke<ScanKeysResult>("redis_scan_keys", {
-            request: {
-                connection_id: request.connectionId,
-                pattern: request.pattern,
-                count: request.count,
-            },
-        })
+        return invoke<ScanKeysResult>("redis_scan_keys", { request })
     },
 
     redisGetValue: async (request: GetValueRequest): Promise<GetValueResult> => {
-        return invoke<GetValueResult>("redis_get_value", {
-            request: {
-                connection_id: request.connectionId,
-                key: request.key,
-            },
-        })
+        return invoke<GetValueResult>("redis_get_value", { request })
     },
 
     redisSetTTL: async (request: SetTTLRequest): Promise<boolean> => {
-        return invoke<boolean>("redis_set_ttl", {
-            request: {
-                connection_id: request.connectionId,
-                key: request.key,
-                seconds: request.seconds,
-            },
-        })
+        return invoke<boolean>("redis_set_ttl", { request })
     },
 
     redisSlowLog: async (connectionId: string, count?: number): Promise<SlowLogEntry[]> => {

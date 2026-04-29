@@ -38,6 +38,7 @@ fn redis_quote(input: &str) -> String {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ScanKeysRequest {
     pub connection_id: String,
     pub pattern: String,
@@ -51,6 +52,7 @@ pub struct ScanKeysResult {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GetValueRequest {
     pub connection_id: String,
     pub key: String,
@@ -74,6 +76,7 @@ pub struct GetValueResult {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SetTTLRequest {
     pub connection_id: String,
     pub key: String,
