@@ -6,7 +6,14 @@ export interface KeyboardShortcut {
     shift?: boolean
     alt?: boolean
     handler: () => void
-    description: string
+    /**
+     * Free-form developer label, intended for a future "shortcuts
+     * cheat-sheet" UI. **Not** rendered anywhere today, so call sites
+     * shouldn't bother routing it through i18n — leave it as a plain
+     * English string and pretend it's a code comment until a consumer
+     * for it ships.
+     */
+    description?: string
 }
 
 const isMac = typeof window !== "undefined" && navigator.platform.toUpperCase().includes("MAC")
