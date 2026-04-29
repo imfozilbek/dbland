@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { extractErrorMessage } from "@dbland/core"
 import { type ReplicaSetStatus, usePlatform } from "../../contexts/PlatformContext"
 import { Badge } from "../ui/badge"
@@ -9,6 +9,14 @@ import { Activity, ArrowRight, CheckCircle, RefreshCw, Server, XCircle } from "l
 import { useT } from "../../i18n"
 
 type T = ReturnType<typeof useT>
+
+/**
+ * Cadence at which the replica-set status auto-refreshes when the
+ * monitor is enabled. 5 s matches what mongod's own diagnostics dump
+ * — fast enough to catch a primary step-down within a heartbeat
+ * window, slow enough not to swamp the IPC.
+ */
+const AUTO_REFRESH_INTERVAL_MS = 5000
 
 export interface ReplicaSetMonitorProps {
     connectionId: string | null
@@ -22,23 +30,13 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
     const [error, setError] = useState<string | null>(null)
     const [autoRefresh, setAutoRefresh] = useState(true)
 
-    useEffect(() => {
-        if (!connectionId) {
-            setStatus(null)
-            return
-        }
-
-        loadStatus()
-
-        if (autoRefresh) {
-            const interval = setInterval(loadStatus, 5000)
-            return () => {
-                clearInterval(interval)
-            }
-        }
-    }, [connectionId, autoRefresh])
-
-    const loadStatus = (): void => {
+    // useCallback so the same function reference flows into useEffect's
+    // dep array — without it, the loader was a fresh closure each render
+    // and the auto-refresh interval kept calling a *stale* loader that
+    // captured the previous `platform` and `t` references. Bound to the
+    // changing inputs explicitly so the dep checker can verify
+    // freshness.
+    const loadStatus = useCallback((): void => {
         if (!connectionId) {
             return
         }
@@ -57,7 +55,23 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
             .finally(() => {
                 setIsLoading(false)
             })
-    }
+    }, [connectionId, platform, t])
+
+    useEffect(() => {
+        if (!connectionId) {
+            setStatus(null)
+            return
+        }
+
+        loadStatus()
+
+        if (autoRefresh) {
+            const interval = setInterval(loadStatus, AUTO_REFRESH_INTERVAL_MS)
+            return () => {
+                clearInterval(interval)
+            }
+        }
+    }, [connectionId, autoRefresh, loadStatus])
 
     const getStateColor = (stateStr: string): "default" | "destructive" | "secondary" => {
         switch (stateStr) {
