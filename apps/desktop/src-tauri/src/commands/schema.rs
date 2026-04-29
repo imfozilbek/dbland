@@ -6,11 +6,10 @@ use tauri::{command, State};
 
 /// Database info for frontend
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DatabaseDto {
     pub name: String,
-    #[serde(rename = "sizeBytes")]
     pub size_bytes: Option<u64>,
-    #[serde(rename = "collectionCount")]
     pub collection_count: Option<u64>,
 }
 
@@ -26,13 +25,11 @@ impl From<DatabaseInfo> for DatabaseDto {
 
 /// Collection info for frontend
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CollectionDto {
     pub name: String,
-    #[serde(rename = "databaseName")]
     pub database_name: String,
-    #[serde(rename = "documentCount")]
     pub document_count: Option<u64>,
-    #[serde(rename = "sizeBytes")]
     pub size_bytes: Option<u64>,
 }
 
