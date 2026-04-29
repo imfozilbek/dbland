@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 
 export interface KeyboardShortcut {
     key: string
@@ -12,9 +12,19 @@ export interface KeyboardShortcut {
 const isMac = typeof window !== "undefined" && navigator.platform.toUpperCase().includes("MAC")
 
 export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]): void {
+    // Hold the latest shortcut list in a ref so the keydown listener
+    // attaches once and survives re-renders. The previous version
+    // depended on `shortcuts` directly — every parent render that
+    // built a fresh inline array (which is most call sites) tore down
+    // and re-attached the global window listener, losing key presses
+    // mid-cycle and producing a steady stream of GC pressure on long
+    // sessions.
+    const shortcutsRef = useRef(shortcuts)
+    shortcutsRef.current = shortcuts
+
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent): void => {
-            for (const shortcut of shortcuts) {
+            for (const shortcut of shortcutsRef.current) {
                 const ctrlOrCmdPressed = isMac ? event.metaKey : event.ctrlKey
 
                 const keyMatches = event.key.toLowerCase() === shortcut.key.toLowerCase()
@@ -35,7 +45,7 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]): void {
         return () => {
             window.removeEventListener("keydown", handleKeyDown)
         }
-    }, [shortcuts])
+    }, [])
 }
 
 export const getShortcutLabel = (shortcut: KeyboardShortcut): string => {
