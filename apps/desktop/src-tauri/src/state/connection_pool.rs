@@ -252,6 +252,22 @@ impl ConnectionPool {
         adapter.execute_query(database, collection, query).await
     }
 
+    /// Insert a batch of JSON documents through the underlying adapter.
+    /// Returns the number of documents the driver actually persisted.
+    pub async fn insert_documents(
+        &self,
+        connection_id: &str,
+        database: &str,
+        collection: &str,
+        docs: Vec<serde_json::Value>,
+    ) -> Result<u64, AdapterError> {
+        let adapter = self
+            .adapter_for(connection_id)
+            .await
+            .ok_or(AdapterError::NotConnected)?;
+        adapter.insert_documents(database, collection, docs).await
+    }
+
     /// If the config asks for an SSH tunnel, bring it up and return a
     /// rewritten config that points at the local forwarded port. The
     /// tunnel handle must outlive the resulting adapter — drop it and

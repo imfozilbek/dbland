@@ -385,6 +385,52 @@ impl DatabaseAdapter for MongoDbAdapter {
             error: None,
         })
     }
+
+    /// Bulk insert via the driver's native `insert_many`. Each JSON
+    /// value is converted to a BSON `Document`; values that can't be
+    /// represented as a BSON object (e.g. a top-level string or
+    /// number) are rejected up front so the driver never sees them.
+    ///
+    /// Replaces the previous import path which tried to round-trip
+    /// `db.<coll>.insertMany([...])` through `execute_query` (whose
+    /// MongoDB implementation only handles `find`). That route always
+    /// failed at parse time, so every JSON import silently reported
+    /// "0 inserted, N failed" with a confusing error string.
+    async fn insert_documents(
+        &self,
+        database: &str,
+        collection: &str,
+        docs: Vec<serde_json::Value>,
+    ) -> Result<u64, AdapterError> {
+        if docs.is_empty() {
+            return Ok(0);
+        }
+
+        let client = self.get_client().await?;
+        let coll = client.database(database).collection::<Document>(collection);
+
+        let mut bson_docs = Vec::with_capacity(docs.len());
+        for value in docs {
+            let bson = mongodb::bson::to_bson(&value)
+                .map_err(|e| AdapterError::QueryFailed(format!("invalid JSON: {}", e)))?;
+            match bson {
+                mongodb::bson::Bson::Document(d) => bson_docs.push(d),
+                other => {
+                    return Err(AdapterError::QueryFailed(format!(
+                        "expected JSON object per document, got {:?}",
+                        other.element_type()
+                    )))
+                }
+            }
+        }
+
+        let outcome = coll
+            .insert_many(bson_docs)
+            .await
+            .map_err(|e| AdapterError::QueryFailed(e.to_string()))?;
+
+        Ok(outcome.inserted_ids.len() as u64)
+    }
 }
 
 #[cfg(test)]

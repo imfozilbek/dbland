@@ -98,37 +98,37 @@ async fn import_json(
         vec![content]
     };
 
-    // Insert documents in chunks
+    // Insert documents in chunks via the dedicated batch-insert path.
+    //
+    // The previous version built `db.<coll>.insertMany([...])` query
+    // strings and round-tripped them through `execute_query`. The
+    // MongoDB adapter's `execute_query` only handles `find`, so every
+    // import landed in the error branch of `parse_find_query` ("Top-
+    // level must be a JSON object") and silently reported "0 inserted,
+    // N failed" with a confusing error message. The dedicated
+    // `pool.insert_documents` path now goes straight to the driver's
+    // native `insert_many` for MongoDB and refuses cleanly for Redis.
     const CHUNK_SIZE: usize = 100;
     for chunk in documents.chunks(CHUNK_SIZE) {
-        let docs_json = serde_json::to_string(&chunk).map_err(|e| crate::redact_error(e.to_string()))?;
-        let insert_query = format!(
-            "db.{}.insertMany({})",
-            options.collection_name, docs_json
-        );
-
+        let chunk_size = chunk.len() as u64;
         match state
             .pool
-            .execute_query(
+            .insert_documents(
                 connection_id,
                 &options.database_name,
-                Some(&options.collection_name),
-                &insert_query,
+                &options.collection_name,
+                chunk.to_vec(),
             )
             .await
         {
-            Ok(result) => {
-                if result.success {
-                    imported += chunk.len() as u64;
-                } else {
-                    failed += chunk.len() as u64;
-                    if let Some(err) = result.error {
-                        errors.push(err);
-                    }
+            Ok(inserted) => {
+                imported += inserted;
+                if inserted < chunk_size {
+                    failed += chunk_size - inserted;
                 }
             }
             Err(e) => {
-                failed += chunk.len() as u64;
+                failed += chunk_size;
                 errors.push(crate::redact_error(e.to_string()));
             }
         }

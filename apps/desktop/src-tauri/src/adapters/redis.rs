@@ -346,6 +346,23 @@ impl DatabaseAdapter for RedisAdapter {
             error: None,
         })
     }
+
+    /// Redis has no notion of a "collection of documents" — keys are
+    /// flat and the closest analog (HMSET / MSET on individual keys)
+    /// would need a key-extraction policy the user has to choose.
+    /// Refuse the operation with a clear message instead of pretending
+    /// to support it.
+    async fn insert_documents(
+        &self,
+        _database: &str,
+        _collection: &str,
+        _docs: Vec<serde_json::Value>,
+    ) -> Result<u64, AdapterError> {
+        Err(AdapterError::OperationNotSupported(
+            "Redis does not support batch document insert; use SET/HSET on individual keys"
+                .to_string(),
+        ))
+    }
 }
 
 /// Convert Redis value to JSON
