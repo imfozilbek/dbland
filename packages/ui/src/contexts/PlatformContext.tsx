@@ -270,11 +270,24 @@ export interface SetTTLRequest {
     seconds: number
 }
 
+/**
+ * Single Redis SLOWLOG entry as it crosses the IPC boundary.
+ *
+ * Field shapes match the Rust-side `SlowLogEntry` struct:
+ *   - `durationMicros` carries the unit in the name (the previous
+ *     `duration: number` was always microseconds but unlabelled, so
+ *     callers had to read `formatDuration` to figure out the unit).
+ *   - `command` is the tokenised argv (`["SET", "key", "value"]`),
+ *     not a single string. The Redis server returns it as an array
+ *     of bulk strings; flattening to a string at the boundary loses
+ *     argv boundaries (a value containing a space would be
+ *     ambiguous in the rendered form).
+ */
 export interface SlowLogEntry {
     id: number
     timestamp: number
-    duration: number
-    command: string
+    durationMicros: number
+    command: string[]
 }
 
 // Database Profiler

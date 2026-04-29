@@ -84,6 +84,7 @@ pub struct SetTTLRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SlowLogEntry {
     pub id: i64,
     pub timestamp: i64,

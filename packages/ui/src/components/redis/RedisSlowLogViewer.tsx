@@ -84,18 +84,25 @@ export function RedisSlowLogViewer({ connectionId }: RedisSlowLogViewerProps): J
                                 <div className="flex items-center gap-2">
                                     <span
                                         className={`rounded border px-2 py-0.5 text-xs font-medium ${
-                                            entry.duration > 1000000
+                                            entry.durationMicros > 1_000_000
                                                 ? "border-[var(--destructive)]/30 bg-[var(--destructive)]/15 text-[var(--destructive)]"
-                                                : entry.duration > 100000
+                                                : entry.durationMicros > 100_000
                                                   ? "border-[var(--warning)]/30 bg-[var(--warning)]/15 text-[var(--warning)]"
                                                   : "border-[var(--info)]/30 bg-[var(--info)]/15 text-[var(--info)]"
                                         }`}
                                     >
-                                        {formatDuration(entry.duration)}
+                                        {formatDuration(entry.durationMicros)}
                                     </span>
                                 </div>
+                                {/* `command` arrives as the tokenised argv
+                                 * (`["SET", "key", "value"]`). Joining with
+                                 * spaces gives the user the same string
+                                 * they would see in `redis-cli`; without
+                                 * the join, React would render it as
+                                 * `SETkeyvalue` because each array element
+                                 * becomes a separate text node. */}
                                 <pre className="whitespace-pre-wrap break-words rounded bg-muted p-2 text-xs">
-                                    {entry.command}
+                                    {entry.command.join(" ")}
                                 </pre>
                             </div>
                         </Card>
