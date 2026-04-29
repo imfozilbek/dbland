@@ -122,10 +122,7 @@ export function AggregationBuilder({
                     documents: [],
                     executionTimeMs: 0,
                     documentsReturned: 0,
-                    error:
-                        err instanceof Error
-                            ? err.message
-                            : t("aggregationBuilder.executionFailed"),
+                    error: extractErrorMessage(err) || t("aggregationBuilder.executionFailed"),
                 })
             })
             .finally(() => {
