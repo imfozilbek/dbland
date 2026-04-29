@@ -70,7 +70,7 @@ pub async fn list_gridfs_files(
     let files = result
         .documents
         .into_iter()
-        .filter_map(|doc| {
+        .map(|doc| {
             let id = doc
                 .get("_id")
                 .and_then(|v| v.get("$oid").and_then(|o| o.as_str()))
@@ -83,15 +83,9 @@ pub async fn list_gridfs_files(
                 .unwrap_or("unknown")
                 .to_string();
 
-            let length = doc
-                .get("length")
-                .and_then(|v| v.as_i64())
-                .unwrap_or(0);
+            let length = doc.get("length").and_then(|v| v.as_i64()).unwrap_or(0);
 
-            let chunk_size = doc
-                .get("chunkSize")
-                .and_then(|v| v.as_i64())
-                .unwrap_or(0);
+            let chunk_size = doc.get("chunkSize").and_then(|v| v.as_i64()).unwrap_or(0);
 
             let upload_date = doc
                 .get("uploadDate")
@@ -99,19 +93,16 @@ pub async fn list_gridfs_files(
                 .unwrap_or("")
                 .to_string();
 
-            let md5 = doc
-                .get("md5")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
+            let md5 = doc.get("md5").and_then(|v| v.as_str()).map(String::from);
 
             let content_type = doc
                 .get("contentType")
                 .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
+                .map(String::from);
 
             let metadata = doc.get("metadata").cloned();
 
-            Some(GridFSFile {
+            GridFSFile {
                 id,
                 filename,
                 length,
@@ -120,7 +111,7 @@ pub async fn list_gridfs_files(
                 md5,
                 content_type,
                 metadata,
-            })
+            }
         })
         .collect();
 
@@ -348,7 +339,7 @@ pub async fn download_gridfs_file(
 fn sanitise_basename(filename: &str) -> String {
     // Take the segment after the last `/` or `\`, then forbid `..`
     // and any remaining separators.
-    let last_slash = filename.rfind(|c: char| c == '/' || c == '\\');
+    let last_slash = filename.rfind(['/', '\\']);
     let trimmed = match last_slash {
         Some(idx) => &filename[idx + 1..],
         None => filename,

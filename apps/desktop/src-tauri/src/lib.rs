@@ -108,45 +108,6 @@ fn decode_master_key(s: &str) -> Option<[u8; 32]> {
     Some(key)
 }
 
-#[cfg(test)]
-mod master_key_codec {
-    use super::*;
-
-    #[test]
-    fn round_trip_preserves_bytes() {
-        let key: [u8; 32] = [
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
-            0x0e, 0x0f, 0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb,
-            0xfc, 0xfd, 0xfe, 0xff,
-        ];
-        let encoded = encode_master_key(&key);
-        assert_eq!(encoded.len(), 64);
-        let decoded = decode_master_key(&encoded).expect("round-trip must succeed");
-        assert_eq!(decoded, key);
-    }
-
-    #[test]
-    fn encode_uses_lowercase_hex() {
-        let key = [0xab; 32];
-        let encoded = encode_master_key(&key);
-        assert_eq!(encoded, "ab".repeat(32));
-    }
-
-    #[test]
-    fn decode_rejects_wrong_length() {
-        assert!(decode_master_key("").is_none());
-        assert!(decode_master_key(&"a".repeat(63)).is_none());
-        assert!(decode_master_key(&"a".repeat(65)).is_none());
-    }
-
-    #[test]
-    fn decode_rejects_non_hex_characters() {
-        // Length is right (64) but contains non-hex
-        let bogus = format!("zz{}", "a".repeat(62));
-        assert!(decode_master_key(&bogus).is_none());
-    }
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Initialise structured logging — silent unless RUST_LOG is set,
@@ -292,4 +253,43 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod master_key_codec {
+    use super::*;
+
+    #[test]
+    fn round_trip_preserves_bytes() {
+        let key: [u8; 32] = [
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
+            0x0e, 0x0f, 0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb,
+            0xfc, 0xfd, 0xfe, 0xff,
+        ];
+        let encoded = encode_master_key(&key);
+        assert_eq!(encoded.len(), 64);
+        let decoded = decode_master_key(&encoded).expect("round-trip must succeed");
+        assert_eq!(decoded, key);
+    }
+
+    #[test]
+    fn encode_uses_lowercase_hex() {
+        let key = [0xab; 32];
+        let encoded = encode_master_key(&key);
+        assert_eq!(encoded, "ab".repeat(32));
+    }
+
+    #[test]
+    fn decode_rejects_wrong_length() {
+        assert!(decode_master_key("").is_none());
+        assert!(decode_master_key(&"a".repeat(63)).is_none());
+        assert!(decode_master_key(&"a".repeat(65)).is_none());
+    }
+
+    #[test]
+    fn decode_rejects_non_hex_characters() {
+        // Length is right (64) but contains non-hex
+        let bogus = format!("zz{}", "a".repeat(62));
+        assert!(decode_master_key(&bogus).is_none());
+    }
 }

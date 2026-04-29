@@ -68,7 +68,7 @@ pub async fn list_shards(
     let shards = result
         .documents
         .into_iter()
-        .filter_map(|doc| {
+        .map(|doc| {
             let shard_id = doc
                 .get("_id")
                 .and_then(|v| v.as_str())
@@ -81,27 +81,20 @@ pub async fn list_shards(
                 .unwrap_or("unknown")
                 .to_string();
 
-            let state = doc
-                .get("state")
-                .and_then(|v| v.as_i64())
-                .unwrap_or(0) as i32;
+            let state = doc.get("state").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
 
             let tags = doc
                 .get("tags")
                 .and_then(|v| v.as_array())
-                .map(|arr| {
-                    arr.iter()
-                        .filter_map(|t| t.as_str().map(|s| s.to_string()))
-                        .collect()
-                })
+                .map(|arr| arr.iter().filter_map(|t| t.as_str().map(String::from)).collect())
                 .unwrap_or_default();
 
-            Some(ShardInfo {
+            ShardInfo {
                 shard_id,
                 host,
                 state,
                 tags,
-            })
+            }
         })
         .collect();
 
@@ -125,17 +118,14 @@ pub async fn list_sharded_collections(
     let collections = result
         .documents
         .into_iter()
-        .filter_map(|doc| {
+        .map(|doc| {
             let namespace = doc
                 .get("_id")
                 .and_then(|v| v.as_str())
                 .unwrap_or("unknown")
                 .to_string();
 
-            let shard_key = doc
-                .get("key")
-                .cloned()
-                .unwrap_or(serde_json::Value::Null);
+            let shard_key = doc.get("key").cloned().unwrap_or(serde_json::Value::Null);
 
             let unique = doc
                 .get("unique")
@@ -151,13 +141,13 @@ pub async fn list_sharded_collections(
             // For chunk count, we'd need another query, so default to 0
             let chunk_count = 0;
 
-            Some(ShardedCollection {
+            ShardedCollection {
                 namespace,
                 shard_key,
                 unique,
                 balancing,
                 chunk_count,
-            })
+            }
         })
         .collect();
 

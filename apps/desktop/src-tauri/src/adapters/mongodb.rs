@@ -150,7 +150,7 @@ impl MongoDbAdapter {
         match value {
             serde_json::Value::Object(map) => {
                 for (key, child) in map {
-                    if DENY_LIST.iter().any(|d| *d == key.as_str()) {
+                    if DENY_LIST.contains(&key.as_str()) {
                         return Err(AdapterError::QueryFailed(format!(
                             "Operator '{}' is not allowed (server-side JS execution)",
                             key

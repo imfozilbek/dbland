@@ -80,7 +80,7 @@ pub async fn get_replica_set_status(
         .and_then(|v| v.as_array())
         .map(|arr| {
             arr.iter()
-                .filter_map(|member| {
+                .map(|member| {
                     let name = member
                         .get("name")
                         .and_then(|v| v.as_str())
@@ -98,10 +98,7 @@ pub async fn get_replica_set_status(
                         .and_then(|v| v.as_i64())
                         .unwrap_or(0) as i32;
 
-                    let uptime = member
-                        .get("uptime")
-                        .and_then(|v| v.as_i64())
-                        .unwrap_or(0);
+                    let uptime = member.get("uptime").and_then(|v| v.as_i64()).unwrap_or(0);
 
                     let optime_date = member
                         .get("optimeDate")
@@ -112,23 +109,21 @@ pub async fn get_replica_set_status(
                     let last_heartbeat = member
                         .get("lastHeartbeat")
                         .and_then(|v| v.get("$date").and_then(|d| d.as_str()))
-                        .map(|s| s.to_string());
+                        .map(String::from);
 
-                    let ping_ms = member
-                        .get("pingMs")
-                        .and_then(|v| v.as_i64());
+                    let ping_ms = member.get("pingMs").and_then(|v| v.as_i64());
 
                     let sync_source_host = member
                         .get("syncSourceHost")
                         .and_then(|v| v.as_str())
-                        .map(|s| s.to_string());
+                        .map(String::from);
 
                     let config_version = member
                         .get("configVersion")
                         .and_then(|v| v.as_i64())
                         .unwrap_or(0) as i32;
 
-                    Some(ReplicaSetMember {
+                    ReplicaSetMember {
                         name,
                         state_str,
                         health,
@@ -138,7 +133,7 @@ pub async fn get_replica_set_status(
                         ping_ms,
                         sync_source_host,
                         config_version,
-                    })
+                    }
                 })
                 .collect()
         })
