@@ -288,32 +288,7 @@ impl ConnectionPool {
                 Ok(Box::new(MongoDbAdapter::new(mongo_config)))
             }
             DatabaseType::Redis => {
-                // The shared `database` field doubles as a Mongo DB
-                // name (string) and a Redis DB index (u8). For Redis,
-                // we expect a number in 0..=15 (default `databases 16`
-                // in `redis.conf`). The previous code silently coerced
-                // anything non-numeric to 0 — which is probably what
-                // the user wants for a missing field but is actively
-                // misleading when they typed "abc" expecting db 5 and
-                // ended up writing to db 0. Log when we ignore a value
-                // we couldn't parse so the cause is visible without
-                // stuffing a hard error onto a small UX nit.
-                let database = config.database.as_ref().map_or(0, |raw| {
-                    let trimmed = raw.trim();
-                    if trimmed.is_empty() {
-                        return 0;
-                    }
-                    match trimmed.parse::<u8>() {
-                        Ok(n) => n,
-                        Err(_) => {
-                            log::warn!(
-                                "redis db field is not a valid u8 ({:?}); falling back to 0",
-                                raw
-                            );
-                            0
-                        }
-                    }
-                });
+                let database = parse_redis_db_index(config.database.as_deref());
                 let redis_config = RedisConfig {
                     host: config.host.clone(),
                     port: config.port,
@@ -324,5 +299,83 @@ impl ConnectionPool {
                 Ok(Box::new(RedisAdapter::new(redis_config)))
             }
         }
+    }
+}
+
+/// Coerce the shared `database` field on `ConnectionConfig` into a
+/// Redis DB index.
+///
+/// The same field doubles as a MongoDB database name (string) and a
+/// Redis DB index (u8 in 0..=15 for the default `databases 16` in
+/// `redis.conf`). For the Redis branch:
+///
+///   * `None` or an all-whitespace string → silently fall through to
+///     0. Both are common — "I don't care, give me the default".
+///   * Anything else that fails to parse as `u8` → log at warn and
+///     still fall through to 0. We don't fail the connection over a
+///     small typo when the cost is a connection to db 0; the warn is
+///     there so the cause is visible if the user notices.
+///
+/// Extracted from `create_adapter` so the rule is testable without
+/// touching the rest of the pool wiring.
+fn parse_redis_db_index(raw: Option<&str>) -> u8 {
+    let Some(raw) = raw else { return 0 };
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return 0;
+    }
+    match trimmed.parse::<u8>() {
+        Ok(n) => n,
+        Err(_) => {
+            log::warn!(
+                "redis db field is not a valid u8 ({:?}); falling back to 0",
+                raw
+            );
+            0
+        }
+    }
+}
+
+#[cfg(test)]
+mod redis_db_index_tests {
+    use super::parse_redis_db_index;
+
+    #[test]
+    fn none_falls_through_to_zero() {
+        assert_eq!(parse_redis_db_index(None), 0);
+    }
+
+    #[test]
+    fn empty_string_falls_through_to_zero() {
+        assert_eq!(parse_redis_db_index(Some("")), 0);
+    }
+
+    #[test]
+    fn whitespace_only_falls_through_to_zero() {
+        assert_eq!(parse_redis_db_index(Some("   ")), 0);
+    }
+
+    #[test]
+    fn valid_index_parses() {
+        assert_eq!(parse_redis_db_index(Some("0")), 0);
+        assert_eq!(parse_redis_db_index(Some("5")), 5);
+        assert_eq!(parse_redis_db_index(Some("15")), 15);
+    }
+
+    #[test]
+    fn surrounding_whitespace_is_tolerated() {
+        assert_eq!(parse_redis_db_index(Some("  7  ")), 7);
+    }
+
+    #[test]
+    fn unparseable_values_fall_back_to_zero() {
+        // Both should fall back without panicking. The warn-log side
+        // effect is exercised in the runtime; here we just lock in the
+        // deterministic return value.
+        assert_eq!(parse_redis_db_index(Some("abc")), 0);
+        assert_eq!(parse_redis_db_index(Some("0xff")), 0);
+        assert_eq!(parse_redis_db_index(Some("-1")), 0);
+        // u8::MAX = 255; "256" doesn't fit, so falls back.
+        assert_eq!(parse_redis_db_index(Some("256")), 0);
     }
 }
