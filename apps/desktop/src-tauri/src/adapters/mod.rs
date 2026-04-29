@@ -72,17 +72,32 @@ pub struct TestResult {
     pub server_version: Option<String>,
 }
 
-/// Trait for database adapters
+/// Trait for database adapters.
+///
+/// `connect` and `disconnect` take `&self` rather than `&mut self`
+/// because both supported adapters (`MongoDbAdapter`, `RedisAdapter`)
+/// already gate their underlying client/connection behind interior
+/// mutability (`Arc<RwLock<Option<...>>>`). The `&mut self` shape was
+/// an artifact of an earlier draft — it forced `ConnectionPool` to
+/// own the adapter as `Box<dyn DatabaseAdapter>`, which in turn
+/// forced reader paths (`execute_query`, `get_databases`, …) to hold
+/// the pool's read lock across the entire driver call. A 30-second
+/// query then blocked every other write on the pool (connect, save,
+/// disconnect on *unrelated* ids) until it returned.
+///
+/// With `&self`, the pool stores adapters as `Arc<dyn DatabaseAdapter>`
+/// and reader paths can clone the Arc out under a brief read-lock,
+/// release the lock, and `await` the driver call lock-free.
 #[async_trait]
 pub trait DatabaseAdapter: Send + Sync {
     /// Test connection without fully connecting
     async fn test_connection(&self) -> Result<TestResult, AdapterError>;
 
     /// Establish connection
-    async fn connect(&mut self) -> Result<(), AdapterError>;
+    async fn connect(&self) -> Result<(), AdapterError>;
 
     /// Close connection
-    async fn disconnect(&mut self) -> Result<(), AdapterError>;
+    async fn disconnect(&self) -> Result<(), AdapterError>;
 
     /// Get list of databases
     async fn get_databases(&self) -> Result<Vec<DatabaseInfo>, AdapterError>;

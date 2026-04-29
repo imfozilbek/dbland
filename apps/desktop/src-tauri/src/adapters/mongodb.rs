@@ -234,7 +234,7 @@ impl DatabaseAdapter for MongoDbAdapter {
         }
     }
 
-    async fn connect(&mut self) -> Result<(), AdapterError> {
+    async fn connect(&self) -> Result<(), AdapterError> {
         let options = self.config.build_client_options().await?;
 
         let client = Client::with_options(options)
@@ -253,7 +253,7 @@ impl DatabaseAdapter for MongoDbAdapter {
         Ok(())
     }
 
-    async fn disconnect(&mut self) -> Result<(), AdapterError> {
+    async fn disconnect(&self) -> Result<(), AdapterError> {
         let mut guard = self.client.write().await;
         *guard = None;
         Ok(())

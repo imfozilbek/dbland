@@ -150,7 +150,7 @@ impl DatabaseAdapter for RedisAdapter {
         }
     }
 
-    async fn connect(&mut self) -> Result<(), AdapterError> {
+    async fn connect(&self) -> Result<(), AdapterError> {
         let info = self.config.to_connection_info();
 
         let client =
@@ -167,7 +167,7 @@ impl DatabaseAdapter for RedisAdapter {
         Ok(())
     }
 
-    async fn disconnect(&mut self) -> Result<(), AdapterError> {
+    async fn disconnect(&self) -> Result<(), AdapterError> {
         let mut guard = self.connection.write().await;
         *guard = None;
         Ok(())

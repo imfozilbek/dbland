@@ -49,9 +49,16 @@ pub struct ConnectionConfig {
     pub ssh: Option<SSHTunnelConfig>,
 }
 
-/// Active connection wrapper
+/// Active connection wrapper.
+///
+/// `adapter` is `Arc<dyn DatabaseAdapter>` (not `Box`) so reader paths
+/// (`execute_query`, `get_databases`, `get_collections`) can clone the
+/// handle out under a brief read-lock and `await` the driver call
+/// without holding the pool's RwLock. Without that, a single 30-second
+/// query blocked every other write on the pool — including connect
+/// and disconnect for *unrelated* connection ids.
 struct ActiveConnection {
-    adapter: Box<dyn DatabaseAdapter>,
+    adapter: Arc<dyn DatabaseAdapter>,
     config: ConnectionConfig,
     tunnel: Option<SSHTunnel>,
 }
@@ -130,7 +137,7 @@ impl ConnectionPool {
 
         let (tunnel, effective_config) = Self::prepare_effective_config(config.clone())?;
 
-        let mut adapter = Self::create_adapter(&effective_config)?;
+        let adapter = Self::create_adapter(&effective_config)?;
         adapter.connect().await?;
 
         let active = ActiveConnection {
@@ -176,6 +183,21 @@ impl ConnectionPool {
         driver_result
     }
 
+    /// Look up the adapter for an id under a brief read-lock and clone
+    /// the Arc out. Returns `None` if there is no active session.
+    ///
+    /// All reader paths (`execute_query`, `get_databases`,
+    /// `get_collections`, …) funnel through this helper so the
+    /// "lock-only-for-the-lookup" pattern lives in exactly one place.
+    /// Inlining it would have meant repeating the same scope-block at
+    /// every call site, and slipping back into "hold the read lock
+    /// across the await" is exactly the regression we're trying to
+    /// prevent.
+    async fn adapter_for(&self, connection_id: &str) -> Option<Arc<dyn DatabaseAdapter>> {
+        let guard = self.connections.read().await;
+        guard.get(connection_id).map(|c| c.adapter.clone())
+    }
+
     /// Get list of active connection IDs
     pub async fn get_active_connections(&self) -> Vec<String> {
         let guard = self.connections.read().await;
@@ -195,12 +217,11 @@ impl ConnectionPool {
         &self,
         connection_id: &str,
     ) -> Result<Vec<crate::adapters::DatabaseInfo>, AdapterError> {
-        let guard = self.connections.read().await;
-        let active = guard
-            .get(connection_id)
+        let adapter = self
+            .adapter_for(connection_id)
+            .await
             .ok_or(AdapterError::NotConnected)?;
-
-        active.adapter.get_databases().await
+        adapter.get_databases().await
     }
 
     /// Get collections for a database
@@ -209,12 +230,11 @@ impl ConnectionPool {
         connection_id: &str,
         database: &str,
     ) -> Result<Vec<crate::adapters::CollectionInfo>, AdapterError> {
-        let guard = self.connections.read().await;
-        let active = guard
-            .get(connection_id)
+        let adapter = self
+            .adapter_for(connection_id)
+            .await
             .ok_or(AdapterError::NotConnected)?;
-
-        active.adapter.get_collections(database).await
+        adapter.get_collections(database).await
     }
 
     /// Execute a query
@@ -225,12 +245,11 @@ impl ConnectionPool {
         collection: Option<&str>,
         query: &str,
     ) -> Result<crate::adapters::QueryResult, AdapterError> {
-        let guard = self.connections.read().await;
-        let active = guard
-            .get(connection_id)
+        let adapter = self
+            .adapter_for(connection_id)
+            .await
             .ok_or(AdapterError::NotConnected)?;
-
-        active.adapter.execute_query(database, collection, query).await
+        adapter.execute_query(database, collection, query).await
     }
 
     /// If the config asks for an SSH tunnel, bring it up and return a
@@ -283,7 +302,7 @@ impl ConnectionPool {
     /// flat pipeline (`Self::prepare_effective_config` →
     /// `Self::create_adapter`) rather than a mix of method and
     /// associated calls.
-    fn create_adapter(config: &ConnectionConfig) -> Result<Box<dyn DatabaseAdapter>, AdapterError> {
+    fn create_adapter(config: &ConnectionConfig) -> Result<Arc<dyn DatabaseAdapter>, AdapterError> {
         match config.db_type {
             DatabaseType::MongoDB => {
                 let mongo_config = MongoDbConfig {
@@ -295,7 +314,7 @@ impl ConnectionPool {
                     replica_set: None,
                     tls: config.tls,
                 };
-                Ok(Box::new(MongoDbAdapter::new(mongo_config)))
+                Ok(Arc::new(MongoDbAdapter::new(mongo_config)))
             }
             DatabaseType::Redis => {
                 let database = parse_redis_db_index(config.database.as_deref());
@@ -306,7 +325,7 @@ impl ConnectionPool {
                     database,
                     tls: config.tls,
                 };
-                Ok(Box::new(RedisAdapter::new(redis_config)))
+                Ok(Arc::new(RedisAdapter::new(redis_config)))
             }
         }
     }
