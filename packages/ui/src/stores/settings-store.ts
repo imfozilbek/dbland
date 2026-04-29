@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import type { Locale } from "../i18n"
 
 export interface EditorSettings {
     fontSize: number
@@ -10,7 +11,9 @@ export interface EditorSettings {
 
 export interface AppSettings {
     theme: "light" | "dark" | "system"
-    language: "en" | "ru"
+    /** Locale code. Single source of truth lives in the i18n module —
+     *  adding a third language is one type change there, not two. */
+    language: Locale
     autoSave: boolean
     confirmDelete: boolean
     editor: EditorSettings
