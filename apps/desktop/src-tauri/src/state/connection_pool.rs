@@ -93,7 +93,7 @@ impl ConnectionPool {
         config: &ConnectionConfig,
     ) -> Result<TestResult, AdapterError> {
         let (_tunnel, effective_config) = Self::prepare_effective_config(config.clone())?;
-        let adapter = self.create_adapter(&effective_config)?;
+        let adapter = Self::create_adapter(&effective_config)?;
         adapter.test_connection().await
     }
 
@@ -101,7 +101,7 @@ impl ConnectionPool {
     pub async fn connect(&self, config: ConnectionConfig) -> Result<(), AdapterError> {
         let (tunnel, effective_config) = Self::prepare_effective_config(config.clone())?;
 
-        let mut adapter = self.create_adapter(&effective_config)?;
+        let mut adapter = Self::create_adapter(&effective_config)?;
         adapter.connect().await?;
 
         let active = ActiveConnection {
@@ -265,8 +265,15 @@ impl ConnectionPool {
         Ok((Some(tunnel), effective_config))
     }
 
-    /// Create an adapter based on config
-    fn create_adapter(&self, config: &ConnectionConfig) -> Result<Box<dyn DatabaseAdapter>, AdapterError> {
+    /// Create an adapter based on config.
+    ///
+    /// Associated function — there is no `&self` state to consult, the
+    /// match arms only depend on the input config. Matches the shape
+    /// of `prepare_effective_config` above so call sites read as a
+    /// flat pipeline (`Self::prepare_effective_config` →
+    /// `Self::create_adapter`) rather than a mix of method and
+    /// associated calls.
+    fn create_adapter(config: &ConnectionConfig) -> Result<Box<dyn DatabaseAdapter>, AdapterError> {
         match config.db_type {
             DatabaseType::MongoDB => {
                 let mongo_config = MongoDbConfig {
