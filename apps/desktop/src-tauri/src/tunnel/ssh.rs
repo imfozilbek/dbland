@@ -302,3 +302,20 @@ impl SSHTunnel {
         Ok(())
     }
 }
+
+/// Belt-and-braces cleanup: if an `SSHTunnel` is dropped without an
+/// explicit `stop()` first, flip the `active` flag here so the
+/// background accept-loop thread (which holds its own
+/// `Arc<Mutex<bool>>` clone) notices on the next 200 ms tick and
+/// unwinds. Without this, dropping a tunnel via panic-unwind, error
+/// path, or simply forgetting the explicit teardown would leak the
+/// listener thread for the rest of the process lifetime.
+///
+/// `stop()` stays public because the existing call sites (the pool's
+/// `disconnect`) want deterministic teardown *before* the struct
+/// drops; `Drop` is just the safety net.
+impl Drop for SSHTunnel {
+    fn drop(&mut self) {
+        *self.active.lock() = false;
+    }
+}
