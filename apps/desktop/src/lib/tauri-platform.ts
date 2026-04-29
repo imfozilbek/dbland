@@ -87,7 +87,20 @@ export const tauriPlatformAPI: PlatformAPI = {
         databaseName?: string,
         collectionName?: string,
     ): Promise<QueryResult> => {
-        // Backend requires database_name, default to "test" if not provided
+        // The backend's `execute_query` command requires a database name
+        // and runs every MongoDB query through `db.{collection}.find(...)`
+        // resolved against that database. Silently defaulting to a magic
+        // `"test"` database (as an earlier version did) hides the
+        // mistake — the user expected their `users.find({})` to run
+        // against the database they were browsing, and instead it
+        // targets a different one with possibly no collections at all,
+        // returns nothing, and the user is left wondering whether
+        // their data is gone. Reject the call here with a clear error
+        // so the UI can surface "select a database first" instead of
+        // running the query in the wrong place.
+        if (!databaseName) {
+            throw new Error("Database name is required to execute a query")
+        }
         const result = await invoke<{
             success: boolean
             documents: Record<string, unknown>[]
@@ -96,7 +109,7 @@ export const tauriPlatformAPI: PlatformAPI = {
             error?: string
         }>("execute_query", {
             connectionId,
-            databaseName: databaseName ?? "test",
+            databaseName,
             collectionName: collectionName ?? null,
             query,
         })
