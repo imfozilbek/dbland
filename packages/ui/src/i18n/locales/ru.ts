@@ -654,6 +654,12 @@ export const ru: Translations = {
                 count: "Подсчёт документов в результате",
             },
         },
+        card: {
+            emptyHint: "Пусто — кликните, чтобы настроить",
+            dragAria: "Перетащите для изменения порядка стадии {{position}}",
+            previewAria: "Превью стадии {{position}}",
+            removeAria: "Удалить стадию {{position}}",
+        },
     },
     geospatial: {
         emptyPrompt: "Выберите коллекцию, чтобы строить геопространственные запросы",

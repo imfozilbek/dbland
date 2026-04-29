@@ -655,6 +655,12 @@ export const en = {
                 count: "Count documents in the result",
             },
         },
+        card: {
+            emptyHint: "Empty — click to configure",
+            dragAria: "Drag to reorder stage {{position}}",
+            previewAria: "Preview stage {{position}}",
+            removeAria: "Remove stage {{position}}",
+        },
     },
     geospatial: {
         emptyPrompt: "Select a collection to build geospatial queries",

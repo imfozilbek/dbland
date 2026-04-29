@@ -4,6 +4,7 @@ import { Card } from "../ui/card"
 import { Button } from "../ui/button"
 import { Eye, GripVertical, Trash2 } from "lucide-react"
 import type { AggregationPipelineStage } from "../../contexts/PlatformContext"
+import { useT } from "../../i18n"
 
 export interface SortableStageCardProps {
     id: string
@@ -24,9 +25,11 @@ export function SortableStageCard({
     onRemove,
     onPreview,
 }: SortableStageCardProps): JSX.Element {
+    const t = useT()
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id,
     })
+    const position = index + 1
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -63,7 +66,7 @@ export function SortableStageCard({
             <div className="flex items-center gap-2">
                 <button
                     type="button"
-                    aria-label={`Drag to reorder stage ${index + 1}`}
+                    aria-label={t("aggregationBuilder.card.dragAria", { position })}
                     className="cursor-grab touch-none rounded text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
                     {...attributes}
                     {...listeners}
@@ -87,7 +90,9 @@ export function SortableStageCard({
                                 : "text-[var(--muted-foreground)]"
                         }`}
                     >
-                        {isEmpty ? "Empty — click to configure" : JSON.stringify(stage.stageData)}
+                        {isEmpty
+                            ? t("aggregationBuilder.card.emptyHint")
+                            : JSON.stringify(stage.stageData)}
                     </p>
                 </div>
 
@@ -95,7 +100,7 @@ export function SortableStageCard({
                     <Button
                         size="sm"
                         variant="ghost"
-                        aria-label={`Preview stage ${index + 1}`}
+                        aria-label={t("aggregationBuilder.card.previewAria", { position })}
                         className="h-7 w-7 p-0"
                         onClick={(e) => {
                             e.stopPropagation()
@@ -107,7 +112,7 @@ export function SortableStageCard({
                     <Button
                         size="sm"
                         variant="ghost"
-                        aria-label={`Remove stage ${index + 1}`}
+                        aria-label={t("aggregationBuilder.card.removeAria", { position })}
                         className="h-7 w-7 p-0 text-[var(--destructive)] hover:text-[var(--destructive)]/80"
                         onClick={(e) => {
                             e.stopPropagation()
