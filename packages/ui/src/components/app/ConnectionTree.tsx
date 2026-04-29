@@ -16,6 +16,8 @@ import {
     type DatabaseInfo,
     selectCollections,
     selectDatabases,
+    selectIsLoading,
+    selectIsLoadingCollections,
     useSchemaStore,
 } from "../../stores/schema-store"
 import { useT } from "../../i18n"
@@ -45,7 +47,8 @@ export function ConnectionTree({
     const { connect, disconnect, deleteConnection } = useConnectionStore()
 
     // Schema store
-    const { loadDatabases, loadCollections, isLoading: schemaLoading } = useSchemaStore()
+    const { loadDatabases, loadCollections } = useSchemaStore()
+    const schemaLoading = useSchemaStore(selectIsLoading)
     const databases = useSchemaStore(selectDatabases(connection.id))
 
     const isConnected = connection.status === "connected"
@@ -342,7 +345,7 @@ function DatabaseNode({
 }: DatabaseNodeProps): JSX.Element {
     const t = useT()
     const collections = useSchemaStore(selectCollections(connectionId, database.name))
-    const { isLoading } = useSchemaStore()
+    const isLoading = useSchemaStore(selectIsLoadingCollections(connectionId, database.name))
 
     return (
         <TreeGroup
