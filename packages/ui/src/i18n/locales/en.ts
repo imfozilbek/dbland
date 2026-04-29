@@ -610,6 +610,17 @@ export const en = {
         emptySelectionAddFirst:
             "Add a stage from the library, then click it to configure its parameters here.",
         emptySelectionPickOne: "Click any stage in the canvas to edit its parameters.",
+        canvas: {
+            emptyTitle: "Empty pipeline",
+            emptyDescription:
+                "Pick a stage from the library on the left — $match, $group, $project, $sort and friends — and drop it here to begin building.",
+        },
+        preview: {
+            title: "Stage Preview",
+            documentsAndTime: "{{count}} documents ({{ms}}ms)",
+            errorPrefix: "Error:",
+            closeAriaLabel: "Close stage preview",
+        },
     },
     geospatial: {
         emptyPrompt: "Select a collection to build geospatial queries",

@@ -609,6 +609,17 @@ export const ru: Translations = {
         emptySelectionAddFirst:
             "Добавьте стадию из библиотеки, затем кликните по ней, чтобы настроить параметры.",
         emptySelectionPickOne: "Кликните по стадии в канве, чтобы изменить её параметры.",
+        canvas: {
+            emptyTitle: "Пустой pipeline",
+            emptyDescription:
+                "Выберите стадию из библиотеки слева — $match, $group, $project, $sort и другие — и перетащите её сюда, чтобы начать.",
+        },
+        preview: {
+            title: "Превью стадии",
+            documentsAndTime: "{{count}} документов ({{ms}} мс)",
+            errorPrefix: "Ошибка:",
+            closeAriaLabel: "Закрыть превью стадии",
+        },
     },
     geospatial: {
         emptyPrompt: "Выберите коллекцию, чтобы строить геопространственные запросы",

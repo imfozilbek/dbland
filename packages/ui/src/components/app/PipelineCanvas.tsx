@@ -18,6 +18,7 @@ import { EmptyState } from "../ui/empty-state"
 import { ScrollArea } from "../ui/scroll-area"
 import type { AggregationPipelineStage } from "../../contexts/PlatformContext"
 import { Workflow } from "lucide-react"
+import { useT } from "../../i18n"
 
 export interface PipelineCanvasProps {
     pipeline: AggregationPipelineStage[]
@@ -36,6 +37,7 @@ export function PipelineCanvas({
     onRemoveStage,
     onPreviewStage,
 }: PipelineCanvasProps): JSX.Element {
+    const t = useT()
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -61,8 +63,8 @@ export function PipelineCanvas({
             <div className="flex h-full items-center justify-center">
                 <EmptyState
                     icon={<Workflow className="h-5 w-5" />}
-                    title="Empty pipeline"
-                    description="Pick a stage from the library on the left — $match, $group, $project, $sort and friends — and drop it here to begin building."
+                    title={t("aggregationBuilder.canvas.emptyTitle")}
+                    description={t("aggregationBuilder.canvas.emptyDescription")}
                 />
             </div>
         )
