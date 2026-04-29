@@ -1,4 +1,4 @@
-use crate::{validate_collection_name, validate_object_id, AppState};
+use crate::{validate_collection_name, validate_database_name, validate_object_id, AppState};
 use serde_json::Value;
 use std::sync::Arc;
 use tauri::{command, State};
@@ -12,8 +12,9 @@ pub async fn get_document(
     collection_name: String,
     document_id: String,
 ) -> Result<Value, String> {
-    validate_object_id(&document_id)?;
+    validate_database_name(&database_name)?;
     validate_collection_name(&collection_name)?;
+    validate_object_id(&document_id)?;
     // Build query to find document by _id
     let query = format!(r#"{{"_id": {{"$oid": "{}"}}}}"#, document_id);
 
@@ -40,8 +41,9 @@ pub async fn update_document(
     document_id: String,
     update: Value,
 ) -> Result<bool, String> {
-    validate_object_id(&document_id)?;
+    validate_database_name(&database_name)?;
     validate_collection_name(&collection_name)?;
+    validate_object_id(&document_id)?;
     // Build update query
     let update_doc = serde_json::to_string(&update).map_err(|e| crate::redact_error(e.to_string()))?;
     let query = format!(
@@ -67,8 +69,9 @@ pub async fn delete_document(
     collection_name: String,
     document_id: String,
 ) -> Result<bool, String> {
-    validate_object_id(&document_id)?;
+    validate_database_name(&database_name)?;
     validate_collection_name(&collection_name)?;
+    validate_object_id(&document_id)?;
     // Build delete query
     let query = format!(
         r#"db.{}.deleteOne({{"_id": {{"$oid": "{}"}}}})"#,
@@ -93,8 +96,9 @@ pub async fn clone_document(
     collection_name: String,
     document_id: String,
 ) -> Result<String, String> {
-    validate_object_id(&document_id)?;
+    validate_database_name(&database_name)?;
     validate_collection_name(&collection_name)?;
+    validate_object_id(&document_id)?;
     // First, get the document
     let get_query = format!(r#"{{"_id": {{"$oid": "{}"}}}}"#, document_id);
 
