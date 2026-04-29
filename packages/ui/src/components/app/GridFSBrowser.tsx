@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { extractErrorMessage } from "@dbland/core"
 import { toast } from "sonner"
 import { type GridFSFile, usePlatform } from "../../contexts/PlatformContext"
@@ -27,16 +27,12 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
     const [isLoading, setIsLoading] = useState(false)
     const [filterText, setFilterText] = useState("")
 
-    useEffect(() => {
-        if (!connectionId || !databaseName) {
-            setFiles([])
-            return
-        }
-
-        loadFiles()
-    }, [connectionId, databaseName, bucket])
-
-    const loadFiles = (): void => {
+    // Stable reference for the bootstrap effect's dep array. Without
+    // useCallback the loader was a fresh closure each render and the
+    // exhaustive-deps lint had no way to verify the closure picked up
+    // a new `platform` or `t`. The bound deps are the actual inputs
+    // the loader reads.
+    const loadFiles = useCallback((): void => {
         if (!connectionId || !databaseName) {
             return
         }
@@ -60,7 +56,16 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
             .finally(() => {
                 setIsLoading(false)
             })
-    }
+    }, [connectionId, databaseName, bucket, platform, t])
+
+    useEffect(() => {
+        if (!connectionId || !databaseName) {
+            setFiles([])
+            return
+        }
+
+        loadFiles()
+    }, [connectionId, databaseName, loadFiles])
 
     const handleDownload = async (file: GridFSFile): Promise<void> => {
         if (!connectionId || !databaseName) {
