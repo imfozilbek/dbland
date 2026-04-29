@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { extractErrorMessage } from "@dbland/core"
 import { toast } from "sonner"
 import { type SavedQuery, usePlatform } from "../../contexts/PlatformContext"
@@ -33,16 +33,12 @@ export function SavedQueries({
     const [selectedTag, setSelectedTag] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(false)
 
-    useEffect(() => {
-        if (!connectionId) {
-            setQueries([])
-            return
-        }
-
-        loadQueries()
-    }, [connectionId, platform, refreshKey])
-
-    const loadQueries = (): void => {
+    // Stable reference for the bootstrap effect's dep array AND the
+    // handleClearSearch button — without useCallback the loader was a
+    // fresh closure each render, the effect listed only
+    // `[connectionId, platform, refreshKey]` and React's exhaustive-deps
+    // lint had no way to verify the closure picked up new inputs.
+    const loadQueries = useCallback((): void => {
         if (!connectionId) {
             return
         }
@@ -59,7 +55,16 @@ export function SavedQueries({
             .finally(() => {
                 setIsLoading(false)
             })
-    }
+    }, [connectionId, platform])
+
+    useEffect(() => {
+        if (!connectionId) {
+            setQueries([])
+            return
+        }
+
+        loadQueries()
+    }, [connectionId, refreshKey, loadQueries])
 
     const handleSearch = (): void => {
         if (!connectionId || !searchQuery.trim()) {
