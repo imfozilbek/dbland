@@ -178,6 +178,16 @@ impl ConnectionStorage {
             })
             .transpose()?;
 
+        // `last_connected_at` is intentionally NOT in the UPDATE SET
+        // clause. Its sole writer is `update_last_connected`, which
+        // fires when a connection actually opens. The save path is
+        // driven by the user editing config (name/host/credentials)
+        // and always supplies `last_connected_at: None` because the
+        // DTO has no such field — including it in SET would clobber
+        // the real timestamp every time the user clicks "Save" on a
+        // previously-connected entry. `created_at` is excluded for the
+        // same reason: the upsert path receives a fresh `now`, but a
+        // connection's birth-time must not move on every edit.
         conn.execute(
             "INSERT INTO connections (
                 id, name, db_type, host, port, username, password_encrypted,
@@ -194,8 +204,7 @@ impl ConnectionStorage {
                 auth_database = excluded.auth_database,
                 tls = excluded.tls,
                 ssh_config_encrypted = excluded.ssh_config_encrypted,
-                updated_at = excluded.updated_at,
-                last_connected_at = excluded.last_connected_at",
+                updated_at = excluded.updated_at",
             rusqlite::params![
                 connection.id,
                 connection.name,
@@ -463,6 +472,100 @@ mod tests {
         storage.save(&connection).unwrap();
         assert!(storage.delete("to-delete").unwrap());
         assert!(storage.get("to-delete").is_err());
+    }
+
+    #[test]
+    fn save_preserves_last_connected_at_on_update() {
+        // Regression: `last_connected_at = excluded.last_connected_at`
+        // used to be in the UPDATE SET clause, so a user editing a
+        // connection's name silently wiped its last-connected stamp
+        // (the DTO has no such field, so save_connection always
+        // passes None). The save path must be a no-op for that column.
+        let key = Crypto::generate_key();
+        let storage = ConnectionStorage::in_memory(&key).unwrap();
+
+        let original = SavedConnection {
+            id: "conn-1".to_string(),
+            name: "Old Name".to_string(),
+            db_type: "mongodb".to_string(),
+            host: "localhost".to_string(),
+            port: 27017,
+            username: None,
+            password: None,
+            database: None,
+            auth_database: None,
+            tls: false,
+            ssh: None,
+            created_at: "2024-01-01T00:00:00Z".to_string(),
+            updated_at: "2024-01-01T00:00:00Z".to_string(),
+            last_connected_at: None,
+        };
+        storage.save(&original).unwrap();
+        storage.update_last_connected("conn-1").unwrap();
+
+        let after_connect = storage.get("conn-1").unwrap();
+        assert!(
+            after_connect.last_connected_at.is_some(),
+            "update_last_connected must stamp a value"
+        );
+
+        // User edits the connection (name change) — DTO has no
+        // last_connected_at, so the save struct carries None.
+        let edited = SavedConnection {
+            name: "New Name".to_string(),
+            updated_at: "2024-02-01T00:00:00Z".to_string(),
+            last_connected_at: None,
+            ..after_connect.clone()
+        };
+        storage.save(&edited).unwrap();
+
+        let after_edit = storage.get("conn-1").unwrap();
+        assert_eq!(after_edit.name, "New Name", "edit must take effect");
+        assert_eq!(
+            after_edit.last_connected_at, after_connect.last_connected_at,
+            "last_connected_at must survive an edit-save round trip"
+        );
+    }
+
+    #[test]
+    fn save_preserves_created_at_on_update() {
+        // Same shape as the last_connected_at regression: `created_at`
+        // is omitted from the UPDATE SET clause so a connection's
+        // birth time is stable across edits, even though save() is
+        // handed a fresh `now` value by the command layer.
+        let key = Crypto::generate_key();
+        let storage = ConnectionStorage::in_memory(&key).unwrap();
+
+        let original = SavedConnection {
+            id: "conn-2".to_string(),
+            name: "Connection".to_string(),
+            db_type: "mongodb".to_string(),
+            host: "localhost".to_string(),
+            port: 27017,
+            username: None,
+            password: None,
+            database: None,
+            auth_database: None,
+            tls: false,
+            ssh: None,
+            created_at: "2024-01-01T00:00:00Z".to_string(),
+            updated_at: "2024-01-01T00:00:00Z".to_string(),
+            last_connected_at: None,
+        };
+        storage.save(&original).unwrap();
+
+        let later = SavedConnection {
+            created_at: "2099-12-31T23:59:59Z".to_string(),
+            updated_at: "2024-02-01T00:00:00Z".to_string(),
+            ..original.clone()
+        };
+        storage.save(&later).unwrap();
+
+        let stored = storage.get("conn-2").unwrap();
+        assert_eq!(
+            stored.created_at, "2024-01-01T00:00:00Z",
+            "created_at must not move on subsequent saves"
+        );
     }
 
     #[test]
