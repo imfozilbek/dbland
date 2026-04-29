@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { extractErrorMessage } from "@dbland/core"
 import { type ImportOptions, usePlatform } from "../../contexts/PlatformContext"
 import { Button } from "../ui/button"
 import {
@@ -84,7 +85,7 @@ export function ImportDialog({
                     success: false,
                     imported: 0,
                     failed: 0,
-                    errors: [err instanceof Error ? err.message : t("importDialog.defaultError")],
+                    errors: [extractErrorMessage(err) || t("importDialog.defaultError")],
                 })
             })
             .finally(() => {

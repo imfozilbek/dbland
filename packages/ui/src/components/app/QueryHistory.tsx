@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { extractErrorMessage } from "@dbland/core"
 import { toast } from "sonner"
 import { type QueryHistoryEntry, usePlatform } from "../../contexts/PlatformContext"
 import { useConfirm } from "../../hooks/use-confirm"
@@ -93,7 +94,7 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
             .catch((err: unknown) => {
                 console.error("Failed to delete query history:", err)
                 toast.error(t("queryHistory.deleteFailed"), {
-                    description: err instanceof Error ? err.message : t("common.unknownError"),
+                    description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })
     }
@@ -122,7 +123,7 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
             .catch((err: unknown) => {
                 console.error("Failed to clear query history:", err)
                 toast.error(t("queryHistory.clearFailed"), {
-                    description: err instanceof Error ? err.message : t("common.unknownError"),
+                    description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })
     }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { extractErrorMessage } from "@dbland/core"
 import { toast } from "sonner"
 import { type Index, type IndexStats, usePlatform } from "../../contexts/PlatformContext"
 import { useConfirm } from "../../hooks/use-confirm"
@@ -77,7 +78,7 @@ export function IndexManager({
             .catch((err: unknown) => {
                 console.error("Failed to drop index:", err)
                 toast.error(t("indexManager.dropFailed"), {
-                    description: err instanceof Error ? err.message : t("common.unknownError"),
+                    description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })
     }

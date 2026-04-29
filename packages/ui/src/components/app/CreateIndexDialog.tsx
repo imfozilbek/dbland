@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { extractErrorMessage } from "@dbland/core"
 import { usePlatform } from "../../contexts/PlatformContext"
 import { Button } from "../ui/button"
 import {
@@ -81,7 +82,7 @@ export function CreateIndexDialog({
                 }
             })
             .catch((err: unknown) => {
-                setError(err instanceof Error ? err.message : t("createIndex.defaultError"))
+                setError(extractErrorMessage(err) || t("createIndex.defaultError"))
             })
             .finally(() => {
                 setIsCreating(false)

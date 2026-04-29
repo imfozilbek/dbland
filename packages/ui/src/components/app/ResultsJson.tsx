@@ -1,4 +1,5 @@
 import { Braces, Copy } from "lucide-react"
+import { extractErrorMessage } from "@dbland/core"
 import { useState } from "react"
 import { toast } from "sonner"
 import { Button } from "../ui/button"
@@ -35,7 +36,7 @@ export function ResultsJson({ documents }: ResultsJsonProps): JSX.Element {
             .catch((err: unknown) => {
                 console.error("Failed to copy JSON:", err)
                 toast.error("Could not copy JSON", {
-                    description: err instanceof Error ? err.message : "Unknown error",
+                    description: extractErrorMessage(err) || "Unknown error",
                 })
             })
     }

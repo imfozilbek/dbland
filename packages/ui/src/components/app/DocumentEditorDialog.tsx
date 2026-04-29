@@ -1,4 +1,5 @@
 import * as React from "react"
+import { extractErrorMessage } from "@dbland/core"
 import { useState } from "react"
 import { toast } from "sonner"
 import { type ResultDocument, usePlatform } from "../../contexts/PlatformContext"
@@ -64,7 +65,7 @@ export function DocumentEditorDialog({
                 setJsonContent(JSON.stringify(doc, null, 4))
             })
             .catch((err: unknown) => {
-                setError(err instanceof Error ? err.message : t("documentEditor.errors.load"))
+                setError(extractErrorMessage(err) || t("documentEditor.errors.load"))
                 console.error("Failed to load document:", err)
             })
             .finally(() => {
@@ -101,7 +102,7 @@ export function DocumentEditorDialog({
                 }
             })
             .catch((err: unknown) => {
-                setError(err instanceof Error ? err.message : t("documentEditor.errors.save"))
+                setError(extractErrorMessage(err) || t("documentEditor.errors.save"))
                 console.error("Failed to save document:", err)
             })
             .finally(() => {
@@ -135,10 +136,10 @@ export function DocumentEditorDialog({
                 }
             })
             .catch((err: unknown) => {
-                setError(err instanceof Error ? err.message : t("documentEditor.errors.delete"))
+                setError(extractErrorMessage(err) || t("documentEditor.errors.delete"))
                 console.error("Failed to delete document:", err)
                 toast.error(t("documentEditor.errors.delete"), {
-                    description: err instanceof Error ? err.message : t("common.unknownError"),
+                    description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })
     }
@@ -153,7 +154,7 @@ export function DocumentEditorDialog({
                 }
             })
             .catch((err: unknown) => {
-                setError(err instanceof Error ? err.message : t("documentEditor.errors.clone"))
+                setError(extractErrorMessage(err) || t("documentEditor.errors.clone"))
                 console.error("Failed to clone document:", err)
             })
     }

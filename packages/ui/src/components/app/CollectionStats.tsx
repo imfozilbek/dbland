@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { extractErrorMessage } from "@dbland/core"
 import { type DetailedCollectionStats, usePlatform } from "../../contexts/PlatformContext"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
@@ -242,7 +243,7 @@ function useCollectionStats(
                 setState({
                     stats: null,
                     isLoading: false,
-                    error: err instanceof Error ? err.message : t("collectionStats.loadFailed"),
+                    error: extractErrorMessage(err) || t("collectionStats.loadFailed"),
                 })
             })
     }

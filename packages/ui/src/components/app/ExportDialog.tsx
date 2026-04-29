@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { extractErrorMessage } from "@dbland/core"
 import { type ExportOptions, usePlatform } from "../../contexts/PlatformContext"
 import { Button } from "../ui/button"
 import {
@@ -91,7 +92,7 @@ export function ExportDialog({
                 setResult({
                     success: false,
                     exported: 0,
-                    error: err instanceof Error ? err.message : t("exportDialog.defaultError"),
+                    error: extractErrorMessage(err) || t("exportDialog.defaultError"),
                 })
             })
             .finally(() => {

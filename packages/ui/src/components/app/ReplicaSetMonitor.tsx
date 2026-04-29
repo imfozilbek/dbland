@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { extractErrorMessage } from "@dbland/core"
 import { type ReplicaSetStatus, usePlatform } from "../../contexts/PlatformContext"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
@@ -51,7 +52,7 @@ export function ReplicaSetMonitor({ connectionId }: ReplicaSetMonitorProps): JSX
             })
             .catch((err: unknown) => {
                 console.error("Failed to get replica set status:", err)
-                setError(err instanceof Error ? err.message : t("replicaSet.loadFailed"))
+                setError(extractErrorMessage(err) || t("replicaSet.loadFailed"))
             })
             .finally(() => {
                 setIsLoading(false)

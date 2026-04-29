@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { extractErrorMessage } from "@dbland/core"
 import { toast } from "sonner"
 import {
     type AggregationPipelineStage,
@@ -151,7 +152,7 @@ export function AggregationBuilder({
                 // identical to a slow request — the user just waited.
                 console.error("Failed to preview stage:", err)
                 toast.error(t("aggregationBuilder.previewFailed"), {
-                    description: err instanceof Error ? err.message : t("common.unknownError"),
+                    description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })
     }

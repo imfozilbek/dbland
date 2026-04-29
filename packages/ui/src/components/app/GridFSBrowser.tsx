@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { extractErrorMessage } from "@dbland/core"
 import { toast } from "sonner"
 import { type GridFSFile, usePlatform } from "../../contexts/PlatformContext"
 import { useConfirm } from "../../hooks/use-confirm"
@@ -53,7 +54,7 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
                 // the user knows whether their bucket is empty or unreachable.
                 setFiles([])
                 toast.error(t("gridfs.loadFailed"), {
-                    description: err instanceof Error ? err.message : t("common.unknownError"),
+                    description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })
             .finally(() => {
@@ -79,7 +80,7 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
         } catch (err: unknown) {
             console.error("Failed to download file:", err)
             toast.error(t("gridfs.downloadFailed"), {
-                description: err instanceof Error ? err.message : t("common.unknownError"),
+                description: extractErrorMessage(err) || t("common.unknownError"),
             })
         }
     }
@@ -108,7 +109,7 @@ export function GridFSBrowser({ connectionId, databaseName }: GridFSBrowserProps
             .catch((err: unknown) => {
                 console.error("Failed to delete file:", err)
                 toast.error(t("gridfs.deleteFailed"), {
-                    description: err instanceof Error ? err.message : t("common.unknownError"),
+                    description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })
     }

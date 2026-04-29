@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { extractErrorMessage } from "@dbland/core"
 import { toast } from "sonner"
 import { usePlatform } from "../../contexts/PlatformContext"
 import { useConfirm } from "../../hooks/use-confirm"
@@ -249,7 +250,7 @@ export function DatabaseProfiler({
             .catch((err: unknown) => {
                 console.error("Failed to set profiler level:", err)
                 toast.error(t("databaseProfiler.setLevelFailed"), {
-                    description: err instanceof Error ? err.message : t("common.unknownError"),
+                    description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })
     }
@@ -278,7 +279,7 @@ export function DatabaseProfiler({
             .catch((err: unknown) => {
                 console.error("Failed to clear profiler data:", err)
                 toast.error(t("databaseProfiler.clearFailed"), {
-                    description: err instanceof Error ? err.message : t("common.unknownError"),
+                    description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })
     }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { extractErrorMessage } from "@dbland/core"
 import { toast } from "sonner"
 import { type SavedQuery, usePlatform } from "../../contexts/PlatformContext"
 import { Badge } from "../ui/badge"
@@ -94,7 +95,7 @@ export function SavedQueries({
             .catch((err: unknown) => {
                 console.error("Failed to delete saved query:", err)
                 toast.error(t("savedQueries.deleteFailed"), {
-                    description: err instanceof Error ? err.message : t("common.unknownError"),
+                    description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })
     }

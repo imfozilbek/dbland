@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { extractErrorMessage } from "@dbland/core"
 import { toast } from "sonner"
 import { type QueryResult, usePlatform } from "../../contexts/PlatformContext"
 import { type ResultsViewMode } from "../../stores/query-store"
@@ -159,7 +160,7 @@ export function GeospatialQueryBuilder({
             })
             .catch((err: unknown) => {
                 console.error("Failed to execute geospatial query:", err)
-                setError(err instanceof Error ? err.message : "Query execution failed")
+                setError(extractErrorMessage(err) || "Query execution failed")
             })
             .finally(() => {
                 setIsLoading(false)
