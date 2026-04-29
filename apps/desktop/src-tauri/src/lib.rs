@@ -109,17 +109,40 @@ fn encode_master_key(key: &[u8; 32]) -> String {
 }
 
 /// Decode a hex string back into a 32-byte key. Returns `None` on any malformation.
+///
+/// Operates on the byte view, not the `&str` view. The previous version
+/// sliced `&s[i * 2..i * 2 + 2]` after only checking `s.len() == 64` —
+/// `len` counts bytes, so a 64-byte string with a multi-byte UTF-8
+/// character anywhere in it would let the length check pass and then
+/// panic at the slice (slicing inside a UTF-8 codepoint is a runtime
+/// abort). A user (or attacker) seeding the keychain with garbage
+/// would then crash the app at startup with no recourse.
 fn decode_master_key(s: &str) -> Option<[u8; 32]> {
-    if s.len() != 64 {
+    let bytes = s.as_bytes();
+    if bytes.len() != 64 {
         return None;
     }
     let mut key = [0u8; 32];
-    for (i, byte) in key.iter_mut().enumerate() {
-        let chunk = &s[i * 2..i * 2 + 2];
-        *byte = u8::from_str_radix(chunk, 16).ok()?;
+    for (i, slot) in key.iter_mut().enumerate() {
+        let high = hex_value(bytes[i * 2])?;
+        let low = hex_value(bytes[i * 2 + 1])?;
+        *slot = (high << 4) | low;
     }
     Some(key)
 }
+
+/// Convert a single ASCII hex character (`0-9`, `a-f`, `A-F`) to its
+/// nibble value, or `None` if it is anything else — including
+/// non-ASCII bytes from a UTF-8 multi-byte sequence.
+fn hex_value(c: u8) -> Option<u8> {
+    match c {
+        b'0'..=b'9' => Some(c - b'0'),
+        b'a'..=b'f' => Some(10 + c - b'a'),
+        b'A'..=b'F' => Some(10 + c - b'A'),
+        _ => None,
+    }
+}
+
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -304,5 +327,31 @@ mod master_key_codec {
         // Length is right (64) but contains non-hex
         let bogus = format!("zz{}", "a".repeat(62));
         assert!(decode_master_key(&bogus).is_none());
+    }
+
+    #[test]
+    fn decode_accepts_uppercase_hex() {
+        let key = [0xABu8; 32];
+        assert_eq!(decode_master_key(&"AB".repeat(32)), Some(key));
+        // Mixed-case must work too — round-trippable with `encode_master_key`
+        // output (lowercase) and with hex pasted from external tooling.
+        assert_eq!(decode_master_key(&"aB".repeat(32)), Some(key));
+    }
+
+    /// Regression: the previous implementation only checked
+    /// `s.len() == 64` and then sliced `&s[i*2..i*2+2]`. `len()` counts
+    /// bytes, so a 64-byte string containing a multi-byte UTF-8
+    /// codepoint would slip past the length check, and slicing inside
+    /// the codepoint would panic at runtime. A user (or attacker)
+    /// seeding the keychain with garbage bytes would crash the app at
+    /// startup with no recourse — the byte-view rewrite must reject
+    /// this cleanly instead.
+    #[test]
+    fn decode_rejects_multibyte_utf8_without_panic() {
+        // 16 copies of "ñ" (U+00F1, 2 bytes each) = 32 bytes; pad with
+        // ASCII to 64 bytes total.
+        let mixed = format!("{}{}", "ñ".repeat(16), "0".repeat(32));
+        assert_eq!(mixed.len(), 64, "regression input must be 64 bytes");
+        assert!(decode_master_key(&mixed).is_none());
     }
 }
