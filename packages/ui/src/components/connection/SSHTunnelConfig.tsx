@@ -3,6 +3,7 @@ import { Input } from "../ui/input"
 import { Switch } from "../ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { useT } from "../../i18n"
+import { DEFAULT_SSH_PORT } from "@dbland/core"
 
 interface SSHTunnelValue {
     enabled: boolean
@@ -19,8 +20,6 @@ interface SSHTunnelConfigProps {
     value: SSHTunnelValue
     onChange: (value: SSHTunnelValue) => void
 }
-
-const DEFAULT_SSH_PORT = 22
 
 /**
  * Fully controlled — every input reads its current value straight from

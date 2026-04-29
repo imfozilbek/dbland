@@ -26,3 +26,11 @@ export const DEFAULT_HOST = "localhost"
  * Default Mongo auth database.
  */
 export const DEFAULT_MONGO_AUTH_DATABASE = "admin"
+
+/**
+ * Default SSH port for tunnelled connections — the IANA-assigned 22.
+ * Lives here next to the database defaults because the SSH tunnel is
+ * always wrapped around a database connection and the UI configures
+ * both as one form.
+ */
+export const DEFAULT_SSH_PORT = 22

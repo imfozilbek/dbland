@@ -23,7 +23,7 @@ import {
     useConnectionStore,
 } from "../../stores/connection-store"
 import { useT } from "../../i18n"
-import { DatabaseType, DEFAULT_HOST, DEFAULT_PORTS } from "@dbland/core"
+import { DatabaseType, DEFAULT_HOST, DEFAULT_PORTS, DEFAULT_SSH_PORT } from "@dbland/core"
 
 type T = ReturnType<typeof useT>
 
@@ -45,7 +45,6 @@ interface FormErrors {
 // keeps the call sites readable without copy-pasting the literals.
 const DEFAULT_MONGODB_PORT = DEFAULT_PORTS[DatabaseType.MongoDB]
 const DEFAULT_REDIS_PORT = DEFAULT_PORTS[DatabaseType.Redis]
-const DEFAULT_SSH_PORT = 22
 const MAX_NAME_LENGTH = 50
 const MIN_PORT = 1
 const MAX_PORT = 65535
