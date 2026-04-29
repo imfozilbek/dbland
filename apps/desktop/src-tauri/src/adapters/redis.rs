@@ -1,5 +1,7 @@
 use async_trait::async_trait;
-use redis::{aio::MultiplexedConnection, Client};
+use redis::{
+    aio::MultiplexedConnection, Client, ConnectionAddr, ConnectionInfo, RedisConnectionInfo,
+};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -18,20 +20,44 @@ pub struct RedisConfig {
 }
 
 impl RedisConfig {
-    /// Build Redis connection URL
-    pub fn to_url(&self) -> String {
-        let protocol = if self.tls { "rediss" } else { "redis" };
+    /// Build a `ConnectionInfo` with credentials set on the redis-side
+    /// struct, never embedded in a URL.
+    ///
+    /// Mirrors the pattern used by the MongoDB adapter: keep secrets
+    /// out of the connection-string layer entirely. The previous
+    /// version embedded the password inside `redis://:<pw>@host:port/`
+    /// (URL-encoded), which meant a parse error from `Client::open`
+    /// could echo the URL back into the error message, any debug log
+    /// that captured the URL string also captured the secret, and
+    /// URL-encoding edge cases for special characters were a latent
+    /// compat risk.
+    ///
+    /// The IPC-boundary `redact_error` covers the first via regex, but
+    /// defense-in-depth says don't put the password in the string we
+    /// render in the first place. Now it travels in
+    /// `RedisConnectionInfo::password` only, which the redis crate
+    /// uses for the `AUTH` handshake without ever stringifying.
+    pub fn to_connection_info(&self) -> ConnectionInfo {
+        let addr = if self.tls {
+            ConnectionAddr::TcpTls {
+                host: self.host.clone(),
+                port: self.port,
+                insecure: false,
+                tls_params: None,
+            }
+        } else {
+            ConnectionAddr::Tcp(self.host.clone(), self.port)
+        };
 
-        let auth = self
-            .password
-            .as_ref()
-            .map(|p| format!(":{}@", urlencoding::encode(p)))
-            .unwrap_or_default();
-
-        format!(
-            "{}://{}{}:{}/{}",
-            protocol, auth, self.host, self.port, self.database
-        )
+        ConnectionInfo {
+            addr,
+            redis: RedisConnectionInfo {
+                db: self.database as i64,
+                username: None,
+                password: self.password.clone(),
+                ..Default::default()
+            },
+        }
     }
 }
 
@@ -73,9 +99,9 @@ impl RedisAdapter {
 impl DatabaseAdapter for RedisAdapter {
     async fn test_connection(&self) -> Result<TestResult, AdapterError> {
         let start = std::time::Instant::now();
-        let url = self.config.to_url();
+        let info = self.config.to_connection_info();
 
-        match Client::open(url) {
+        match Client::open(info) {
             Ok(client) => match client.get_multiplexed_tokio_connection().await {
                 Ok(mut conn) => {
                     // PING command
@@ -117,7 +143,7 @@ impl DatabaseAdapter for RedisAdapter {
             },
             Err(e) => Ok(TestResult {
                 success: false,
-                message: format!("Invalid URL: {}", e),
+                message: format!("Client creation failed: {}", e),
                 latency_ms: None,
                 server_version: None,
             }),
@@ -125,10 +151,10 @@ impl DatabaseAdapter for RedisAdapter {
     }
 
     async fn connect(&mut self) -> Result<(), AdapterError> {
-        let url = self.config.to_url();
+        let info = self.config.to_connection_info();
 
         let client =
-            Client::open(url).map_err(|e| AdapterError::ConnectionFailed(e.to_string()))?;
+            Client::open(info).map_err(|e| AdapterError::ConnectionFailed(e.to_string()))?;
 
         let conn = client
             .get_multiplexed_tokio_connection()
@@ -462,7 +488,7 @@ enum RedisTokenError {
 
 #[cfg(test)]
 mod tokenizer_tests {
-    use super::tokenize_redis_command;
+    use super::*;
 
     #[test]
     fn splits_on_whitespace() {
@@ -509,5 +535,52 @@ mod tokenizer_tests {
     fn empty_input_yields_empty_vec() {
         let tokens = tokenize_redis_command("   ").unwrap();
         assert!(tokens.is_empty());
+    }
+
+    /// The password lives in `RedisConnectionInfo::password`, not in
+    /// `ConnectionAddr` (which only carries host/port). Locks in the
+    /// invariant that no future refactor accidentally re-introduces a
+    /// URL-encoded `:pw@host` form by checking `Debug` output (the
+    /// channel through which a leaked URL would actually surface in
+    /// logs and error toasts).
+    #[test]
+    fn connection_info_keeps_password_off_the_address() {
+        let cfg = RedisConfig {
+            host: "redis.example.com".to_string(),
+            port: 6379,
+            password: Some("p@ss:word/with#special!".to_string()),
+            database: 3,
+            tls: false,
+        };
+
+        let info = cfg.to_connection_info();
+        assert_eq!(info.redis.password.as_deref(), Some("p@ss:word/with#special!"));
+        assert_eq!(info.redis.db, 3);
+
+        // The `Debug` impl on `ConnectionAddr` is what shows up in
+        // error messages — it must not contain the secret.
+        let addr_debug = format!("{:?}", info.addr);
+        assert!(
+            !addr_debug.contains("p@ss:word"),
+            "password leaked into ConnectionAddr Debug: {}",
+            addr_debug
+        );
+    }
+
+    #[test]
+    fn connection_info_uses_tcp_tls_when_tls_enabled() {
+        let cfg = RedisConfig {
+            tls: true,
+            host: "secure.example.com".to_string(),
+            port: 6380,
+            ..RedisConfig::default()
+        };
+
+        match cfg.to_connection_info().addr {
+            redis::ConnectionAddr::TcpTls { insecure, .. } => {
+                assert!(!insecure, "must verify hostname by default");
+            }
+            other => panic!("expected TcpTls, got {:?}", other),
+        }
     }
 }
