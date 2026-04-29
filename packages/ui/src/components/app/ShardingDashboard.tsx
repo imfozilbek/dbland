@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
+import { extractErrorMessage } from "@dbland/core"
 import {
     type ChunkDistribution,
     type ShardedCollection,
@@ -58,7 +59,7 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
             })
             .catch((err: unknown) => {
                 console.error("Failed to load sharding data:", err)
-                setError(err instanceof Error ? err.message : t("sharding.loadFailed"))
+                setError(extractErrorMessage(err) || t("sharding.loadFailed"))
             })
             .finally(() => {
                 setIsLoading(false)
@@ -89,7 +90,7 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
             .catch((err: unknown) => {
                 console.error("Failed to load chunk distribution:", err)
                 toast.error(`Couldn't load chunk distribution for ${namespace}`, {
-                    description: err instanceof Error ? err.message : t("common.unknownError"),
+                    description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })
             .finally(() => {

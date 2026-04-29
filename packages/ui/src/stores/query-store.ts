@@ -1,4 +1,5 @@
 import { create } from "zustand"
+import { extractErrorMessage } from "@dbland/core"
 import type { PlatformAPI, QueryResult, ResultDocument } from "../contexts/PlatformContext"
 import { formatQuery } from "../lib/query-formatter"
 
@@ -139,7 +140,11 @@ export const useQueryStore = create<QueryState>((set, get) => ({
                 get().extractFieldsFromResult(collectionName, result)
             }
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "Unknown error occurred"
+            // extractErrorMessage handles Error, DomainError (which loses
+            // its prototype across the IPC boundary), strings, and falls
+            // back to a JSON dump for everything else — strictly more
+            // information than `err instanceof Error ? err.message : "Unknown"`.
+            const errorMessage = extractErrorMessage(err) || "Unknown error occurred"
             set({
                 currentResult: null,
                 isExecuting: false,
