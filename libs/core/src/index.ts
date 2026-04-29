@@ -41,4 +41,12 @@ export * from "./application/use-cases/ExecuteQueryUseCase"
 export * from "./application/use-cases/GetSchemaUseCase"
 
 // Application - Utilities
-export * from "./application/error-extraction"
+//
+// `export *` from a CommonJS-compiled module compiles down to
+// `__exportStar(...)`, a runtime helper that rollup's static
+// analyser can't follow — apps consuming us via Vite then fail with
+// "X is not exported by libs/core/dist/index.js" even though the
+// symbol is there at runtime. Naming the exports explicitly emits
+// `Object.defineProperty` re-exports rollup *can* see, so the
+// downstream bundlers wire up correctly.
+export { extractErrorMessage, extractErrorCode } from "./application/error-extraction"

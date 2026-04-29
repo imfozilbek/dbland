@@ -37,5 +37,22 @@ export default defineConfig({
         minify: !process.env.TAURI_DEBUG ? "esbuild" : false,
         // Produce sourcemaps for debug builds
         sourcemap: !!process.env.TAURI_DEBUG,
+        // `@dbland/core` ships compiled CommonJS (TypeScript with
+        // `module: "nodenext"` + a `package.json` that doesn't set
+        // `"type": "module"` produces CJS). Vite's `@rollup/plugin-
+        // commonjs` only sweeps `node_modules` by default, but the
+        // workspace dep lives at `libs/core` — outside that scope —
+        // so the plugin never converts its getter-based re-exports
+        // (`Object.defineProperty(exports, "x", { get: ... })`) into
+        // ES re-exports rollup can statically introspect. Without
+        // this, named imports like `extractErrorMessage` fail with
+        // "X is not exported by libs/core/dist/index.js" even though
+        // the symbol is there at runtime. Pulling the workspace
+        // package into the include list fixes the resolution at
+        // build time without touching the dist format.
+        commonjsOptions: {
+            include: [/libs\/core/, /node_modules/],
+            transformMixedEsModules: true,
+        },
     },
 })

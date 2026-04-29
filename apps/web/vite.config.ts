@@ -27,5 +27,16 @@ export default defineConfig({
     build: {
         target: "esnext",
         sourcemap: true,
+        // Workspace-local CJS dep (`@dbland/core`) lives at
+        // `libs/core` — outside the default `node_modules`-only sweep
+        // of `@rollup/plugin-commonjs`. Without this, its
+        // `Object.defineProperty`-style re-exports stay opaque to
+        // rollup's static analyser and named imports fail with "X is
+        // not exported by libs/core/dist/index.js". Mirrors the same
+        // override in `apps/desktop/vite.config.ts`.
+        commonjsOptions: {
+            include: [/libs\/core/, /node_modules/],
+            transformMixedEsModules: true,
+        },
     },
 })
