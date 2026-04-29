@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { extractErrorMessage } from "@dbland/core"
 import { type DetailedCollectionStats, usePlatform } from "../../contexts/PlatformContext"
 import { Badge } from "../ui/badge"
@@ -227,7 +227,14 @@ function useCollectionStats(
         error: null,
     })
 
-    const reload = (): void => {
+    // Stable reload via useCallback so the bootstrap effect can list
+    // it as a real dep and the lint can verify freshness. Previous
+    // version excluded `reload` "intentionally" but its closure also
+    // captured `platform` and `t`, which were *not* in the effect
+    // deps either — so a swapped platform reference (theme provider
+    // re-render, hot reload) silently kept invoking the stale
+    // wrapper.
+    const reload = useCallback((): void => {
         if (!connectionId || !databaseName || !collectionName) {
             return
         }
@@ -246,7 +253,7 @@ function useCollectionStats(
                     error: extractErrorMessage(err) || t("collectionStats.loadFailed"),
                 })
             })
-    }
+    }, [connectionId, databaseName, collectionName, platform, t])
 
     useEffect(() => {
         if (!connectionId || !databaseName || !collectionName) {
@@ -254,9 +261,7 @@ function useCollectionStats(
             return
         }
         reload()
-        // reload depends on the same inputs; intentionally not in deps
-        // to avoid re-running the effect when its identity changes per render.
-    }, [connectionId, databaseName, collectionName])
+    }, [connectionId, databaseName, collectionName, reload])
 
     return { ...state, reload }
 }
