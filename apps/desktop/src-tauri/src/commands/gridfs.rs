@@ -205,7 +205,7 @@ pub async fn delete_gridfs_file(
         .pool
         .execute_query(&connection_id, &database_name, Some(&files_collection), &delete_file_query)
         .await
-        .map_err(|e| format!("Failed to delete file: {}", e))?;
+        .map_err(|e| crate::redact_error(format!("Failed to delete file: {}", e)))?;
 
     // Delete from chunks collection
     let chunks_collection = format!("{}.chunks", bucket_name);
@@ -218,7 +218,7 @@ pub async fn delete_gridfs_file(
         .pool
         .execute_query(&connection_id, &database_name, Some(&chunks_collection), &delete_chunks_query)
         .await
-        .map_err(|e| format!("Failed to delete chunks: {}", e))?;
+        .map_err(|e| crate::redact_error(format!("Failed to delete chunks: {}", e)))?;
 
     Ok(())
 }
@@ -246,7 +246,7 @@ pub async fn download_gridfs_file(
         .pool
         .execute_query(&connection_id, &database_name, Some(&files_collection), &metadata_query)
         .await
-        .map_err(|e| format!("Failed to get file metadata: {}", e))?;
+        .map_err(|e| crate::redact_error(format!("Failed to get file metadata: {}", e)))?;
 
     if metadata_result.documents.is_empty() {
         return Err("File not found".to_string());
@@ -269,7 +269,7 @@ pub async fn download_gridfs_file(
         .pool
         .execute_query(&connection_id, &database_name, Some(&chunks_collection), &chunks_query)
         .await
-        .map_err(|e| format!("Failed to get file chunks: {}", e))?;
+        .map_err(|e| crate::redact_error(format!("Failed to get file chunks: {}", e)))?;
 
     // Reassemble chunks
     let mut file_data = Vec::new();

@@ -68,7 +68,7 @@ pub async fn execute_aggregation_pipeline(
             &query,
         )
         .await
-        .map_err(|e| format!("Aggregation failed: {:?}", e))?;
+        .map_err(|e| crate::redact_error(format!("Aggregation failed: {}", e)))?;
 
     let execution_time_ms = start.elapsed().as_millis() as u64;
     let documents_returned = result.documents.len();
@@ -125,7 +125,7 @@ pub async fn preview_pipeline_stage(
             &query,
         )
         .await
-        .map_err(|e| format!("Preview failed: {:?}", e))?;
+        .map_err(|e| crate::redact_error(format!("Preview failed: {}", e)))?;
 
     let execution_time_ms = start.elapsed().as_millis() as u64;
     let documents_returned = result.documents.len();
