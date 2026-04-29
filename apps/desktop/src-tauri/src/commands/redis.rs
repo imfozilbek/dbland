@@ -177,163 +177,119 @@ pub async fn redis_scan_keys(
     Ok(ScanKeysResult { keys, cursor })
 }
 
-/// Get Redis value by key
+/// Get Redis value by key.
+///
+/// The redis adapter returns each command's response as a single
+/// JSON-converted document in `result.documents[0]`. The previous
+/// parser misread the shape across every type branch — it tried
+/// `doc.get("type")` / `doc.get("value")` / `doc.get("field")` as if
+/// the responses were objects with named fields, but they're not:
+///
+///   * `TYPE k` → JSON string `"string"` (the bare type name)
+///   * `TTL  k` → JSON number `123`
+///   * `GET  k` → JSON string `"the value"`
+///   * `LRANGE / SMEMBERS / ZRANGE / HGETALL` → JSON array of
+///     alternating bulk strings (RESP2) or, for HGETALL only, a
+///     JSON object (RESP3, which the adapter's `redis_value_to_json`
+///     does support).
+///
+/// `Value::get("…")` on any of those returns `None`, so every branch
+/// produced empty output. The Redis data viewer rendered nothing.
+/// This rewrite reads each response shape directly with named
+/// helpers and pairs the alternating arrays with `.chunks(2)` rather
+/// than walking them as if they were row sets.
 #[command]
 pub async fn redis_get_value(
     state: State<'_, Arc<AppState>>,
     request: GetValueRequest,
 ) -> Result<GetValueResult, String> {
-    // Get key type
-    let type_result = state
-        .pool
-        .execute_query(
-            &request.connection_id,
-            "0",
-            None,
-            &format!("TYPE {}", redis_quote(&request.key)),
-        )
-        .await
-        .map_err(|e| crate::redact_error(e.to_string()))?;
+    let key = redis_quote(&request.key);
 
-    let key_type = type_result
-        .documents
-        .first()
-        .and_then(|doc| doc.get("type").and_then(|v| v.as_str()))
-        .unwrap_or("none");
+    let key_type = run_redis(&state, &request.connection_id, &format!("TYPE {}", key))
+        .await?
+        .as_str()
+        .map(String::from)
+        .unwrap_or_else(|| "none".to_string());
 
-    // Get TTL
-    let ttl_result = state
-        .pool
-        .execute_query(
-            &request.connection_id,
-            "0",
-            None,
-            &format!("TTL {}", redis_quote(&request.key)),
-        )
-        .await
-        .map_err(|e| crate::redact_error(e.to_string()))?;
+    let ttl = run_redis(&state, &request.connection_id, &format!("TTL {}", key))
+        .await?
+        .as_i64();
 
-    let ttl = ttl_result
-        .documents
-        .first()
-        .and_then(|doc| doc.get("ttl").and_then(|v| v.as_i64()));
-
-    // Get value based on type
-    let value = match key_type {
+    let value = match key_type.as_str() {
         "string" => {
-            let result = state
-                .pool
-                .execute_query(
-                    &request.connection_id,
-                    "0",
-                    None,
-                    &format!("GET {}", redis_quote(&request.key)),
-                )
-                .await
-                .map_err(|e| crate::redact_error(e.to_string()))?;
-
-            let string_value = result
-                .documents
-                .first()
-                .and_then(|doc| doc.get("value").and_then(|v| v.as_str()))
-                .unwrap_or("")
-                .to_string();
-
-            RedisValue::String { value: string_value }
+            let raw = run_redis(&state, &request.connection_id, &format!("GET {}", key)).await?;
+            RedisValue::String {
+                value: raw.as_str().unwrap_or("").to_string(),
+            }
         }
         "list" => {
-            let result = state
-                .pool
-                .execute_query(
-                    &request.connection_id,
-                    "0",
-                    None,
-                    &format!("LRANGE {} 0 -1", redis_quote(&request.key)),
-                )
-                .await
-                .map_err(|e| crate::redact_error(e.to_string()))?;
-
-            let values: Vec<String> = result
-                .documents
-                .iter()
-                .filter_map(|doc| doc.get("value").and_then(|v| v.as_str()).map(|s| s.to_string()))
-                .collect();
-
-            RedisValue::List { values }
+            let raw =
+                run_redis(&state, &request.connection_id, &format!("LRANGE {} 0 -1", key)).await?;
+            RedisValue::List {
+                values: read_string_array(&raw),
+            }
         }
         "set" => {
-            let result = state
-                .pool
-                .execute_query(
-                    &request.connection_id,
-                    "0",
-                    None,
-                    &format!("SMEMBERS {}", redis_quote(&request.key)),
-                )
-                .await
-                .map_err(|e| crate::redact_error(e.to_string()))?;
-
-            let values: Vec<String> = result
-                .documents
-                .iter()
-                .filter_map(|doc| doc.get("value").and_then(|v| v.as_str()).map(|s| s.to_string()))
-                .collect();
-
-            RedisValue::Set { values }
+            let raw =
+                run_redis(&state, &request.connection_id, &format!("SMEMBERS {}", key)).await?;
+            RedisValue::Set {
+                values: read_string_array(&raw),
+            }
         }
         "zset" => {
-            let result = state
-                .pool
-                .execute_query(
-                    &request.connection_id,
-                    "0",
-                    None,
-                    &format!("ZRANGE {} 0 -1 WITHSCORES", redis_quote(&request.key)),
-                )
-                .await
-                .map_err(|e| crate::redact_error(e.to_string()))?;
-
-            let values: Vec<(String, f64)> = result
-                .documents
-                .chunks(2)
-                .filter_map(|chunk| {
-                    if chunk.len() == 2 {
-                        let member = chunk[0].get("value").and_then(|v| v.as_str())?;
-                        let score = chunk[1].get("score").and_then(|v| v.as_f64())?;
-                        Some((member.to_string(), score))
-                    } else {
-                        None
-                    }
+            let raw = run_redis(
+                &state,
+                &request.connection_id,
+                &format!("ZRANGE {} 0 -1 WITHSCORES", key),
+            )
+            .await?;
+            // ZRANGE WITHSCORES under RESP2 returns a flat array of
+            // alternating `[member, score, member, score, …]` where
+            // every entry — including the score — is a bulk string.
+            // The score-string parses to f64; if a future change
+            // switches to RESP3 (which returns score as a real
+            // number), the same `as_f64` fall-back via parse() still
+            // works.
+            let values: Vec<(String, f64)> = raw
+                .as_array()
+                .map(|arr| {
+                    arr.chunks(2)
+                        .filter_map(|c| {
+                            let m = c.first()?.as_str()?.to_string();
+                            let s = c.get(1)?;
+                            let f = s
+                                .as_f64()
+                                .or_else(|| s.as_str().and_then(|t| t.parse().ok()))?;
+                            Some((m, f))
+                        })
+                        .collect()
                 })
-                .collect();
+                .unwrap_or_default();
 
             RedisValue::ZSet { values }
         }
         "hash" => {
-            let result = state
-                .pool
-                .execute_query(
-                    &request.connection_id,
-                    "0",
-                    None,
-                    &format!("HGETALL {}", redis_quote(&request.key)),
-                )
-                .await
-                .map_err(|e| crate::redact_error(e.to_string()))?;
-
-            let fields: Vec<(String, String)> = result
-                .documents
-                .chunks(2)
-                .filter_map(|chunk| {
-                    if chunk.len() == 2 {
-                        let field = chunk[0].get("field").and_then(|v| v.as_str())?;
-                        let value = chunk[1].get("value").and_then(|v| v.as_str())?;
-                        Some((field.to_string(), value.to_string()))
-                    } else {
-                        None
-                    }
-                })
-                .collect();
+            let raw =
+                run_redis(&state, &request.connection_id, &format!("HGETALL {}", key)).await?;
+            // HGETALL returns either an array of alternating
+            // `[field, value, field, value, …]` (RESP2, today's
+            // path) or a real `{field: value}` object (RESP3, which
+            // the adapter's converter already supports).
+            let fields: Vec<(String, String)> = if let Some(obj) = raw.as_object() {
+                obj.iter()
+                    .map(|(k, v)| (k.clone(), v.as_str().unwrap_or("").to_string()))
+                    .collect()
+            } else if let Some(arr) = raw.as_array() {
+                arr.chunks(2)
+                    .filter_map(|c| {
+                        let f = c.first()?.as_str()?.to_string();
+                        let v = c.get(1)?.as_str()?.to_string();
+                        Some((f, v))
+                    })
+                    .collect()
+            } else {
+                Vec::new()
+            };
 
             RedisValue::Hash { fields }
         }
@@ -341,6 +297,37 @@ pub async fn redis_get_value(
     };
 
     Ok(GetValueResult { value, ttl })
+}
+
+/// Run a Redis command and return the single JSON document the
+/// adapter wraps the response in. Centralises the four-line
+/// "execute_query → unwrap first document → propagate redacted
+/// error" boilerplate so each branch above reads as a single
+/// statement.
+async fn run_redis(
+    state: &State<'_, Arc<AppState>>,
+    connection_id: &str,
+    command: &str,
+) -> Result<serde_json::Value, String> {
+    let result = state
+        .pool
+        .execute_query(connection_id, "0", None, command)
+        .await
+        .map_err(|e| crate::redact_error(e.to_string()))?;
+    Ok(result.documents.into_iter().next().unwrap_or(serde_json::Value::Null))
+}
+
+/// Pull every string element out of a JSON array, dropping non-string
+/// entries (which Redis bulk-string commands don't produce, but the
+/// type system can't prove). Used by LRANGE and SMEMBERS.
+fn read_string_array(raw: &serde_json::Value) -> Vec<String> {
+    raw.as_array()
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// Set TTL for a Redis key
@@ -364,48 +351,62 @@ pub async fn redis_set_ttl(
     Ok(true)
 }
 
-/// Get Redis slow log entries
+/// Get Redis slow log entries.
+///
+/// `SLOWLOG GET N` under RESP2 returns an outer array of slow-log
+/// entries. Each entry is itself an array, positionally:
+///
+///   `[id_int, timestamp_int, duration_micros_int, [cmd, args…],
+///     client_ip:port_str, client_name_str]`
+///
+/// The previous parser walked `result.documents` (a single-element
+/// `Vec` that contained the *whole* outer array) and tried
+/// `doc.get("id")` / `doc.get("timestamp")` etc. as if each
+/// document were an object with named fields. None of those
+/// `.get(name)` calls match an array, so every entry was filtered
+/// out and the slow-log panel rendered empty.
+///
+/// This rewrite reads the response shape directly: peel the outer
+/// array, then index each entry positionally for the four fields
+/// we actually surface (id, timestamp, duration, command).
 #[command]
 pub async fn redis_slow_log(
     state: State<'_, Arc<AppState>>,
     connection_id: String,
     count: Option<usize>,
 ) -> Result<Vec<SlowLogEntry>, String> {
-    // Get slow log
-    let result = state
-        .pool
-        .execute_query(
-            &connection_id,
-            "0",
-            None,
-            &format!(
-                "SLOWLOG GET {}",
-                count.unwrap_or(SLOWLOG_LIMIT_DEFAULT).clamp(1, SLOWLOG_LIMIT_MAX)
-            ),
-        )
-        .await
-        .map_err(|e| crate::redact_error(e.to_string()))?;
+    let raw = run_redis(
+        &state,
+        &connection_id,
+        &format!(
+            "SLOWLOG GET {}",
+            count.unwrap_or(SLOWLOG_LIMIT_DEFAULT).clamp(1, SLOWLOG_LIMIT_MAX)
+        ),
+    )
+    .await?;
 
-    // Parse slow log entries
-    let entries: Vec<SlowLogEntry> = result
-        .documents
-        .iter()
-        .filter_map(|doc| {
-            Some(SlowLogEntry {
-                id: doc.get("id").and_then(|v| v.as_i64())?,
-                timestamp: doc.get("timestamp").and_then(|v| v.as_i64())?,
-                duration_micros: doc.get("duration").and_then(|v| v.as_i64())?,
-                command: doc
-                    .get("command")
-                    .and_then(|v| v.as_array())
-                    .map(|arr| {
-                        arr.iter()
-                            .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                            .collect()
-                    })?,
-            })
+    let entries: Vec<SlowLogEntry> = raw
+        .as_array()
+        .map(|outer| {
+            outer
+                .iter()
+                .filter_map(|entry| {
+                    let arr = entry.as_array()?;
+                    Some(SlowLogEntry {
+                        id: arr.first()?.as_i64()?,
+                        timestamp: arr.get(1)?.as_i64()?,
+                        duration_micros: arr.get(2)?.as_i64()?,
+                        command: arr
+                            .get(3)?
+                            .as_array()?
+                            .iter()
+                            .filter_map(|v| v.as_str().map(String::from))
+                            .collect(),
+                    })
+                })
+                .collect()
         })
-        .collect();
+        .unwrap_or_default();
 
     Ok(entries)
 }
