@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { extractErrorMessage } from "@dbland/core"
 import { toast } from "sonner"
 import { usePlatform } from "../../contexts/PlatformContext"
@@ -174,18 +174,13 @@ export function DatabaseProfiler({
     const [slowMs, setSlowMs] = useState("100")
     const [isLoading, setIsLoading] = useState(false)
 
-    useEffect(() => {
-        if (!connectionId || !databaseName) {
-            setProfilerLevel(null)
-            setEntries([])
-            return
-        }
-
-        loadProfilerLevel()
-        loadProfilerData()
-    }, [connectionId, databaseName])
-
-    const loadProfilerLevel = (): void => {
+    // useCallback so the loaders flow into the bootstrap effect's
+    // dep array as stable references — without it, the effect saw a
+    // fresh closure each render and React's exhaustive-deps lint
+    // would have flagged a missing dep. The bound deps are
+    // (connectionId, databaseName, platform), which is the actual
+    // input set the loader cares about.
+    const loadProfilerLevel = useCallback((): void => {
         if (!connectionId || !databaseName) {
             return
         }
@@ -202,26 +197,40 @@ export function DatabaseProfiler({
             .catch((err: unknown) => {
                 console.error("Failed to get profiler level:", err)
             })
-    }
+    }, [connectionId, databaseName, platform])
 
-    const loadProfilerData = (limit?: number): void => {
+    const loadProfilerData = useCallback(
+        (limit?: number): void => {
+            if (!connectionId || !databaseName) {
+                return
+            }
+
+            setIsLoading(true)
+            platform
+                .getProfilerData(connectionId, databaseName, limit)
+                .then((data) => {
+                    setEntries(data)
+                })
+                .catch((err: unknown) => {
+                    console.error("Failed to get profiler data:", err)
+                })
+                .finally(() => {
+                    setIsLoading(false)
+                })
+        },
+        [connectionId, databaseName, platform],
+    )
+
+    useEffect(() => {
         if (!connectionId || !databaseName) {
+            setProfilerLevel(null)
+            setEntries([])
             return
         }
 
-        setIsLoading(true)
-        platform
-            .getProfilerData(connectionId, databaseName, limit)
-            .then((data) => {
-                setEntries(data)
-            })
-            .catch((err: unknown) => {
-                console.error("Failed to get profiler data:", err)
-            })
-            .finally(() => {
-                setIsLoading(false)
-            })
-    }
+        loadProfilerLevel()
+        loadProfilerData()
+    }, [connectionId, databaseName, loadProfilerLevel, loadProfilerData])
 
     const handleSetProfilerLevel = (): void => {
         if (!connectionId || !databaseName) {
