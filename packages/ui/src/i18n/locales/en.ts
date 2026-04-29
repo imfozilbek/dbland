@@ -10,6 +10,7 @@ export const en = {
     common: {
         loading: "Loading…",
         cancel: "Cancel",
+        confirm: "Confirm",
         save: "Save",
         saving: "Saving…",
         delete: "Delete",

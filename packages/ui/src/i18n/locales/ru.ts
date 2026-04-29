@@ -8,6 +8,7 @@ export const ru: Translations = {
     common: {
         loading: "Загрузка…",
         cancel: "Отмена",
+        confirm: "Подтвердить",
         save: "Сохранить",
         saving: "Сохранение…",
         delete: "Удалить",

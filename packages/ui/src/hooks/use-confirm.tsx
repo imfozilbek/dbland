@@ -9,6 +9,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "../components/ui/alert-dialog"
+import { useT } from "../i18n"
 
 export interface ConfirmOptions {
     title: string
@@ -33,12 +34,23 @@ interface PendingPrompt extends ConfirmOptions {
  * matters.
  */
 export function useConfirm(): readonly [(opts: ConfirmOptions) => Promise<boolean>, JSX.Element] {
+    const t = useT()
     const [open, setOpen] = useState(false)
     const [prompt, setPrompt] = useState<PendingPrompt | null>(null)
     const pendingRef = useRef<PendingPrompt | null>(null)
 
     const confirm = useCallback(async (opts: ConfirmOptions): Promise<boolean> => {
         return new Promise<boolean>((resolve) => {
+            // If a previous prompt is still on screen when a new one is
+            // requested, resolve the old one as "cancelled" rather than
+            // letting its promise hang forever. Without this, a caller
+            // racing two confirms (e.g. a quick double click on a
+            // delete-all toolbar) would leak the first awaiting Promise
+            // and its `if (!confirmed) return` branch would never run.
+            const previous = pendingRef.current
+            if (previous) {
+                previous.resolve(false)
+            }
             const next: PendingPrompt = { ...opts, resolve }
             pendingRef.current = next
             setPrompt(next)
@@ -77,7 +89,7 @@ export function useConfirm(): readonly [(opts: ConfirmOptions) => Promise<boolea
                             settle(false)
                         }}
                     >
-                        {prompt?.cancelLabel ?? "Cancel"}
+                        {prompt?.cancelLabel ?? t("common.cancel")}
                     </AlertDialogCancel>
                     <AlertDialogAction
                         onClick={() => {
@@ -89,7 +101,7 @@ export function useConfirm(): readonly [(opts: ConfirmOptions) => Promise<boolea
                                 : undefined
                         }
                     >
-                        {prompt?.confirmLabel ?? "Confirm"}
+                        {prompt?.confirmLabel ?? t("common.confirm")}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
