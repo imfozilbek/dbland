@@ -161,6 +161,22 @@ function createConnect(get: Get, set: Set): (id: string) => Promise<void> {
         if (!connection) {
             throw new Error("Connection not found")
         }
+
+        // Already connected — make this idempotent rather than re-running
+        // the handshake. Re-running orphans the existing driver pool and
+        // SSH tunnel under the same registry id. Mirrors the
+        // ConnectToDatabaseUseCase short-circuit in libs/core.
+        if (connection.status === "connected") {
+            set({ activeConnectionId: id })
+            return
+        }
+        // Already in-flight — ignore the second click instead of starting
+        // a parallel handshake (Connecting → Connecting is forbidden by
+        // the state machine).
+        if (connection.status === "connecting") {
+            return
+        }
+
         set({
             connections: connections.map((c) =>
                 c.id === id ? { ...c, status: "connecting" as const } : c,
@@ -193,10 +209,20 @@ function createConnect(get: Get, set: Set): (id: string) => Promise<void> {
 
 function createDisconnect(get: Get, set: Set): (id: string) => Promise<void> {
     return async (id) => {
-        const { _api } = get()
+        const { _api, connections } = get()
         if (!_api) {
             throw new Error("Platform API not initialized")
         }
+
+        // Idempotent: if the connection is already disconnected (or the
+        // store has no record of it), there's nothing to tear down on
+        // either side. Avoids a no-op IPC round trip and a Disconnected
+        // → Disconnected state-changed flicker in the UI.
+        const target = connections.find((c) => c.id === id)
+        if (!target || target.status === "disconnected") {
+            return
+        }
+
         try {
             await _api.disconnect(id)
             const { connections, activeConnectionId } = get()
