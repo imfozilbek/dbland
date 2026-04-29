@@ -94,7 +94,7 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
             })
             .catch((err: unknown) => {
                 console.error("Failed to load chunk distribution:", err)
-                toast.error(`Couldn't load chunk distribution for ${namespace}`, {
+                toast.error(t("sharding.chunkLoadFailed", { namespace }), {
                     description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })

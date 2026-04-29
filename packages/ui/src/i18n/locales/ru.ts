@@ -624,6 +624,7 @@ export const ru: Translations = {
         chunksBadge_many: "{{count}} чанков",
         chunksBadge_other: "{{count}} чанков",
         selectCollection: "Выберите коллекцию, чтобы посмотреть распределение чанков",
+        chunkLoadFailed: "Не удалось загрузить распределение чанков для {{namespace}}",
     },
     settings: {
         title: "Настройки",

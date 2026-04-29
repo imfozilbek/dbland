@@ -625,6 +625,7 @@ export const en = {
         chunksBadge_many: "{{count}} chunks",
         chunksBadge_other: "{{count}} chunks",
         selectCollection: "Select a collection to view chunk distribution",
+        chunkLoadFailed: "Couldn't load chunk distribution for {{namespace}}",
     },
     settings: {
         title: "Settings",
