@@ -1,8 +1,28 @@
-use crate::AppState;
+use crate::{validate_collection_name, validate_database_name, validate_object_id, AppState};
 use base64::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::State;
+
+/// GridFS bucket names live in `db.{bucket}.files` / `{bucket}.chunks`,
+/// so they end up interpolated into the same JS-shell strings as
+/// regular collection names. Validate them with the same rules — and
+/// reject embedded dots so the caller can't sneak a second collection
+/// name in via `evil.bucket"; db.dropDatabase()`.
+fn validate_bucket_name(name: &str) -> Result<(), String> {
+    if name.is_empty() {
+        return Err("GridFS bucket name must not be empty".to_string());
+    }
+    let safe = name
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
+    if !safe || name.starts_with('$') {
+        return Err(
+            "GridFS bucket name may only contain letters, digits, '_' and '-'".to_string(),
+        );
+    }
+    Ok(())
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -26,8 +46,13 @@ pub async fn list_gridfs_files(
     bucket: Option<String>,
     limit: Option<i64>,
 ) -> Result<Vec<GridFSFile>, String> {
+    validate_database_name(&database_name)?;
     let bucket_name = bucket.unwrap_or_else(|| "fs".to_string());
+    validate_bucket_name(&bucket_name)?;
     let collection_name = format!("{}.files", bucket_name);
+    // After interpolation it's a `<bucket>.files` form; re-check
+    // because the surrounding format!() then drops it into the JS.
+    validate_collection_name(&collection_name)?;
 
     // Build query with optional limit
     let query = if let Some(limit_val) = limit {
@@ -111,7 +136,10 @@ pub async fn get_gridfs_file_metadata(
     file_id: String,
     bucket: Option<String>,
 ) -> Result<GridFSFile, String> {
+    validate_database_name(&database_name)?;
+    validate_object_id(&file_id)?;
     let bucket_name = bucket.unwrap_or_else(|| "fs".to_string());
+    validate_bucket_name(&bucket_name)?;
     let collection_name = format!("{}.files", bucket_name);
 
     let query = format!(
@@ -192,7 +220,10 @@ pub async fn delete_gridfs_file(
     file_id: String,
     bucket: Option<String>,
 ) -> Result<(), String> {
+    validate_database_name(&database_name)?;
+    validate_object_id(&file_id)?;
     let bucket_name = bucket.unwrap_or_else(|| "fs".to_string());
+    validate_bucket_name(&bucket_name)?;
 
     // Delete from files collection
     let files_collection = format!("{}.files", bucket_name);
@@ -233,7 +264,10 @@ pub async fn download_gridfs_file(
     save_path: String,
     bucket: Option<String>,
 ) -> Result<String, String> {
+    validate_database_name(&database_name)?;
+    validate_object_id(&file_id)?;
     let bucket_name = bucket.unwrap_or_else(|| "fs".to_string());
+    validate_bucket_name(&bucket_name)?;
 
     // Get file metadata first
     let files_collection = format!("{}.files", bucket_name);

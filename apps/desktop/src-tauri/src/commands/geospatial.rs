@@ -1,4 +1,4 @@
-use crate::AppState;
+use crate::{validate_collection_name, validate_database_name, AppState};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::State;
@@ -33,6 +33,8 @@ pub async fn execute_geospatial_query(
     state: State<'_, Arc<AppState>>,
     request: GeospatialQueryRequest,
 ) -> Result<GeospatialQueryResult, String> {
+    validate_database_name(&request.database_name)?;
+    validate_collection_name(&request.collection_name)?;
     let start = std::time::Instant::now();
 
     // Build geospatial query based on type

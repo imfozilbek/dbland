@@ -1,4 +1,4 @@
-use crate::AppState;
+use crate::{validate_collection_name, validate_database_name, AppState};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::State;
@@ -50,6 +50,8 @@ pub async fn get_indexes(
     database_name: String,
     collection_name: String,
 ) -> Result<Vec<Index>, String> {
+    validate_database_name(&database_name)?;
+    validate_collection_name(&collection_name)?;
     let query = format!("db.{}.getIndexes()", collection_name);
 
     let result = state
@@ -93,6 +95,8 @@ pub async fn create_index(
     state: State<'_, Arc<AppState>>,
     request: CreateIndexRequest,
 ) -> Result<String, String> {
+    validate_database_name(&request.database_name)?;
+    validate_collection_name(&request.collection_name)?;
     let keys_str = serde_json::to_string(&request.keys)
         .map_err(|e| format!("Failed to serialize keys: {}", e))?;
 
@@ -146,6 +150,8 @@ pub async fn drop_index(
     collection_name: String,
     index_name: String,
 ) -> Result<bool, String> {
+    validate_database_name(&database_name)?;
+    validate_collection_name(&collection_name)?;
     let query = format!("db.{}.dropIndex({})", collection_name, js_string(&index_name));
 
     let result = state
@@ -164,6 +170,8 @@ pub async fn get_index_stats(
     database_name: String,
     collection_name: String,
 ) -> Result<Vec<IndexStats>, String> {
+    validate_database_name(&database_name)?;
+    validate_collection_name(&collection_name)?;
     let query = format!("db.{}.aggregate([{{$indexStats: {{}}}}])", collection_name);
 
     let result = state

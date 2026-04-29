@@ -1,4 +1,4 @@
-use crate::AppState;
+use crate::{validate_collection_name, validate_database_name, AppState};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::State;
@@ -41,6 +41,8 @@ pub async fn execute_aggregation_pipeline(
     state: State<'_, Arc<AppState>>,
     request: ExecuteAggregationRequest,
 ) -> Result<AggregationResult, String> {
+    validate_database_name(&request.database_name)?;
+    validate_collection_name(&request.collection_name)?;
     let start = std::time::Instant::now();
 
     // Build MongoDB aggregation pipeline
@@ -87,6 +89,8 @@ pub async fn preview_pipeline_stage(
     state: State<'_, Arc<AppState>>,
     request: PreviewStageRequest,
 ) -> Result<AggregationResult, String> {
+    validate_database_name(&request.database_name)?;
+    validate_collection_name(&request.collection_name)?;
     let start = std::time::Instant::now();
 
     // Build pipeline up to the requested stage

@@ -1,4 +1,4 @@
-use crate::AppState;
+use crate::{validate_collection_name, validate_database_name, AppState};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -43,6 +43,9 @@ pub async fn get_detailed_collection_stats(
     database_name: String,
     collection_name: String,
 ) -> Result<DetailedCollectionStats, String> {
+    validate_database_name(&database_name)?;
+    validate_collection_name(&collection_name)?;
+
     // Use collStats command with verbose option
     let query = format!(r#"db.runCommand({{ "collStats": "{}", "verbose": true }})"#, collection_name);
 

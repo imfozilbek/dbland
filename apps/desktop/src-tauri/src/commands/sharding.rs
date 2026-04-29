@@ -1,4 +1,4 @@
-use crate::AppState;
+use crate::{validate_collection_name, validate_database_name, AppState};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::State;
@@ -172,6 +172,8 @@ pub async fn get_chunk_distribution(
     database_name: String,
     collection_name: String,
 ) -> Result<Vec<ChunkDistribution>, String> {
+    validate_database_name(&database_name)?;
+    validate_collection_name(&collection_name)?;
     let namespace = format!("{}.{}", database_name, collection_name);
     let query = format!(r#"db.getSiblingDB("config").chunks.find({{ ns: "{}" }})"#, namespace);
 

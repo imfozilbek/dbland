@@ -4,10 +4,14 @@ mod error;
 mod state;
 mod storage;
 mod tunnel;
+mod validation;
 
 // Re-export the IPC redactor so command handlers can pull it from a
 // stable path. Keeps `mod error` private; callers see `crate::redact_error`.
 pub(crate) use error::redact_error;
+pub(crate) use validation::{
+    validate_collection_name, validate_database_name, validate_object_id,
+};
 
 use state::ConnectionPool;
 use storage::{ConnectionStorage, Crypto, QueryHistoryStorage, SavedQueriesStorage};
