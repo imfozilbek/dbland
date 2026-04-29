@@ -12,14 +12,14 @@ import { Card } from "../ui/card"
 import { useT } from "../../i18n"
 
 /**
- * Build-time version string for the About tab. Bumped on every release —
- * the previous static "0.8.0" was stale by five minor versions and made
- * the dialog actively misleading.
- *
- * TODO: wire this through Vite's `import.meta.env` so the value is read
- * from package.json at build time instead of being hand-edited.
+ * Fallback shown only when the host app forgets to pass `version`. The
+ * shared package can't read the desktop/web app's package.json at build
+ * time — Vite's `define` replacement happens in the *consuming* app's
+ * bundle, not in @dbland/ui's published `dist`. So we accept it as a
+ * prop, exactly like `StatusBar` already does, and the host wires it
+ * from `__APP_VERSION__`.
  */
-const APP_VERSION = "1.1.0"
+const FALLBACK_VERSION = ""
 
 const FEATURES: { label: string; group: string }[] = [
     { group: "MongoDB", label: "Query editor with Monaco" },
@@ -45,9 +45,20 @@ const FEATURES: { label: string; group: string }[] = [
 export interface SettingsDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
+    /**
+     * Build-time version string. The host app is expected to pass this
+     * from `__APP_VERSION__` (wired in `vite.config.ts` via `define`
+     * from package.json). Empty by default so a missing wiring is
+     * visibly empty rather than silently misleading.
+     */
+    version?: string
 }
 
-export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX.Element {
+export function SettingsDialog({
+    open,
+    onOpenChange,
+    version = FALLBACK_VERSION,
+}: SettingsDialogProps): JSX.Element {
     const t = useT()
     const { settings, updateSettings, updateEditorSettings, resetSettings } = useSettingsStore()
 
@@ -222,7 +233,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): JSX
                                         {t("settings.about.tagline")}
                                     </p>
                                     <p className="pt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--muted-foreground)]/70">
-                                        {t("settings.about.version", { version: APP_VERSION })}
+                                        {t("settings.about.version", { version })}
                                     </p>
                                 </div>
 

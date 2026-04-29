@@ -11,7 +11,7 @@ export function SettingsPage(): JSX.Element {
 
     return (
         <div className="flex h-full items-center justify-center">
-            <SettingsDialog open={open} onOpenChange={setOpen} />
+            <SettingsDialog open={open} onOpenChange={setOpen} version={`v${__APP_VERSION__}`} />
             {!open && (
                 <div className="text-center">
                     <h1 className="text-2xl font-bold">Settings</h1>
