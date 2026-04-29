@@ -10,6 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Textarea } from "../ui/textarea"
 import { Crosshair, MapPin } from "lucide-react"
 import { ResultsViewer } from "./ResultsViewer"
+import { useT } from "../../i18n"
+
+/**
+ * Error tags returned by `parseNearCoordinates`. The caller maps each
+ * tag to a localised user-facing message — keeps the parser pure and
+ * lets translators own the wording in one place (the i18n file)
+ * instead of inside this React component.
+ */
+type CoordError = "invalidCoordinates" | "outOfRangeCoordinates"
 
 /**
  * Fallback coordinates when geolocation is unavailable / denied.
@@ -34,14 +43,14 @@ export interface GeospatialQueryBuilderProps {
 function parseNearCoordinates(
     longitude: string,
     latitude: string,
-): { ok: true; coordinates: [number, number] } | { ok: false; error: string } {
+): { ok: true; coordinates: [number, number] } | { ok: false; error: CoordError } {
     const lon = parseFloat(longitude)
     const lat = parseFloat(latitude)
     if (Number.isNaN(lon) || Number.isNaN(lat)) {
-        return { ok: false, error: "Longitude and latitude must be valid numbers" }
+        return { ok: false, error: "invalidCoordinates" }
     }
     if (lon < -180 || lon > 180 || lat < -90 || lat > 90) {
-        return { ok: false, error: "Coordinates out of range (longitude ±180, latitude ±90)" }
+        return { ok: false, error: "outOfRangeCoordinates" }
     }
     return { ok: true, coordinates: [lon, lat] }
 }
@@ -51,6 +60,7 @@ export function GeospatialQueryBuilder({
     databaseName,
     collectionName,
 }: GeospatialQueryBuilderProps): JSX.Element {
+    const t = useT()
     const platform = usePlatform()
     const [field, setField] = useState("location")
     const [queryType, setQueryType] = useState<"near" | "within" | "intersects">("near")
@@ -69,8 +79,8 @@ export function GeospatialQueryBuilder({
 
     const handleUseMyLocation = (): void => {
         if (typeof navigator === "undefined" || !navigator.geolocation) {
-            toast.error("Geolocation not available", {
-                description: "Your browser does not support the geolocation API.",
+            toast.error(t("geospatial.toasts.geolocationUnavailableTitle"), {
+                description: t("geospatial.toasts.geolocationUnavailableDescription"),
             })
             return
         }
@@ -78,10 +88,10 @@ export function GeospatialQueryBuilder({
             (pos) => {
                 setLongitude(pos.coords.longitude.toFixed(6))
                 setLatitude(pos.coords.latitude.toFixed(6))
-                toast.success("Location set")
+                toast.success(t("geospatial.toasts.locationSet"))
             },
             (err) => {
-                toast.error("Could not get your location", {
+                toast.error(t("geospatial.toasts.locationFailedTitle"), {
                     description: err.message,
                 })
             },
@@ -101,7 +111,7 @@ export function GeospatialQueryBuilder({
         if (queryType === "near") {
             const parsed = parseNearCoordinates(longitude, latitude)
             if (!parsed.ok) {
-                setError(parsed.error)
+                setError(t(`geospatial.errors.${parsed.error}`))
                 setIsLoading(false)
                 return
             }
@@ -110,7 +120,7 @@ export function GeospatialQueryBuilder({
             try {
                 coordinates = JSON.parse(polygonCoords) as number[]
             } catch (_err) {
-                setError("Invalid polygon coordinates JSON")
+                setError(t("geospatial.errors.invalidPolygon"))
                 setIsLoading(false)
                 return
             }
@@ -121,7 +131,7 @@ export function GeospatialQueryBuilder({
             try {
                 filter = JSON.parse(additionalFilter) as Record<string, unknown>
             } catch (_err) {
-                setError("Invalid additional filter JSON")
+                setError(t("geospatial.errors.invalidFilter"))
                 setIsLoading(false)
                 return
             }
@@ -160,7 +170,7 @@ export function GeospatialQueryBuilder({
             })
             .catch((err: unknown) => {
                 console.error("Failed to execute geospatial query:", err)
-                setError(extractErrorMessage(err) || "Query execution failed")
+                setError(extractErrorMessage(err) || t("geospatial.errors.executionFailed"))
             })
             .finally(() => {
                 setIsLoading(false)
@@ -171,7 +181,7 @@ export function GeospatialQueryBuilder({
         return (
             <div className="flex h-full items-center justify-center text-muted-foreground">
                 <MapPin className="mr-2 h-5 w-5" />
-                Select a collection to build geospatial queries
+                {t("geospatial.emptyPrompt")}
             </div>
         )
     }
@@ -180,22 +190,22 @@ export function GeospatialQueryBuilder({
         <div className="flex h-full">
             {/* Query Builder Panel */}
             <div className="w-96 border-r p-4 space-y-4 overflow-auto">
-                <h2 className="text-lg font-semibold">Geospatial Query Builder</h2>
+                <h2 className="text-lg font-semibold">{t("geospatial.title")}</h2>
 
                 <div className="space-y-2">
-                    <Label htmlFor="field">Location Field</Label>
+                    <Label htmlFor="field">{t("geospatial.labels.field")}</Label>
                     <Input
                         id="field"
                         value={field}
                         onChange={(e) => {
                             setField(e.target.value)
                         }}
-                        placeholder="location"
+                        placeholder={t("geospatial.placeholders.field")}
                     />
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="query-type">Query Type</Label>
+                    <Label htmlFor="query-type">{t("geospatial.labels.queryType")}</Label>
                     <Select
                         value={queryType}
                         onValueChange={(v) => {
@@ -217,7 +227,9 @@ export function GeospatialQueryBuilder({
                     <>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="longitude">Longitude</Label>
+                                <Label htmlFor="longitude">
+                                    {t("geospatial.labels.longitude")}
+                                </Label>
                                 <Input
                                     id="longitude"
                                     type="number"
@@ -229,7 +241,7 @@ export function GeospatialQueryBuilder({
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="latitude">Latitude</Label>
+                                <Label htmlFor="latitude">{t("geospatial.labels.latitude")}</Label>
                                 <Input
                                     id="latitude"
                                     type="number"
@@ -247,16 +259,18 @@ export function GeospatialQueryBuilder({
                                 variant="outline"
                                 size="sm"
                                 onClick={handleUseMyLocation}
-                                aria-label="Use device location for coordinates"
+                                aria-label={t("geospatial.useMyLocationAria")}
                             >
                                 <Crosshair className="mr-2 h-4 w-4" />
-                                Use my location
+                                {t("geospatial.useMyLocation")}
                             </Button>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="max-distance">Max Distance (m)</Label>
+                                <Label htmlFor="max-distance">
+                                    {t("geospatial.labels.maxDistance")}
+                                </Label>
                                 <Input
                                     id="max-distance"
                                     type="number"
@@ -267,7 +281,9 @@ export function GeospatialQueryBuilder({
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="min-distance">Min Distance (m)</Label>
+                                <Label htmlFor="min-distance">
+                                    {t("geospatial.labels.minDistance")}
+                                </Label>
                                 <Input
                                     id="min-distance"
                                     type="number"
@@ -275,14 +291,14 @@ export function GeospatialQueryBuilder({
                                     onChange={(e) => {
                                         setMinDistance(e.target.value)
                                     }}
-                                    placeholder="Optional"
+                                    placeholder={t("geospatial.placeholders.minDistance")}
                                 />
                             </div>
                         </div>
                     </>
                 ) : (
                     <div className="space-y-2">
-                        <Label htmlFor="polygon">Polygon Coordinates (JSON)</Label>
+                        <Label htmlFor="polygon">{t("geospatial.labels.polygon")}</Label>
                         <Textarea
                             id="polygon"
                             value={polygonCoords}
@@ -293,13 +309,15 @@ export function GeospatialQueryBuilder({
                             rows={8}
                         />
                         <div className="text-xs text-muted-foreground">
-                            Format: [[lng1, lat1], [lng2, lat2], ...]
+                            {t("geospatial.polygonHelp")}
                         </div>
                     </div>
                 )}
 
                 <div className="space-y-2">
-                    <Label htmlFor="additional-filter">Additional Filter (JSON)</Label>
+                    <Label htmlFor="additional-filter">
+                        {t("geospatial.labels.additionalFilter")}
+                    </Label>
                     <Textarea
                         id="additional-filter"
                         value={additionalFilter}
@@ -319,7 +337,7 @@ export function GeospatialQueryBuilder({
                 )}
 
                 <Button onClick={handleExecute} disabled={isLoading} className="w-full">
-                    {isLoading ? "Executing…" : "Execute Query"}
+                    {isLoading ? t("geospatial.executing") : t("geospatial.execute")}
                 </Button>
             </div>
 
