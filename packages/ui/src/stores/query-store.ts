@@ -96,10 +96,20 @@ export const useQueryStore = create<QueryState>((set, get) => ({
         databaseName?: string,
         collectionName?: string,
     ): Promise<void> => {
-        const { _api, activeQuery } = get()
+        const { _api, activeQuery, isExecuting } = get()
 
         if (!_api) {
             set({ error: "Platform API not initialized" })
+            return
+        }
+
+        // Drop the second click while a query is in flight. Without this
+        // a Cmd-Enter spam (or a flaky touchpad) starts parallel
+        // executions whose results race to overwrite each other in the
+        // store — the user sees the wrong result for the query they
+        // typed last. Mirrors the in-flight guard the connection-store
+        // got in the previous iteration.
+        if (isExecuting) {
             return
         }
 
