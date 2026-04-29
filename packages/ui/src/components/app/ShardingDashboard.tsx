@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { extractErrorMessage } from "@dbland/core"
 import {
@@ -31,17 +31,12 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
     const [isLoadingChunks, setIsLoadingChunks] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    useEffect(() => {
-        if (!connectionId) {
-            setShards([])
-            setCollections([])
-            return
-        }
-
-        loadData()
-    }, [connectionId])
-
-    const loadData = (): void => {
+    // Stable reference for the bootstrap effect's dep array. Without
+    // useCallback the loader was a fresh closure each render and the
+    // exhaustive-deps lint had no way to verify the closure picked up
+    // a new platform/t/connectionId. The bound deps name every input
+    // the closure actually reads.
+    const loadData = useCallback((): void => {
         if (!connectionId) {
             return
         }
@@ -64,7 +59,17 @@ export function ShardingDashboard({ connectionId }: ShardingDashboardProps): JSX
             .finally(() => {
                 setIsLoading(false)
             })
-    }
+    }, [connectionId, platform, t])
+
+    useEffect(() => {
+        if (!connectionId) {
+            setShards([])
+            setCollections([])
+            return
+        }
+
+        loadData()
+    }, [connectionId, loadData])
 
     const loadChunkDistribution = (namespace: string): void => {
         if (!connectionId) {
