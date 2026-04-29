@@ -3,6 +3,22 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::{command, State};
 
+/// SCAN's `COUNT` is a server-side batch-size hint (Redis is free to
+/// return more or fewer keys per cursor step). The hint isn't a
+/// security boundary, but a frontend bug passing `usize::MAX` would
+/// still hand a stupid number to the server. Clamp it to something
+/// the schema browser actually uses for grouping.
+const SCAN_COUNT_MAX: usize = 10_000;
+const SCAN_COUNT_DEFAULT: usize = 100;
+
+/// `SLOWLOG GET N` reads the last N entries from a circular buffer of
+/// slow queries. The server-side default cap is 128 entries, but
+/// passing a huge N still pulls the entire buffer across the wire and
+/// across IPC. The slow-log panel virtualises and only ever shows the
+/// most recent batch.
+const SLOWLOG_LIMIT_MAX: usize = 1000;
+const SLOWLOG_LIMIT_DEFAULT: usize = 10;
+
 /// Wrap a user-supplied Redis argument in the double-quoted form the
 /// redis-cli tokenizer recognises, with `\` and `"` escaped.
 ///
@@ -88,7 +104,7 @@ pub async fn redis_scan_keys(
             &format!(
                 "SCAN 0 MATCH {} COUNT {}",
                 redis_quote(&request.pattern),
-                request.count.unwrap_or(100)
+                request.count.unwrap_or(SCAN_COUNT_DEFAULT).clamp(1, SCAN_COUNT_MAX)
             ),
         )
         .await
@@ -304,7 +320,15 @@ pub async fn redis_slow_log(
     // Get slow log
     let result = state
         .pool
-        .execute_query(&connection_id, "0", None, &format!("SLOWLOG GET {}", count.unwrap_or(10)))
+        .execute_query(
+            &connection_id,
+            "0",
+            None,
+            &format!(
+                "SLOWLOG GET {}",
+                count.unwrap_or(SLOWLOG_LIMIT_DEFAULT).clamp(1, SLOWLOG_LIMIT_MAX)
+            ),
+        )
         .await
         .map_err(|e| crate::redact_error(e.to_string()))?;
 
