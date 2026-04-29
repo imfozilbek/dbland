@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { extractErrorMessage } from "@dbland/core"
 import { toast } from "sonner"
 import { type QueryHistoryEntry, usePlatform } from "../../contexts/PlatformContext"
@@ -26,12 +26,16 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
     const [searchQuery, setSearchQuery] = useState("")
     const [isLoading, setIsLoading] = useState(false)
 
-    useEffect(() => {
+    // Single source of truth for "fetch the unfiltered history list".
+    // Used by the connection-changed bootstrap effect AND by the
+    // Clear-search button — they were duplicated inline in two
+    // separate `then/catch/finally` blocks that drifted in subtle
+    // ways (one logged differently, one didn't reset isLoading on
+    // empty connection). Now both go through the same callback.
+    const refreshHistory = useCallback((): void => {
         if (!connectionId) {
-            setEntries([])
             return
         }
-
         setIsLoading(true)
         platform
             .getQueryHistory(connectionId)
@@ -45,6 +49,14 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
                 setIsLoading(false)
             })
     }, [connectionId, platform])
+
+    useEffect(() => {
+        if (!connectionId) {
+            setEntries([])
+            return
+        }
+        refreshHistory()
+    }, [connectionId, refreshHistory])
 
     const handleSearch = (): void => {
         if (!connectionId || !searchQuery.trim()) {
@@ -67,22 +79,7 @@ export function QueryHistory({ connectionId, onLoadQuery }: QueryHistoryProps): 
 
     const handleClearSearch = (): void => {
         setSearchQuery("")
-        if (!connectionId) {
-            return
-        }
-
-        setIsLoading(true)
-        platform
-            .getQueryHistory(connectionId)
-            .then((data) => {
-                setEntries(data)
-            })
-            .catch((err: unknown) => {
-                console.error("Failed to load query history:", err)
-            })
-            .finally(() => {
-                setIsLoading(false)
-            })
+        refreshHistory()
     }
 
     const handleDelete = (id: number): void => {
