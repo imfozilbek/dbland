@@ -48,7 +48,8 @@ log = "0.4"
 # Logger backend — environment-driven; only emits when RUST_LOG is set
 env_logger = "0.11"
 regex = "1.12.3"
-once_cell = "1.21.4"
+# `LazyLock` for static regex initialisation lives in `std` since
+# Rust 1.80; no third-party `once_cell` crate needed.
 parking_lot = "0.12.5"
 
 [features]

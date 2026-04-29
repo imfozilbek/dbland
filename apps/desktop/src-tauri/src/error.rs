@@ -29,6 +29,9 @@
 //!     unambiguously carry secrets; broader PII handling needs domain
 //!     review.
 
+use regex::Regex;
+use std::sync::LazyLock;
+
 /// Strip credentials and connection-string userinfo from an error
 /// message before it crosses the Tauri IPC boundary.
 ///
@@ -55,21 +58,18 @@ pub fn redact_error(message: impl Into<String>) -> String {
     kv_redacted.into_owned()
 }
 
-use once_cell::sync::Lazy;
-use regex::Regex;
-
 /// Userinfo segment of a URI. Captures the scheme so we can rewrite
 /// in-place instead of stripping the whole URI. The character class
 /// for the scheme matches RFC 3986 §3.1 (alpha + alnum + + - .) and
 /// the userinfo allows anything up to the `@` separator.
-static URI_USERINFO_RE: Lazy<Regex> = Lazy::new(|| {
+static URI_USERINFO_RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?P<scheme>[a-zA-Z][a-zA-Z0-9+.\-]*):\/\/[^@\s/]+@")
         .expect("URI_USERINFO_RE failed to compile")
 });
 
 /// `password=…` / `password: …` key-value pairs. Covers `password`
 /// (case-insensitive); other secret keywords land in a follow-up.
-static PASSWORD_KV_RE: Lazy<Regex> = Lazy::new(|| {
+static PASSWORD_KV_RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?i)(?P<key>password)\s*[:=]\s*[^\s,;\x22']+")
         .expect("PASSWORD_KV_RE failed to compile")
 });
