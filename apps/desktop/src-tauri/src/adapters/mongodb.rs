@@ -144,8 +144,18 @@ impl MongoDbAdapter {
     }
 
     /// Recursively walk the query tree and reject blacklisted operators.
+    ///
+    /// The deny list is keyed by *literal operator name only*. Because
+    /// the walk recurses into every object value and every array
+    /// element, a banned operator nested anywhere in the tree (e.g.
+    /// `{"$expr": {"$function": …}}`) trips the same check the moment
+    /// the recursion reaches that key. The previous version carried a
+    /// dotted entry `"$expr.$function"` that pretended to be a path
+    /// matcher — but the actual check was `key.as_str() == "$expr.$function"`,
+    /// which never matches anything (no JSON object has a literal
+    /// "$expr.$function" key). It was dead string. Removed.
     fn reject_unsafe_operators(value: &serde_json::Value) -> Result<(), AdapterError> {
-        const DENY_LIST: &[&str] = &["$where", "$function", "$accumulator", "$expr.$function"];
+        const DENY_LIST: &[&str] = &["$where", "$function", "$accumulator"];
 
         match value {
             serde_json::Value::Object(map) => {
@@ -443,6 +453,27 @@ mod tests {
     fn parse_find_query_rejects_dollar_accumulator() {
         let err = parse(r#"{"$accumulator": {"init": "function(){}"}}"#).unwrap_err();
         assert!(err.to_string().contains("$accumulator"));
+    }
+
+    /// `$function` at the top level (not just nested inside `$expr`)
+    /// must be rejected. A previous comment in the deny list pretended
+    /// to special-case the `$expr.$function` path; the recursion
+    /// already covers every position, but only the nested case had a
+    /// regression test.
+    #[test]
+    fn parse_find_query_rejects_top_level_dollar_function() {
+        let err =
+            parse(r#"{"$function": {"body": "function(){return 1}", "args": [], "lang": "js"}}"#)
+                .unwrap_err();
+        assert!(err.to_string().contains("$function"));
+    }
+
+    /// `$expr` itself is a legitimate aggregation/match operator and
+    /// must still be allowed when it doesn't carry a banned operator
+    /// inside. Locks in that the deny list isn't over-broad.
+    #[test]
+    fn parse_find_query_accepts_safe_dollar_expr() {
+        parse(r#"{"$expr": {"$gt": ["$score", 50]}}"#).unwrap();
     }
 
     #[test]
