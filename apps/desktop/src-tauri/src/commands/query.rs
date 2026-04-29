@@ -1,5 +1,5 @@
 use crate::storage::{NewQueryHistoryEntry, QueryHistoryEntry};
-use crate::AppState;
+use crate::{validate_collection_name, validate_database_name, AppState};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::Arc;
@@ -46,6 +46,18 @@ pub async fn execute_query(
     collection_name: Option<String>,
     query: String,
 ) -> Result<QueryResultDto, String> {
+    // Validate routing identifiers at the IPC boundary. The query
+    // string itself is *not* validated here — it's the user's actual
+    // payload and goes through adapter-side parsers (e.g. mongodb's
+    // `parse_find_query` deny list). The names are routing fields and
+    // need to match the standard alphanumeric+`_-`/`.` whitelist that
+    // every other handler in this directory enforces. Both validators
+    // accept the Redis-style "db0" forms.
+    validate_database_name(&database_name)?;
+    if let Some(ref coll) = collection_name {
+        validate_collection_name(coll)?;
+    }
+
     // Resolved up front so it is available on both branches below. The
     // history entry needs the language regardless of whether the query
     // succeeded.

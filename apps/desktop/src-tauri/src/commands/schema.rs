@@ -1,5 +1,5 @@
 use crate::adapters::{CollectionInfo, DatabaseInfo};
-use crate::AppState;
+use crate::{validate_database_name, AppState};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::{command, State};
@@ -69,6 +69,7 @@ pub async fn get_collections(
     connection_id: String,
     database_name: String,
 ) -> Result<Vec<CollectionDto>, String> {
+    validate_database_name(&database_name)?;
     let collections = state
         .pool
         .get_collections(&connection_id, &database_name)
