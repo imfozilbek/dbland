@@ -1,8 +1,46 @@
-use crate::AppState;
+use crate::{validate_database_name, AppState};
 use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::State;
+
+/// Hard ceiling on profiler page size. system.profile is a capped
+/// collection but can grow large (1000s of entries) on a busy server;
+/// a malicious or buggy frontend passing limit: i64::MAX would pull
+/// the whole thing across IPC. The UI virtualises anyway, so capping
+/// is free.
+const PROFILER_LIMIT_MAX: i64 = 1000;
+const PROFILER_LIMIT_DEFAULT: i64 = 100;
+
+fn clamp_profiler_limit(input: Option<i64>) -> i64 {
+    input.unwrap_or(PROFILER_LIMIT_DEFAULT).clamp(1, PROFILER_LIMIT_MAX)
+}
+
+#[cfg(test)]
+mod profiler_limit_clamp {
+    use super::*;
+
+    #[test]
+    fn unset_uses_default() {
+        assert_eq!(clamp_profiler_limit(None), PROFILER_LIMIT_DEFAULT);
+    }
+
+    #[test]
+    fn within_range_passes_through() {
+        assert_eq!(clamp_profiler_limit(Some(500)), 500);
+    }
+
+    #[test]
+    fn over_max_is_clamped() {
+        assert_eq!(clamp_profiler_limit(Some(i64::MAX)), PROFILER_LIMIT_MAX);
+    }
+
+    #[test]
+    fn zero_or_negative_is_clamped_to_one() {
+        assert_eq!(clamp_profiler_limit(Some(0)), 1);
+        assert_eq!(clamp_profiler_limit(Some(-1)), 1);
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -30,8 +68,10 @@ pub async fn get_profiler_level(
     connection_id: String,
     database_name: String,
 ) -> Result<ProfilerLevelDto, String> {
-    // Use execute_query to run the profile command
-    let query = format!(r#"db.runCommand({{ "profile": -1 }})"#);
+    validate_database_name(&database_name)?;
+    // No interpolation here — the command body is fixed. Was wrapped in
+    // format!() needlessly before, which clippy would have flagged.
+    let query = r#"db.runCommand({ "profile": -1 })"#.to_string();
 
     let result = state
         .pool
@@ -67,8 +107,14 @@ pub async fn set_profiler_level(
     level: i32,
     slow_ms: Option<i64>,
 ) -> Result<(), String> {
-    if level < 0 || level > 2 {
+    validate_database_name(&database_name)?;
+    if !(0..=2).contains(&level) {
         return Err("Profiler level must be 0, 1, or 2".to_string());
+    }
+    if let Some(ms) = slow_ms {
+        if ms < 0 {
+            return Err("slow_ms must be non-negative".to_string());
+        }
     }
 
     let slow_ms_param = if let Some(ms) = slow_ms {
@@ -100,7 +146,8 @@ pub async fn get_profiler_data(
     database_name: String,
     limit: Option<i64>,
 ) -> Result<Vec<ProfilerEntry>, String> {
-    let limit_value = limit.unwrap_or(100);
+    validate_database_name(&database_name)?;
+    let limit_value = clamp_profiler_limit(limit);
 
     // Query the system.profile collection
     let query = format!(
@@ -176,6 +223,7 @@ pub async fn clear_profiler_data(
     connection_id: String,
     database_name: String,
 ) -> Result<(), String> {
+    validate_database_name(&database_name)?;
     let query = "db.system.profile.drop()".to_string();
 
     let result = state
