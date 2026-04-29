@@ -98,12 +98,23 @@ impl QueryHistoryStorage {
     }
 
     pub fn insert(&self, entry: &NewQueryHistoryEntry) -> Result<i64> {
+        // Stamp the row with an explicit RFC 3339 / ISO 8601 timestamp
+        // (`2024-01-15T12:34:56.789Z`) instead of letting the column
+        // default to SQLite's `datetime('now')`, which produces the
+        // ambiguous `2024-01-15 12:34:56` format. JavaScript's `new
+        // Date(...)` interprets the bare-space form as *local time* on
+        // every modern browser, so a user in UTC+5 browsing the
+        // history panel saw every entry shifted 5h into the past
+        // (SQLite stores UTC under the `now` keyword, JS read it as
+        // local). The explicit `Z` makes JS treat the value as UTC
+        // and `toLocaleString()` renders it correctly.
+        let now = chrono::Utc::now().to_rfc3339();
         let conn = self.conn.lock();
         conn.execute(
             "INSERT INTO query_history
              (connection_id, query, language, database_name, collection_name,
-              execution_time_ms, success, result_count, error)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+              execution_time_ms, success, result_count, error, executed_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
             params![
                 entry.connection_id,
                 entry.query,
@@ -114,6 +125,7 @@ impl QueryHistoryStorage {
                 entry.success as i32,
                 entry.result_count as i64,
                 entry.error,
+                now,
             ],
         )?;
 

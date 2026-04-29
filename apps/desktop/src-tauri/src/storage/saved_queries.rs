@@ -115,11 +115,17 @@ impl SavedQueriesStorage {
     }
 
     pub fn insert(&self, entry: &NewSavedQuery) -> Result<i64> {
+        // Stamp `created_at` / `updated_at` with explicit RFC 3339
+        // timestamps — see the matching docstring on
+        // `QueryHistoryStorage::insert` for why the column-level
+        // `DEFAULT (datetime('now'))` produces timestamps that
+        // JavaScript misparses as local time.
+        let now = chrono::Utc::now().to_rfc3339();
         let conn = self.conn.lock();
         conn.execute(
             "INSERT INTO saved_queries
-             (connection_id, name, description, query, language, database_name, collection_name, tags)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+             (connection_id, name, description, query, language, database_name, collection_name, tags, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
             params![
                 entry.connection_id,
                 entry.name,
@@ -129,6 +135,8 @@ impl SavedQueriesStorage {
                 entry.database_name,
                 entry.collection_name,
                 entry.tags,
+                now,
+                now,
             ],
         )?;
 
@@ -166,11 +174,14 @@ impl SavedQueriesStorage {
     }
 
     pub fn update(&self, entry: &UpdateSavedQuery) -> Result<()> {
+        // Same explicit RFC 3339 stamp as `insert` so the timestamp
+        // round-trips through JS without a local-time misinterpretation.
+        let now = chrono::Utc::now().to_rfc3339();
         let conn = self.conn.lock();
         conn.execute(
             "UPDATE saved_queries
-             SET name = ?1, description = ?2, query = ?3, database_name = ?4, collection_name = ?5, tags = ?6, updated_at = datetime('now')
-             WHERE id = ?7",
+             SET name = ?1, description = ?2, query = ?3, database_name = ?4, collection_name = ?5, tags = ?6, updated_at = ?7
+             WHERE id = ?8",
             params![
                 entry.name,
                 entry.description,
@@ -178,6 +189,7 @@ impl SavedQueriesStorage {
                 entry.database_name,
                 entry.collection_name,
                 entry.tags,
+                now,
                 entry.id,
             ],
         )?;
