@@ -1,6 +1,34 @@
 use parking_lot::Mutex;
-use rusqlite::{params, Connection, Result};
+use rusqlite::{params, Connection, Result, Row};
 use serde::{Deserialize, Serialize};
+
+/// Single source of truth for the SELECT projection. Used by both
+/// `get_by_connection` and `search`. Decoupled from the row mapper
+/// below so adding a column means editing exactly two adjacent items
+/// — projection and decoder — instead of patching every query body.
+const SELECT_COLUMNS: &str = "id, connection_id, query, language, database_name, collection_name, \
+                              executed_at, execution_time_ms, success, result_count, error";
+
+/// Decode a single row into `QueryHistoryEntry`. The two list-style
+/// queries used to inline this 13-line closure each, with positional
+/// `row.get(N)` calls — adding a column meant patching both copies in
+/// lockstep, and a slip would silently shift indices and decode the
+/// wrong column into each field.
+fn entry_from_sql(row: &Row<'_>) -> Result<QueryHistoryEntry> {
+    Ok(QueryHistoryEntry {
+        id: row.get(0)?,
+        connection_id: row.get(1)?,
+        query: row.get(2)?,
+        language: row.get(3)?,
+        database_name: row.get(4)?,
+        collection_name: row.get(5)?,
+        executed_at: row.get(6)?,
+        execution_time_ms: row.get::<_, i64>(7)? as u64,
+        success: row.get::<_, i32>(8)? != 0,
+        result_count: row.get::<_, i64>(9)? as u64,
+        error: row.get(10)?,
+    })
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryHistoryEntry {
@@ -93,31 +121,15 @@ impl QueryHistoryStorage {
 
     pub fn get_by_connection(&self, connection_id: &str, limit: i64) -> Result<Vec<QueryHistoryEntry>> {
         let conn = self.conn.lock();
-        let mut stmt = conn.prepare(
-            "SELECT id, connection_id, query, language, database_name, collection_name,
-                    executed_at, execution_time_ms, success, result_count, error
-             FROM query_history
-             WHERE connection_id = ?1
-             ORDER BY executed_at DESC
-             LIMIT ?2",
-        )?;
+        let sql = format!(
+            "SELECT {} FROM query_history WHERE connection_id = ?1 \
+             ORDER BY executed_at DESC LIMIT ?2",
+            SELECT_COLUMNS
+        );
+        let mut stmt = conn.prepare(&sql)?;
 
         let entries = stmt
-            .query_map(params![connection_id, limit], |row| {
-                Ok(QueryHistoryEntry {
-                    id: row.get(0)?,
-                    connection_id: row.get(1)?,
-                    query: row.get(2)?,
-                    language: row.get(3)?,
-                    database_name: row.get(4)?,
-                    collection_name: row.get(5)?,
-                    executed_at: row.get(6)?,
-                    execution_time_ms: row.get::<_, i64>(7)? as u64,
-                    success: row.get::<_, i32>(8)? != 0,
-                    result_count: row.get::<_, i64>(9)? as u64,
-                    error: row.get(10)?,
-                })
-            })?
+            .query_map(params![connection_id, limit], entry_from_sql)?
             .collect::<Result<Vec<_>>>()?;
 
         Ok(entries)
@@ -146,31 +158,16 @@ impl QueryHistoryStorage {
     ) -> Result<Vec<QueryHistoryEntry>> {
         let search_pattern = format!("%{}%", search_query);
         let conn = self.conn.lock();
-        let mut stmt = conn.prepare(
-            "SELECT id, connection_id, query, language, database_name, collection_name,
-                    executed_at, execution_time_ms, success, result_count, error
-             FROM query_history
-             WHERE connection_id = ?1 AND query LIKE ?2
-             ORDER BY executed_at DESC
-             LIMIT ?3",
-        )?;
+        let sql = format!(
+            "SELECT {} FROM query_history \
+             WHERE connection_id = ?1 AND query LIKE ?2 \
+             ORDER BY executed_at DESC LIMIT ?3",
+            SELECT_COLUMNS
+        );
+        let mut stmt = conn.prepare(&sql)?;
 
         let entries = stmt
-            .query_map(params![connection_id, search_pattern, limit], |row| {
-                Ok(QueryHistoryEntry {
-                    id: row.get(0)?,
-                    connection_id: row.get(1)?,
-                    query: row.get(2)?,
-                    language: row.get(3)?,
-                    database_name: row.get(4)?,
-                    collection_name: row.get(5)?,
-                    executed_at: row.get(6)?,
-                    execution_time_ms: row.get::<_, i64>(7)? as u64,
-                    success: row.get::<_, i32>(8)? != 0,
-                    result_count: row.get::<_, i64>(9)? as u64,
-                    error: row.get(10)?,
-                })
-            })?
+            .query_map(params![connection_id, search_pattern, limit], entry_from_sql)?
             .collect::<Result<Vec<_>>>()?;
 
         Ok(entries)

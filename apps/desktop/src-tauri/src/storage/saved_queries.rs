@@ -1,6 +1,32 @@
 use parking_lot::Mutex;
-use rusqlite::{params, Connection, Result};
+use rusqlite::{params, Connection, Result, Row};
 use serde::{Deserialize, Serialize};
+
+/// Single source of truth for the projection — used by all four read
+/// paths (`get_by_id`, `get_by_connection`, `search_by_name`,
+/// `get_by_tag`). Keeping it next to the row decoder ensures the index
+/// map below stays correct: shifting either by one column without the
+/// other would silently decode the wrong field into each struct slot.
+const SELECT_COLUMNS: &str = "id, connection_id, name, description, query, language, \
+                              database_name, collection_name, tags, created_at, updated_at";
+
+/// Decode a single result row into `SavedQuery`. Replaces four
+/// near-identical 12-line closures inlined at every read call-site.
+fn saved_query_from_sql(row: &Row<'_>) -> Result<SavedQuery> {
+    Ok(SavedQuery {
+        id: row.get(0)?,
+        connection_id: row.get(1)?,
+        name: row.get(2)?,
+        description: row.get(3)?,
+        query: row.get(4)?,
+        language: row.get(5)?,
+        database_name: row.get(6)?,
+        collection_name: row.get(7)?,
+        tags: row.get(8)?,
+        created_at: row.get(9)?,
+        updated_at: row.get(10)?,
+    })
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavedQuery {
@@ -113,58 +139,24 @@ impl SavedQueriesStorage {
     /// row we knew the id of.
     pub fn get_by_id(&self, id: i64) -> Result<Option<SavedQuery>> {
         let conn = self.conn.lock();
-        let mut stmt = conn.prepare(
-            "SELECT id, connection_id, name, description, query, language, database_name, collection_name, tags, created_at, updated_at
-             FROM saved_queries
-             WHERE id = ?1",
-        )?;
+        let sql = format!("SELECT {} FROM saved_queries WHERE id = ?1", SELECT_COLUMNS);
+        let mut stmt = conn.prepare(&sql)?;
 
-        let row = stmt
-            .query_row(params![id], |row| {
-                Ok(SavedQuery {
-                    id: row.get(0)?,
-                    connection_id: row.get(1)?,
-                    name: row.get(2)?,
-                    description: row.get(3)?,
-                    query: row.get(4)?,
-                    language: row.get(5)?,
-                    database_name: row.get(6)?,
-                    collection_name: row.get(7)?,
-                    tags: row.get(8)?,
-                    created_at: row.get(9)?,
-                    updated_at: row.get(10)?,
-                })
-            })
-            .ok();
+        let row = stmt.query_row(params![id], saved_query_from_sql).ok();
 
         Ok(row)
     }
 
     pub fn get_by_connection(&self, connection_id: &str) -> Result<Vec<SavedQuery>> {
         let conn = self.conn.lock();
-        let mut stmt = conn.prepare(
-            "SELECT id, connection_id, name, description, query, language, database_name, collection_name, tags, created_at, updated_at
-             FROM saved_queries
-             WHERE connection_id = ?1
-             ORDER BY created_at DESC",
-        )?;
+        let sql = format!(
+            "SELECT {} FROM saved_queries WHERE connection_id = ?1 ORDER BY created_at DESC",
+            SELECT_COLUMNS
+        );
+        let mut stmt = conn.prepare(&sql)?;
 
         let entries = stmt
-            .query_map(params![connection_id], |row| {
-                Ok(SavedQuery {
-                    id: row.get(0)?,
-                    connection_id: row.get(1)?,
-                    name: row.get(2)?,
-                    description: row.get(3)?,
-                    query: row.get(4)?,
-                    language: row.get(5)?,
-                    database_name: row.get(6)?,
-                    collection_name: row.get(7)?,
-                    tags: row.get(8)?,
-                    created_at: row.get(9)?,
-                    updated_at: row.get(10)?,
-                })
-            })?
+            .query_map(params![connection_id], saved_query_from_sql)?
             .collect::<Result<Vec<_>>>()?;
 
         Ok(entries)
@@ -216,29 +208,16 @@ impl SavedQueriesStorage {
     ) -> Result<Vec<SavedQuery>> {
         let search_pattern = format!("%{}%", search_query);
         let conn = self.conn.lock();
-        let mut stmt = conn.prepare(
-            "SELECT id, connection_id, name, description, query, language, database_name, collection_name, tags, created_at, updated_at
-             FROM saved_queries
-             WHERE connection_id = ?1 AND name LIKE ?2
+        let sql = format!(
+            "SELECT {} FROM saved_queries \
+             WHERE connection_id = ?1 AND name LIKE ?2 \
              ORDER BY created_at DESC",
-        )?;
+            SELECT_COLUMNS
+        );
+        let mut stmt = conn.prepare(&sql)?;
 
         let entries = stmt
-            .query_map(params![connection_id, search_pattern], |row| {
-                Ok(SavedQuery {
-                    id: row.get(0)?,
-                    connection_id: row.get(1)?,
-                    name: row.get(2)?,
-                    description: row.get(3)?,
-                    query: row.get(4)?,
-                    language: row.get(5)?,
-                    database_name: row.get(6)?,
-                    collection_name: row.get(7)?,
-                    tags: row.get(8)?,
-                    created_at: row.get(9)?,
-                    updated_at: row.get(10)?,
-                })
-            })?
+            .query_map(params![connection_id, search_pattern], saved_query_from_sql)?
             .collect::<Result<Vec<_>>>()?;
 
         Ok(entries)
@@ -247,29 +226,16 @@ impl SavedQueriesStorage {
     pub fn get_by_tag(&self, connection_id: &str, tag: &str) -> Result<Vec<SavedQuery>> {
         let tag_pattern = format!("%{}%", tag);
         let conn = self.conn.lock();
-        let mut stmt = conn.prepare(
-            "SELECT id, connection_id, name, description, query, language, database_name, collection_name, tags, created_at, updated_at
-             FROM saved_queries
-             WHERE connection_id = ?1 AND tags LIKE ?2
+        let sql = format!(
+            "SELECT {} FROM saved_queries \
+             WHERE connection_id = ?1 AND tags LIKE ?2 \
              ORDER BY created_at DESC",
-        )?;
+            SELECT_COLUMNS
+        );
+        let mut stmt = conn.prepare(&sql)?;
 
         let entries = stmt
-            .query_map(params![connection_id, tag_pattern], |row| {
-                Ok(SavedQuery {
-                    id: row.get(0)?,
-                    connection_id: row.get(1)?,
-                    name: row.get(2)?,
-                    description: row.get(3)?,
-                    query: row.get(4)?,
-                    language: row.get(5)?,
-                    database_name: row.get(6)?,
-                    collection_name: row.get(7)?,
-                    tags: row.get(8)?,
-                    created_at: row.get(9)?,
-                    updated_at: row.get(10)?,
-                })
-            })?
+            .query_map(params![connection_id, tag_pattern], saved_query_from_sql)?
             .collect::<Result<Vec<_>>>()?;
 
         Ok(entries)
