@@ -23,7 +23,7 @@ import {
     useConnectionStore,
 } from "../../stores/connection-store"
 import { useT } from "../../i18n"
-import { DatabaseType, DEFAULT_PORTS } from "@dbland/core"
+import { DatabaseType, DEFAULT_HOST, DEFAULT_PORTS } from "@dbland/core"
 
 type T = ReturnType<typeof useT>
 
@@ -73,7 +73,7 @@ function getInitialFormData(connection?: Connection): ConnectionConfig {
         return {
             name: "",
             type: "mongodb",
-            host: "localhost",
+            host: DEFAULT_HOST,
             port: DEFAULT_MONGODB_PORT,
             password: "",
             tls: false,
@@ -197,7 +197,7 @@ function BasicFields({
                     onChange={(e) => {
                         updateField("host", e.target.value)
                     }}
-                    placeholder="localhost"
+                    placeholder={DEFAULT_HOST}
                 />
             </FormRow>
 
