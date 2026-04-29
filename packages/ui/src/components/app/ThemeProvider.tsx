@@ -25,20 +25,41 @@ export function ThemeProvider({
 
     useEffect(() => {
         const root = window.document.documentElement
+        const apply = (resolved: "light" | "dark"): void => {
+            root.classList.remove("light", "dark")
+            root.classList.add(resolved)
+        }
 
-        root.classList.remove("light", "dark")
-
-        if (theme === "system") {
-            const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-                ? "dark"
-                : "light"
-
-            root.classList.add(systemTheme)
+        if (theme !== "system") {
+            apply(theme)
             return
         }
 
-        root.classList.add(theme)
+        // Follow the OS theme for "system" — and keep following it.
+        // Reading matchMedia once at mount left the app stuck on the
+        // theme that was active when ThemeProvider first ran; toggling
+        // dark mode in macOS at night did nothing until reload.
+        const media = window.matchMedia("(prefers-color-scheme: dark)")
+        const onChange = (e: MediaQueryListEvent): void => {
+            apply(e.matches ? "dark" : "light")
+        }
+        apply(media.matches ? "dark" : "light")
+        media.addEventListener("change", onChange)
+        return () => {
+            media.removeEventListener("change", onChange)
+        }
     }, [theme])
+
+    // Keep local `theme` in sync if some other code path writes
+    // settings.theme directly (e.g. a programmatic restore on
+    // start-up). Without this the rest of the UI shows the new theme
+    // after one render but the document-root class still reflects the
+    // previous value.
+    useEffect(() => {
+        if (settings.theme && settings.theme !== theme) {
+            setThemeState(settings.theme)
+        }
+    }, [settings.theme, theme])
 
     const setTheme = (newTheme: Theme): void => {
         setThemeState(newTheme)
