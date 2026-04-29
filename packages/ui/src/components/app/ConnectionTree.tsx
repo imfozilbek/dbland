@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react"
 import { Database, HardDrive, Pencil, Plug, PlugZap, Table2, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { extractErrorMessage } from "@dbland/core"
 import { cn } from "../../lib/utils"
 import {
     ContextMenu,
@@ -72,7 +73,7 @@ export function ConnectionTree({
                         toast.error(
                             t("connectionTree.couldNotConnect", { name: connection.name }),
                             {
-                                description: err instanceof Error ? err.message : String(err),
+                                description: extractErrorMessage(err),
                             },
                         )
                     }
@@ -84,7 +85,7 @@ export function ConnectionTree({
                         toast.error(
                             t("connectionTree.couldNotLoadDatabases", { name: connection.name }),
                             {
-                                description: err instanceof Error ? err.message : String(err),
+                                description: extractErrorMessage(err),
                             },
                         )
                     }
@@ -114,7 +115,7 @@ export function ConnectionTree({
                     await loadCollections(connection.id, dbName)
                 } catch (err: unknown) {
                     toast.error(t("connectionTree.couldNotLoadCollections", { db: dbName }), {
-                        description: err instanceof Error ? err.message : String(err),
+                        description: extractErrorMessage(err),
                     })
                 }
             } else {
@@ -177,7 +178,7 @@ export function ConnectionTree({
             await disconnect(connection.id)
         } catch (err: unknown) {
             toast.error(t("connectionTree.couldNotDisconnect", { name: connection.name }), {
-                description: err instanceof Error ? err.message : String(err),
+                description: extractErrorMessage(err),
             })
         }
     }
@@ -197,7 +198,7 @@ export function ConnectionTree({
             toast.success(t("connectionTree.deleted", { name: connection.name }))
         } catch (err: unknown) {
             toast.error(t("connectionTree.couldNotDelete", { name: connection.name }), {
-                description: err instanceof Error ? err.message : String(err),
+                description: extractErrorMessage(err),
             })
         }
     }
