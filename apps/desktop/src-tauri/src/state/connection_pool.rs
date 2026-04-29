@@ -337,6 +337,70 @@ fn parse_redis_db_index(raw: Option<&str>) -> u8 {
 }
 
 #[cfg(test)]
+mod prepare_effective_config_tests {
+    use super::*;
+    use crate::tunnel::ssh::SSHAuthMethod;
+    use crate::tunnel::SSHTunnelConfig;
+
+    fn base_config() -> ConnectionConfig {
+        ConnectionConfig {
+            id: "c1".to_string(),
+            name: "test".to_string(),
+            db_type: DatabaseType::MongoDB,
+            host: "db.example.com".to_string(),
+            port: 27017,
+            username: None,
+            password: None,
+            database: None,
+            auth_database: None,
+            tls: false,
+            ssh: None,
+        }
+    }
+
+    /// No SSH config → return the original config unchanged, no tunnel.
+    #[test]
+    fn no_ssh_returns_config_untouched() {
+        let cfg = base_config();
+        let (tunnel, effective) =
+            ConnectionPool::prepare_effective_config(cfg.clone()).expect("must succeed");
+        assert!(tunnel.is_none());
+        assert_eq!(effective.host, cfg.host);
+        assert_eq!(effective.port, cfg.port);
+    }
+
+    /// SSH config attached but `enabled = false` → still no tunnel,
+    /// host/port preserved. The previous implementation tripped on
+    /// this case by always entering the tunnel-setup branch and then
+    /// re-checking `enabled` with `.expect`; the explicit gate here
+    /// avoids that panic site.
+    #[test]
+    fn ssh_disabled_returns_config_untouched() {
+        let mut cfg = base_config();
+        cfg.ssh = Some(SSHTunnelConfig {
+            enabled: false,
+            host: "jump.example.com".to_string(),
+            port: 22,
+            username: "tunneluser".to_string(),
+            auth_method: SSHAuthMethod::Agent,
+            password: None,
+            private_key_path: None,
+            passphrase: None,
+        });
+
+        let original_host = cfg.host.clone();
+        let original_port = cfg.port;
+
+        let (tunnel, effective) =
+            ConnectionPool::prepare_effective_config(cfg).expect("must succeed");
+
+        assert!(tunnel.is_none(), "disabled SSH must not start a tunnel");
+        assert_eq!(effective.host, original_host);
+        assert_eq!(effective.port, original_port);
+    }
+}
+
+#[cfg(test)]
 mod redis_db_index_tests {
     use super::parse_redis_db_index;
 
