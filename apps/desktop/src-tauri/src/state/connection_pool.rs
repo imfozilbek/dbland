@@ -266,15 +266,37 @@ impl ConnectionPool {
                 Ok(Box::new(MongoDbAdapter::new(mongo_config)))
             }
             DatabaseType::Redis => {
+                // The shared `database` field doubles as a Mongo DB
+                // name (string) and a Redis DB index (u8). For Redis,
+                // we expect a number in 0..=15 (default `databases 16`
+                // in `redis.conf`). The previous code silently coerced
+                // anything non-numeric to 0 — which is probably what
+                // the user wants for a missing field but is actively
+                // misleading when they typed "abc" expecting db 5 and
+                // ended up writing to db 0. Log when we ignore a value
+                // we couldn't parse so the cause is visible without
+                // stuffing a hard error onto a small UX nit.
+                let database = config.database.as_ref().map_or(0, |raw| {
+                    let trimmed = raw.trim();
+                    if trimmed.is_empty() {
+                        return 0;
+                    }
+                    match trimmed.parse::<u8>() {
+                        Ok(n) => n,
+                        Err(_) => {
+                            log::warn!(
+                                "redis db field is not a valid u8 ({:?}); falling back to 0",
+                                raw
+                            );
+                            0
+                        }
+                    }
+                });
                 let redis_config = RedisConfig {
                     host: config.host.clone(),
                     port: config.port,
                     password: config.password.clone(),
-                    database: config
-                        .database
-                        .as_ref()
-                        .and_then(|d| d.parse().ok())
-                        .unwrap_or(0),
+                    database,
                     tls: config.tls,
                 };
                 Ok(Box::new(RedisAdapter::new(redis_config)))
