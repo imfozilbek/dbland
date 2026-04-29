@@ -10,8 +10,9 @@
         "preview": "vite preview",
         "lint": "eslint src",
         "typecheck": "tsc --noEmit",
-        "test": "vitest",
+        "test": "vitest run",
         "test:run": "vitest run",
+        "test:watch": "vitest watch",
         "test:coverage": "vitest run --coverage"
     },
     "dependencies": {
