@@ -23,9 +23,19 @@ describe("DomainError hierarchy", () => {
         expect(ConnectionError.alreadyConnected("x").code).toBe(
             ErrorCode.CONNECTION_ALREADY_CONNECTED,
         )
+        expect(ConnectionError.invalidTransition("x", "connected", "connecting").code).toBe(
+            ErrorCode.CONNECTION_INVALID_TRANSITION,
+        )
         expect(ConnectionError.refused("x").code).toBe(ErrorCode.CONNECTION_REFUSED)
         expect(ConnectionError.timeout("x").code).toBe(ErrorCode.CONNECTION_TIMEOUT)
         expect(ConnectionError.authFailed("x").code).toBe(ErrorCode.AUTH_FAILED)
+    })
+
+    it("ConnectionError.invalidTransition message names both states", () => {
+        const err = ConnectionError.invalidTransition("c1", "connected", "connecting")
+        expect(err.message).toContain("c1")
+        expect(err.message).toContain("connected")
+        expect(err.message).toContain("connecting")
     })
 
     it("QueryError factory codes match the discriminator", () => {
