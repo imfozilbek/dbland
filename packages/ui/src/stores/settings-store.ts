@@ -47,6 +47,34 @@ const defaultSettings: AppSettings = {
     },
 }
 
+/**
+ * Schema version for the persisted settings blob. Bump every time the
+ * shape of `AppSettings` (or any nested block) changes in a way that
+ * old persisted data can't be read as-is. The matching `migrate`
+ * callback below upgrades older blobs in place.
+ *
+ * Versions:
+ *   1 — initial release (theme, language, autoSave, confirmDelete, editor.{fontSize,tabSize,wordWrap,minimap})
+ */
+const SETTINGS_VERSION = 1
+
+/**
+ * Best-effort migration from older persisted settings blobs.
+ *
+ * zustand calls this with `(persistedState, fromVersion)` whenever the
+ * stored version is below `SETTINGS_VERSION`. Returning the same
+ * object shape (with any new fields filled from defaults) keeps the
+ * user's customisations through schema changes — without this, a
+ * version bump would force-reset everyone's preferences.
+ *
+ * The current single version is the baseline, so the migrate is a
+ * no-op cast through `unknown`. Future versions will replace the body
+ * with field-by-field upgrades.
+ */
+function migrateSettings(persistedState: unknown, _fromVersion: number): SettingsState {
+    return persistedState as SettingsState
+}
+
 export const useSettingsStore = create<SettingsState>()(
     persist(
         (set) => ({
@@ -79,6 +107,8 @@ export const useSettingsStore = create<SettingsState>()(
         }),
         {
             name: "dbland-settings",
+            version: SETTINGS_VERSION,
+            migrate: migrateSettings,
         },
     ),
 )
