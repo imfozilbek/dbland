@@ -190,8 +190,13 @@ pub async fn connect(
 
     state.pool.connect(config).await.map_err(|e| crate::redact_error(e.to_string()))?;
 
-    // Update last connected time
-    let _ = state.storage.update_last_connected(&connection_id);
+    // The driver is up; failing the whole IPC call because we couldn't
+    // stamp `last_connected_at` would punish the user for a bookkeeping
+    // miss they can't act on. Log and move on — the rest of the file
+    // uses the same shape for non-fatal storage errors.
+    if let Err(e) = state.storage.update_last_connected(&connection_id) {
+        log::warn!("failed to stamp last_connected_at for {}: {}", connection_id, e);
+    }
 
     Ok(true)
 }
@@ -292,8 +297,14 @@ pub async fn delete_connection(
     state: State<'_, Arc<AppState>>,
     connection_id: String,
 ) -> Result<bool, String> {
-    // Disconnect if connected
-    let _ = state.pool.disconnect(&connection_id).await;
+    // Tear down a live driver/tunnel if there is one. A failure here
+    // (e.g. tunnel already gone, adapter mid-shutdown) must not block
+    // the delete — the user's intent is "remove this row", and the
+    // pool entry is reaped by `disconnect` anyway. Log so it's
+    // diagnosable without surfacing a confusing error toast.
+    if let Err(e) = state.pool.disconnect(&connection_id).await {
+        log::warn!("disconnect during delete failed for {}: {}", connection_id, e);
+    }
 
     let deleted = state
         .storage
