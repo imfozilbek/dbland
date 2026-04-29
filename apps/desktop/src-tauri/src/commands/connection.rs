@@ -82,6 +82,42 @@ impl ConnectionConfigDto {
     }
 }
 
+/// Convert a `SavedConnection` (the storage row shape) into a
+/// `ConnectionConfig` (the pool's runtime shape).
+///
+/// Mirrors `ConnectionConfigDto::to_pool_config` for the persisted-row
+/// path. Pulled out as a free function rather than a method on
+/// `SavedConnection` because `SavedConnection` lives in `crate::storage`
+/// and `ConnectionConfig` lives in `crate::state` — wiring the
+/// conversion onto either side would create a layer-crossing
+/// dependency that doesn't otherwise exist. The helper sits in the
+/// `commands` layer where the conversion is *used*, and both
+/// originating layers stay self-contained.
+///
+/// `db_type` parsing is fallible (the persisted string could be from
+/// a database type the running build no longer supports — e.g. a
+/// future downgrade), so the return type is `Result`. The caller in
+/// `connect` previously inlined this 12-line `ConnectionConfig { … }`
+/// literal; centralising it keeps the row-to-runtime mapping in one
+/// place if a new field is added.
+fn saved_to_pool_config(saved: SavedConnection) -> Result<ConnectionConfig, String> {
+    let db_type = DatabaseType::from_str(&saved.db_type)
+        .ok_or_else(|| format!("Unsupported database type: {}", saved.db_type))?;
+    Ok(ConnectionConfig {
+        id: saved.id,
+        name: saved.name,
+        db_type,
+        host: saved.host,
+        port: saved.port,
+        username: saved.username,
+        password: saved.password,
+        database: saved.database,
+        auth_database: saved.auth_database,
+        tls: saved.tls,
+        ssh: saved.ssh,
+    })
+}
+
 /// Connection response for frontend.
 ///
 /// Same `db_type` → `type` exception as `ConnectionConfigDto` (see
@@ -179,22 +215,7 @@ pub async fn connect(
         .get(&connection_id)
         .map_err(|e| crate::redact_error(e.to_string()))?;
 
-    let db_type = DatabaseType::from_str(&saved.db_type)
-        .ok_or_else(|| format!("Unsupported database type: {}", saved.db_type))?;
-
-    let config = ConnectionConfig {
-        id: saved.id.clone(),
-        name: saved.name,
-        db_type,
-        host: saved.host,
-        port: saved.port,
-        username: saved.username,
-        password: saved.password,
-        database: saved.database,
-        auth_database: saved.auth_database,
-        tls: saved.tls,
-        ssh: saved.ssh,
-    };
+    let config = saved_to_pool_config(saved)?;
 
     state.pool.connect(config).await.map_err(|e| crate::redact_error(e.to_string()))?;
 
