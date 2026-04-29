@@ -88,39 +88,93 @@ pub struct SlowLogEntry {
     pub command: Vec<String>,
 }
 
-/// Scan Redis keys with pattern matching
+/// Hard ceiling on the SCAN walk. The user-supplied `count` is a
+/// per-iteration *batch hint*, but we keep iterating until the cursor
+/// wraps back to 0 — and an unbounded keyspace would produce an
+/// unbounded response. Cap the total at something the key browser can
+/// actually render and group.
+const SCAN_TOTAL_CAP: usize = 10_000;
+
+/// Scan Redis keys with pattern matching.
+///
+/// The previous implementation was broken in two stacked ways:
+///
+///   1. It issued exactly one `SCAN 0 …` command and never advanced
+///      the cursor, so anything past the first batch was invisible —
+///      a 100k-key cache returned at most ~100 entries.
+///   2. It tried to read keys via `doc.get("key")` on the result,
+///      but Redis SCAN returns `[cursor_str, [k1, k2, …]]` (a
+///      two-element array), not an object with a `"key"` field.
+///      `Value::get("key")` on an array returns `None`, so the result
+///      was always `keys: []`. The key browser silently rendered
+///      empty.
+///
+/// Now we iterate cursor-style until SCAN returns the sentinel `0`
+/// cursor (or we hit `SCAN_TOTAL_CAP`), parse each batch's `[cursor,
+/// [keys…]]` shape correctly, and return the accumulated keys plus
+/// the final cursor (zero when fully drained, otherwise the cursor
+/// the caller would resume from — which is what `ScanKeysResult.cursor`
+/// always claimed to be but never was).
 #[command]
 pub async fn redis_scan_keys(
     state: State<'_, Arc<AppState>>,
     request: ScanKeysRequest,
 ) -> Result<ScanKeysResult, String> {
-    // Execute SCAN command
-    let result = state
-        .pool
-        .execute_query(
-            &request.connection_id,
-            "0",
-            None,
-            &format!(
-                "SCAN 0 MATCH {} COUNT {}",
-                redis_quote(&request.pattern),
-                request.count.unwrap_or(SCAN_COUNT_DEFAULT).clamp(1, SCAN_COUNT_MAX)
-            ),
-        )
-        .await
-        .map_err(|e| crate::redact_error(e.to_string()))?;
+    let batch_hint = request
+        .count
+        .unwrap_or(SCAN_COUNT_DEFAULT)
+        .clamp(1, SCAN_COUNT_MAX);
+    let pattern = redis_quote(&request.pattern);
 
-    // Parse result
-    let keys: Vec<String> = result
-        .documents
-        .iter()
-        .filter_map(|doc| doc.get("key").and_then(|v| v.as_str()).map(|s| s.to_string()))
-        .collect();
+    let mut keys = Vec::new();
+    let mut cursor: u64 = 0;
 
-    Ok(ScanKeysResult {
-        keys,
-        cursor: 0,
-    })
+    loop {
+        let result = state
+            .pool
+            .execute_query(
+                &request.connection_id,
+                "0",
+                None,
+                &format!("SCAN {} MATCH {} COUNT {}", cursor, pattern, batch_hint),
+            )
+            .await
+            .map_err(|e| crate::redact_error(e.to_string()))?;
+
+        // SCAN comes back as a single document of shape
+        // `[cursor_string, [k1, k2, …]]`. Anything else is a protocol
+        // mismatch we can't safely interpret.
+        let doc = match result.documents.first() {
+            Some(d) => d,
+            None => break,
+        };
+        let outer = match doc.as_array() {
+            Some(arr) if arr.len() == 2 => arr,
+            _ => break,
+        };
+
+        cursor = outer[0]
+            .as_str()
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(0);
+
+        if let Some(batch) = outer[1].as_array() {
+            for k in batch {
+                if let Some(s) = k.as_str() {
+                    keys.push(s.to_string());
+                    if keys.len() >= SCAN_TOTAL_CAP {
+                        return Ok(ScanKeysResult { keys, cursor });
+                    }
+                }
+            }
+        }
+
+        if cursor == 0 {
+            break;
+        }
+    }
+
+    Ok(ScanKeysResult { keys, cursor })
 }
 
 /// Get Redis value by key
