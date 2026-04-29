@@ -6,6 +6,7 @@ import { Button } from "../ui/button"
 import { EmptyState } from "../ui/empty-state"
 import { ScrollArea } from "../ui/scroll-area"
 import type { ResultDocument } from "../../contexts/PlatformContext"
+import { useT } from "../../i18n"
 
 export interface ResultsJsonProps {
     documents: ResultDocument[]
@@ -22,6 +23,7 @@ const COPIED_FEEDBACK_MS = 1500
  * Displays prettified JSON with syntax highlighting.
  */
 export function ResultsJson({ documents }: ResultsJsonProps): JSX.Element {
+    const t = useT()
     const jsonString = JSON.stringify(documents, null, 4)
     const [justCopied, setJustCopied] = useState(false)
     // Tracks the in-flight "Copied" timer so quick repeated clicks
@@ -45,10 +47,10 @@ export function ResultsJson({ documents }: ResultsJsonProps): JSX.Element {
             .writeText(jsonString)
             .then(() => {
                 setJustCopied(true)
-                toast.success("Copied to clipboard", {
-                    description: `${documents.length} ${
-                        documents.length === 1 ? "document" : "documents"
-                    } as JSON`,
+                toast.success(t("results.json.copySuccessTitle"), {
+                    description: t("results.json.copySuccessDescription", {
+                        count: documents.length,
+                    }),
                 })
                 if (copiedTimerRef.current !== null) {
                     clearTimeout(copiedTimerRef.current)
@@ -60,8 +62,8 @@ export function ResultsJson({ documents }: ResultsJsonProps): JSX.Element {
             })
             .catch((err: unknown) => {
                 console.error("Failed to copy JSON:", err)
-                toast.error("Could not copy JSON", {
-                    description: extractErrorMessage(err) || "Unknown error",
+                toast.error(t("results.json.copyErrorTitle"), {
+                    description: extractErrorMessage(err) || t("common.unknownError"),
                 })
             })
     }
@@ -71,8 +73,8 @@ export function ResultsJson({ documents }: ResultsJsonProps): JSX.Element {
             <div className="flex h-full items-center justify-center">
                 <EmptyState
                     icon={<Braces className="h-5 w-5" />}
-                    title="No documents"
-                    description="There is nothing to render as JSON. Adjust the query and re-run."
+                    title={t("results.json.emptyTitle")}
+                    description={t("results.json.emptyDescription")}
                 />
             </div>
         )
@@ -82,17 +84,17 @@ export function ResultsJson({ documents }: ResultsJsonProps): JSX.Element {
         <div className="flex h-full flex-col">
             <div className="mb-2 flex items-center justify-between">
                 <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--muted-foreground)]/70">
-                    {documents.length} {documents.length === 1 ? "document" : "documents"}
+                    {t("results.json.countLabel", { count: documents.length })}
                 </span>
                 <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleCopy}
-                    aria-label="Copy result as JSON"
+                    aria-label={t("results.json.copyAriaLabel")}
                     className="gap-2"
                 >
                     <Copy className="h-4 w-4" />
-                    {justCopied ? "Copied" : "Copy JSON"}
+                    {justCopied ? t("results.json.copiedBadge") : t("results.json.copyButton")}
                 </Button>
             </div>
             <ScrollArea className="flex-1 rounded-md border border-[var(--border)] bg-[var(--card)]/40">
