@@ -7,6 +7,7 @@ import { Textarea } from "../ui/textarea"
 import { Button } from "../ui/button"
 import { ScrollArea } from "../ui/scroll-area"
 import type { AggregationPipelineStage } from "../../contexts/PlatformContext"
+import { useT } from "../../i18n"
 
 /**
  * Per-stage example payloads that ship next to the JSON editor as a hint
@@ -39,6 +40,7 @@ export interface StageEditorProps {
 }
 
 export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element {
+    const t = useT()
     const stageDataJson = JSON.stringify(stage.stageData, null, 2)
     const [jsonContent, setJsonContent] = useState(stageDataJson)
     const [error, setError] = useState<string | null>(null)
@@ -62,7 +64,7 @@ export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element 
             })
             setError(null)
         } catch (_err) {
-            setError("Invalid JSON")
+            setError(t("aggregationBuilder.editor.invalidJson"))
         }
     }
 
@@ -73,7 +75,9 @@ export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element 
                 return (
                     <div className="space-y-3">
                         <div>
-                            <Label htmlFor="count">Count</Label>
+                            <Label htmlFor="count">
+                                {t("aggregationBuilder.editor.countLabel")}
+                            </Label>
                             <Input
                                 id="count"
                                 type="number"
@@ -87,7 +91,7 @@ export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element 
                                         })
                                     }
                                 }}
-                                placeholder="Enter number"
+                                placeholder={t("aggregationBuilder.editor.countPlaceholder")}
                             />
                         </div>
                     </div>
@@ -97,7 +101,9 @@ export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element 
                 return (
                     <div className="space-y-3">
                         <div>
-                            <Label htmlFor="field">Output Field Name</Label>
+                            <Label htmlFor="field">
+                                {t("aggregationBuilder.editor.outputFieldLabel")}
+                            </Label>
                             <Input
                                 id="field"
                                 value={
@@ -109,7 +115,7 @@ export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element 
                                         stageData: e.target.value,
                                     })
                                 }}
-                                placeholder="count"
+                                placeholder={t("aggregationBuilder.editor.outputFieldPlaceholder")}
                             />
                         </div>
                     </div>
@@ -135,7 +141,9 @@ export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element 
     return (
         <div className="flex h-full flex-col border-l border-[var(--border)]">
             <div className="border-b border-[var(--border)] p-3">
-                <h3 className="text-sm font-semibold text-[var(--foreground)]">Stage Editor</h3>
+                <h3 className="text-sm font-semibold text-[var(--foreground)]">
+                    {t("aggregationBuilder.editor.title")}
+                </h3>
                 <p className="font-mono text-xs text-[var(--muted-foreground)]">
                     ${stage.stageType}
                 </p>
@@ -146,7 +154,9 @@ export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element 
                     {simpleEditor ?? (
                         <>
                             <div className="space-y-2">
-                                <Label htmlFor="stage-json">Stage Configuration (JSON)</Label>
+                                <Label htmlFor="stage-json">
+                                    {t("aggregationBuilder.editor.jsonLabel")}
+                                </Label>
                                 <Textarea
                                     id="stage-json"
                                     value={jsonContent}
@@ -156,7 +166,7 @@ export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element 
                                     }}
                                     rows={15}
                                     className="font-mono text-sm"
-                                    placeholder='{"field": "value"}'
+                                    placeholder={t("aggregationBuilder.editor.jsonPlaceholder")}
                                     aria-invalid={error ? true : undefined}
                                     aria-describedby={error ? "stage-json-error" : undefined}
                                 />
@@ -177,7 +187,9 @@ export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element 
                                 disabled={!hasUnsavedChanges}
                                 className="w-full"
                             >
-                                {hasUnsavedChanges ? "Apply Changes" : "No changes"}
+                                {hasUnsavedChanges
+                                    ? t("aggregationBuilder.editor.applyChanges")
+                                    : t("aggregationBuilder.editor.noChanges")}
                             </Button>
                         </>
                     )}
@@ -188,7 +200,7 @@ export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element 
                                 <div className="flex items-center gap-2">
                                     <Lightbulb className="h-3.5 w-3.5 text-[var(--primary)]" />
                                     <h4 className="text-xs font-semibold text-[var(--foreground)]">
-                                        Example
+                                        {t("aggregationBuilder.editor.exampleHeading")}
                                     </h4>
                                 </div>
                                 {!simpleEditor && (
@@ -198,7 +210,7 @@ export function StageEditor({ stage, onUpdate }: StageEditorProps): JSX.Element 
                                         className="h-6 px-2 text-[11px]"
                                         onClick={handleUseExample}
                                     >
-                                        Use this
+                                        {t("aggregationBuilder.editor.useExample")}
                                     </Button>
                                 )}
                             </div>
