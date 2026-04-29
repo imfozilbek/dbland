@@ -39,13 +39,29 @@ function isSensitiveKey(key: string): boolean {
 const REDACTED = "[REDACTED]"
 
 /**
- * URI userinfo (the `user:pass@` between scheme and host) and bare
+ * URI userinfo (everything between `scheme://` and `@`) and bare
  * `password=…` / `password: …` key-value pairs in free-form strings.
  * Mirrors the Rust-side `redact_error` regexes so error messages from
  * vendor drivers can't smuggle credentials into a log line just
  * because they happen to inline the connection URI.
+ *
+ * The userinfo class is `[^@\s/]+` (anything up to the next `@`),
+ * deliberately *not* the user-`:`-password form. Real connection URIs
+ * vary:
+ *
+ *   * `mongodb://user:pass@host`     — both halves
+ *   * `redis://:secret@host:6379`     — password only (the empty user
+ *                                        before the colon is the most
+ *                                        common Redis URL shape)
+ *   * `mongodb://token@host`          — token-as-username, no colon
+ *
+ * The previous narrower form `[^:/@\s]+:[^@\s]+@` required a colon
+ * inside the userinfo, so `redis://:secret@host` slipped through —
+ * the leading character was `:`, the user-half class rejected it,
+ * and the whole pattern failed at position zero. The Rust-side
+ * already had the broad shape; this brings the TS side parity-equal.
  */
-const URI_USERINFO_PATTERN = /([a-z][a-z0-9+.-]*:\/\/)[^:/@\s]+:[^@\s]+@/giu
+const URI_USERINFO_PATTERN = /([a-z][a-z0-9+.-]*:\/\/)[^@\s/]+@/giu
 // Matches `password=…`, `password: …`, `password = "…"`, `password="…"`.
 // The non-capturing alternative covers double-quoted, single-quoted, and
 // bare values — the previous bare-only form silently let

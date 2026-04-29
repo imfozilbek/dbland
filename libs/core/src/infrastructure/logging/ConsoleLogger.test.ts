@@ -137,6 +137,25 @@ describe("ConsoleLogger", () => {
         expect(message).toBe("connect failed for mongodb://[REDACTED]@db.local:27017")
     })
 
+    it("redacts URI userinfo in non-user:pass shapes (regression: redis password-only URLs)", () => {
+        const sink = fakeSink()
+        const logger = new ConsoleLogger({ level: "warn", sink })
+
+        // The previous narrower regex required a `:` *inside* the
+        // userinfo and silently let these slip:
+        //   - redis://:secret@host       (password only, no user)
+        //   - mongodb://token@host       (token-as-username, no colon)
+        logger.warn("connect failed for redis://:supersecret@redis.local:6379")
+        logger.warn("connect failed for mongodb://accesstoken@cluster.example.com")
+
+        expect(sink.warn.mock.calls[0]?.[0]).toBe(
+            "connect failed for redis://[REDACTED]@redis.local:6379",
+        )
+        expect(sink.warn.mock.calls[1]?.[0]).toBe(
+            "connect failed for mongodb://[REDACTED]@cluster.example.com",
+        )
+    })
+
     it("redacts URI userinfo and password=… patterns from error.message", () => {
         const sink = fakeSink()
         const logger = new ConsoleLogger({ level: "error", sink })
