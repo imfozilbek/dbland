@@ -2,10 +2,19 @@ use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use ssh2::Session;
 use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
+use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 use std::sync::Arc;
 use std::thread;
+use std::time::Duration;
 use thiserror::Error;
+
+/// Hard ceiling on how long we wait for the TCP handshake to the
+/// jump host. `TcpStream::connect` with no timeout is documented to
+/// rely on the OS default, which on macOS / Linux can stretch to 75s
+/// or more — long enough that the user thinks the app has hung. 10s
+/// is a generous bound for any healthy network path; an unreachable
+/// host should fail fast and let the user retry.
+const SSH_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Map an SSH tunnel error to a non-sensitive label so the variant kind
 /// can be logged without leaking host, user, or auth details.
@@ -135,8 +144,22 @@ impl SSHTunnel {
         remote_port: u16,
         active: Arc<Mutex<bool>>,
     ) -> Result<(), SSHTunnelError> {
-        // Create SSH session
-        let tcp = TcpStream::connect(format!("{}:{}", config.host, config.port))
+        // Create SSH session.
+        //
+        // Resolve and bound the TCP handshake explicitly. `TcpStream::
+        // connect` without a timeout falls back to the OS default,
+        // which on Linux/macOS can stretch to 75s+ — long enough that
+        // the user thinks the app has hung. A jump host that doesn't
+        // answer should bubble up a fast `ConnectionFailed` so the
+        // caller can show a clear error, not freeze the dialog.
+        let target = format!("{}:{}", config.host, config.port);
+        let mut addrs = target
+            .to_socket_addrs()
+            .map_err(|e| SSHTunnelError::ConnectionFailed(e.to_string()))?;
+        let addr = addrs.next().ok_or_else(|| {
+            SSHTunnelError::ConnectionFailed(format!("no DNS results for {}", config.host))
+        })?;
+        let tcp = TcpStream::connect_timeout(&addr, SSH_CONNECT_TIMEOUT)
             .map_err(|e| SSHTunnelError::ConnectionFailed(e.to_string()))?;
 
         let mut session = Session::new()?;
