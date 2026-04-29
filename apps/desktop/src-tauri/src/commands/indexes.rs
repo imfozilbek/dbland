@@ -3,6 +3,16 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::State;
 
+/// JS-string-quote a user-supplied label so embedded `"` and `\` don't
+/// break the surrounding `db.coll.dropIndex("…")` / `name: "…"` shell
+/// expressions we hand the MongoDB adapter. The escaping handles the
+/// only two characters that can leak — newline / control bytes can't
+/// reach this function (the IPC layer rejects them at the boundary).
+fn js_string(input: &str) -> String {
+    let escaped = input.replace('\\', "\\\\").replace('"', "\\\"");
+    format!("\"{}\"", escaped)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Index {
     pub name: String,
@@ -46,7 +56,7 @@ pub async fn get_indexes(
         .pool
         .execute_query(&connection_id, &database_name, Some(&collection_name), &query)
         .await
-        .map_err(|e| format!("Failed to get indexes: {:?}", e))?;
+        .map_err(|e| crate::redact_error(format!("Failed to get indexes: {}", e)))?;
 
     let indexes: Vec<Index> = result
         .documents
@@ -101,7 +111,7 @@ pub async fn create_index(
         options.push("background: true".to_string());
     }
     if let Some(ref name) = request.name {
-        options.push(format!("name: \"{}\"", name));
+        options.push(format!("name: {}", js_string(name)));
     }
 
     let options_str = if options.is_empty() {
@@ -119,7 +129,7 @@ pub async fn create_index(
         .pool
         .execute_query(&request.connection_id, &request.database_name, Some(&request.collection_name), &query)
         .await
-        .map_err(|e| format!("Failed to create index: {:?}", e))?;
+        .map_err(|e| crate::redact_error(format!("Failed to create index: {}", e)))?;
 
     if result.success {
         Ok(request.name.unwrap_or_else(|| "index".to_string()))
@@ -136,13 +146,13 @@ pub async fn drop_index(
     collection_name: String,
     index_name: String,
 ) -> Result<bool, String> {
-    let query = format!("db.{}.dropIndex(\"{}\")", collection_name, index_name);
+    let query = format!("db.{}.dropIndex({})", collection_name, js_string(&index_name));
 
     let result = state
         .pool
         .execute_query(&connection_id, &database_name, Some(&collection_name), &query)
         .await
-        .map_err(|e| format!("Failed to drop index: {:?}", e))?;
+        .map_err(|e| crate::redact_error(format!("Failed to drop index: {}", e)))?;
 
     Ok(result.success)
 }
@@ -160,7 +170,7 @@ pub async fn get_index_stats(
         .pool
         .execute_query(&connection_id, &database_name, Some(&collection_name), &query)
         .await
-        .map_err(|e| format!("Failed to get index stats: {:?}", e))?;
+        .map_err(|e| crate::redact_error(format!("Failed to get index stats: {}", e)))?;
 
     let stats: Vec<IndexStats> = result
         .documents
@@ -183,4 +193,26 @@ pub async fn get_index_stats(
         .collect();
 
     Ok(stats)
+}
+
+#[cfg(test)]
+mod js_string_tests {
+    use super::js_string;
+
+    #[test]
+    fn wraps_plain_input() {
+        assert_eq!(js_string("foo"), "\"foo\"");
+    }
+
+    #[test]
+    fn escapes_embedded_quote() {
+        assert_eq!(js_string(r#"a"b"#), r#""a\"b""#);
+    }
+
+    #[test]
+    fn escapes_backslash_before_quote() {
+        // Order matters: backslash must escape first or the second pass
+        // re-introduces the unescaped form.
+        assert_eq!(js_string(r#"a\"b"#), r#""a\\\"b""#);
+    }
 }
