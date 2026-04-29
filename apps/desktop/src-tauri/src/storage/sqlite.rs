@@ -1,8 +1,16 @@
 use parking_lot::Mutex;
-use rusqlite::Connection;
+use rusqlite::{Connection, Row};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use thiserror::Error;
+
+/// Single source of truth for the column projection. `get`, `get_all`,
+/// and the row-to-struct mapper all referenced their own copy of this
+/// list — adding a column meant editing three places, and a mismatch
+/// would silently shift indices in `row.get(N)` and decode garbage.
+const SELECT_COLUMNS: &str = "id, name, db_type, host, port, username, password_encrypted, \
+                              database_name, auth_database, tls, ssh_config_encrypted, \
+                              created_at, updated_at, last_connected_at";
 
 use super::crypto::{Crypto, CryptoError};
 use crate::tunnel::SSHTunnelConfig;
@@ -213,33 +221,10 @@ impl ConnectionStorage {
     pub fn get(&self, id: &str) -> Result<SavedConnection, StorageError> {
         let conn = self.conn.lock();
 
-        let mut stmt = conn.prepare(
-            "SELECT id, name, db_type, host, port, username, password_encrypted,
-                    database_name, auth_database, tls, ssh_config_encrypted, created_at, updated_at, last_connected_at
-             FROM connections WHERE id = ?1",
-        )?;
+        let sql = format!("SELECT {} FROM connections WHERE id = ?1", SELECT_COLUMNS);
+        let mut stmt = conn.prepare(&sql)?;
 
-        let result = stmt.query_row([id], |row| {
-            let encrypted_password: Option<String> = row.get(6)?;
-            let ssh_config_encrypted: Option<String> = row.get(10)?;
-
-            Ok(SavedConnectionRow {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                db_type: row.get(2)?,
-                host: row.get(3)?,
-                port: row.get(4)?,
-                username: row.get(5)?,
-                password_encrypted: encrypted_password,
-                database: row.get(7)?,
-                auth_database: row.get(8)?,
-                tls: row.get::<_, i32>(9)? != 0,
-                ssh_config_encrypted,
-                created_at: row.get(11)?,
-                updated_at: row.get(12)?,
-                last_connected_at: row.get(13)?,
-            })
-        });
+        let result = stmt.query_row([id], saved_connection_row_from_sql);
 
         match result {
             Ok(row) => self.row_to_connection(row),
@@ -252,33 +237,13 @@ impl ConnectionStorage {
     pub fn get_all(&self) -> Result<Vec<SavedConnection>, StorageError> {
         let conn = self.conn.lock();
 
-        let mut stmt = conn.prepare(
-            "SELECT id, name, db_type, host, port, username, password_encrypted,
-                    database_name, auth_database, tls, ssh_config_encrypted, created_at, updated_at, last_connected_at
-             FROM connections ORDER BY name ASC",
-        )?;
+        let sql = format!(
+            "SELECT {} FROM connections ORDER BY name ASC",
+            SELECT_COLUMNS
+        );
+        let mut stmt = conn.prepare(&sql)?;
 
-        let rows = stmt.query_map([], |row| {
-            let encrypted_password: Option<String> = row.get(6)?;
-            let ssh_config_encrypted: Option<String> = row.get(10)?;
-
-            Ok(SavedConnectionRow {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                db_type: row.get(2)?,
-                host: row.get(3)?,
-                port: row.get(4)?,
-                username: row.get(5)?,
-                password_encrypted: encrypted_password,
-                database: row.get(7)?,
-                auth_database: row.get(8)?,
-                tls: row.get::<_, i32>(9)? != 0,
-                ssh_config_encrypted,
-                created_at: row.get(11)?,
-                updated_at: row.get(12)?,
-                last_connected_at: row.get(13)?,
-            })
-        })?;
+        let rows = stmt.query_map([], saved_connection_row_from_sql)?;
 
         let mut connections = Vec::new();
         for row_result in rows {
@@ -346,6 +311,32 @@ impl ConnectionStorage {
             last_connected_at: row.last_connected_at,
         })
     }
+}
+
+/// Decode a single result row into the intermediate `SavedConnectionRow`.
+///
+/// Hoisted out of the two query call-sites so the column-index map
+/// (`row.get(0)` → `id`, `row.get(13)` → `last_connected_at`) lives in
+/// exactly one place. Index ordering is locked to the projection in
+/// `SELECT_COLUMNS`; if you reorder the constant you must update this
+/// function in lockstep.
+fn saved_connection_row_from_sql(row: &Row<'_>) -> rusqlite::Result<SavedConnectionRow> {
+    Ok(SavedConnectionRow {
+        id: row.get(0)?,
+        name: row.get(1)?,
+        db_type: row.get(2)?,
+        host: row.get(3)?,
+        port: row.get(4)?,
+        username: row.get(5)?,
+        password_encrypted: row.get(6)?,
+        database: row.get(7)?,
+        auth_database: row.get(8)?,
+        tls: row.get::<_, i32>(9)? != 0,
+        ssh_config_encrypted: row.get(10)?,
+        created_at: row.get(11)?,
+        updated_at: row.get(12)?,
+        last_connected_at: row.get(13)?,
+    })
 }
 
 /// Internal struct for database rows
