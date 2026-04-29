@@ -313,13 +313,24 @@ export interface DetailedCollectionStats {
 }
 
 // Geospatial
+//
+// `coordinates` carries two GeoJSON shapes depending on `geoType`:
+//   - "near" / "intersects" → a Point: `[lng, lat]`
+//   - "within"              → a Polygon outer ring:
+//                              `[[lng, lat], [lng, lat], …]`
+// The previous `number[]` typing fit the first shape only; passing
+// a polygon ring matched the type at compile time (because `JSON.parse
+// (...) as number[]` is an unchecked cast in TS) but didn't match the
+// declared shape at runtime, and the desktop side rejected it. The
+// union below makes the intended pair of shapes the one the type
+// system enforces.
 export interface GeospatialQueryRequest {
     connectionId: string
     databaseName: string
     collectionName: string
     field: string
     geoType: "near" | "within" | "intersects"
-    coordinates: number[]
+    coordinates: [number, number] | [number, number][]
     maxDistance?: number
     minDistance?: number
     additionalFilter?: Record<string, unknown>

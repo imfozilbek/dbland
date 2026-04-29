@@ -40,6 +40,37 @@ export interface GeospatialQueryBuilderProps {
  * opaque MongoDB error. Returns either `{ ok: true }` with the parsed
  * pair or `{ ok: false }` with a user-visible error string.
  */
+/**
+ * Parse and validate a polygon ring pasted by the user.
+ *
+ * Hoisted out of `handleExecute` to keep that function under the
+ * project's 15-complexity ESLint cap and so the validation rule has a
+ * named place to live. The rule mirrors the desktop-side
+ * `validate_polygon_ring`: at least four `[lng, lat]` points (GeoJSON
+ * close-the-ring rule) where every coordinate is a finite number.
+ */
+function parsePolygonRing(raw: string): [number, number][] | null {
+    let parsed: unknown
+    try {
+        parsed = JSON.parse(raw)
+    } catch {
+        return null
+    }
+    if (!Array.isArray(parsed) || parsed.length < 4) {
+        return null
+    }
+    for (const point of parsed) {
+        if (
+            !Array.isArray(point) ||
+            point.length !== 2 ||
+            !point.every((n) => typeof n === "number" && Number.isFinite(n))
+        ) {
+            return null
+        }
+    }
+    return parsed as [number, number][]
+}
+
 function parseNearCoordinates(
     longitude: string,
     latitude: string,
@@ -107,7 +138,7 @@ export function GeospatialQueryBuilder({
         setIsLoading(true)
         setError(null)
 
-        let coordinates: number[]
+        let coordinates: [number, number] | [number, number][]
         if (queryType === "near") {
             const parsed = parseNearCoordinates(longitude, latitude)
             if (!parsed.ok) {
@@ -117,13 +148,13 @@ export function GeospatialQueryBuilder({
             }
             coordinates = parsed.coordinates
         } else {
-            try {
-                coordinates = JSON.parse(polygonCoords) as number[]
-            } catch (_err) {
+            const ring = parsePolygonRing(polygonCoords)
+            if (!ring) {
                 setError(t("geospatial.errors.invalidPolygon"))
                 setIsLoading(false)
                 return
             }
+            coordinates = ring
         }
 
         let filter: Record<string, unknown> | undefined
