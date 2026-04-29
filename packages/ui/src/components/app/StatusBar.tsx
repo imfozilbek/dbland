@@ -50,7 +50,12 @@ export function StatusBar({
     status = "disconnected",
     statusText,
     centerText,
-    version = "v1.1.0",
+    // The hosting app is expected to pass `version` from its build-
+    // time constant (`__APP_VERSION__` in the desktop and web apps,
+    // wired via Vite's `define` from package.json). The fallback used
+    // to be a hard-coded "v1.1.0" that drifted on every release; an
+    // empty string is a more honest signal that the host forgot.
+    version = "",
 }: StatusBarProps): JSX.Element {
     const t = useT()
     const config = STATUS_CONFIGS[status]

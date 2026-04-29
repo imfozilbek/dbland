@@ -90,7 +90,7 @@ function AppLayout(): JSX.Element {
             </div>
 
             {/* Status bar */}
-            <StatusBar />
+            <StatusBar version={`v${__APP_VERSION__}`} />
 
             {/* Connection Manager Dialog (single instance for both add + edit) */}
             <ConnectionManagerDialog
