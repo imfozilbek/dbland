@@ -1,8 +1,18 @@
-use crate::{validate_collection_name, validate_database_name, validate_object_id, AppState};
+use crate::{
+    clamp_query_limit, validate_collection_name, validate_database_name, validate_object_id,
+    AppState,
+};
 use base64::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::State;
+
+/// Hard ceiling on the GridFS file listing page size. The bucket can
+/// hold gigabytes of files; a buggy frontend passing `i64::MAX` would
+/// otherwise pull the whole catalogue across IPC in one shot. The
+/// browser UI virtualises and paginates anyway, so capping is free.
+const GRIDFS_LIST_LIMIT_MAX: i64 = 1000;
+const GRIDFS_LIST_LIMIT_DEFAULT: i64 = 100;
 
 /// GridFS bucket names live in `db.{bucket}.files` / `{bucket}.chunks`,
 /// so they end up interpolated into the same JS-shell strings as
@@ -54,12 +64,15 @@ pub async fn list_gridfs_files(
     // because the surrounding format!() then drops it into the JS.
     validate_collection_name(&collection_name)?;
 
-    // Build query with optional limit
-    let query = if let Some(limit_val) = limit {
-        format!(r#"db.getSiblingDB("{}").getCollection("{}").find({{}}).limit({})"#, database_name, collection_name, limit_val)
-    } else {
-        format!(r#"db.getSiblingDB("{}").getCollection("{}").find({{}})"#, database_name, collection_name)
-    };
+    // Always cap the page — see the GRIDFS_LIST_LIMIT_* constants for
+    // the ceiling rationale. A `None` here just means "use the
+    // default", which is also the right answer for the GUI's first
+    // page paint.
+    let limit_val = clamp_query_limit(limit, GRIDFS_LIST_LIMIT_DEFAULT, GRIDFS_LIST_LIMIT_MAX);
+    let query = format!(
+        r#"db.getSiblingDB("{}").getCollection("{}").find({{}}).limit({})"#,
+        database_name, collection_name, limit_val
+    );
 
     let result = state
         .pool

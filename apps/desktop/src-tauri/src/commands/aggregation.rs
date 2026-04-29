@@ -1,7 +1,15 @@
-use crate::{validate_collection_name, validate_database_name, AppState};
+use crate::{clamp_query_limit, validate_collection_name, validate_database_name, AppState};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::State;
+
+/// Hard ceiling on the synthetic `$limit` stage appended during stage
+/// preview. The preview is meant to show the user what their pipeline
+/// produces *up to this point* — a few hundred docs is plenty. A
+/// frontend forgetting to set it (or passing `i64::MAX`) would
+/// otherwise pull the entire intermediate result set across IPC.
+const PREVIEW_LIMIT_MAX: i64 = 500;
+const PREVIEW_LIMIT_DEFAULT: i64 = 100;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AggregationPipelineStage {
@@ -107,10 +115,11 @@ pub async fn preview_pipeline_stage(
         pipeline_stages.push(format!("{{\"{}\": {}}}", stage.stage_type, stage_doc));
     }
 
-    // Add $limit stage if specified
-    if let Some(limit) = request.limit {
-        pipeline_stages.push(format!("{{\"$limit\": {}}}", limit));
-    }
+    // Always append a $limit — this is a *preview*, not a full
+    // pipeline run. The cap is non-negotiable so a forgetful frontend
+    // can't accidentally pull the entire intermediate result set.
+    let preview_limit = clamp_query_limit(request.limit, PREVIEW_LIMIT_DEFAULT, PREVIEW_LIMIT_MAX);
+    pipeline_stages.push(format!("{{\"$limit\": {}}}", preview_limit));
 
     let pipeline_str = format!("[{}]", pipeline_stages.join(","));
 

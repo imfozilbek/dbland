@@ -13,33 +13,7 @@ const PROFILER_LIMIT_MAX: i64 = 1000;
 const PROFILER_LIMIT_DEFAULT: i64 = 100;
 
 fn clamp_profiler_limit(input: Option<i64>) -> i64 {
-    input.unwrap_or(PROFILER_LIMIT_DEFAULT).clamp(1, PROFILER_LIMIT_MAX)
-}
-
-#[cfg(test)]
-mod profiler_limit_clamp {
-    use super::*;
-
-    #[test]
-    fn unset_uses_default() {
-        assert_eq!(clamp_profiler_limit(None), PROFILER_LIMIT_DEFAULT);
-    }
-
-    #[test]
-    fn within_range_passes_through() {
-        assert_eq!(clamp_profiler_limit(Some(500)), 500);
-    }
-
-    #[test]
-    fn over_max_is_clamped() {
-        assert_eq!(clamp_profiler_limit(Some(i64::MAX)), PROFILER_LIMIT_MAX);
-    }
-
-    #[test]
-    fn zero_or_negative_is_clamped_to_one() {
-        assert_eq!(clamp_profiler_limit(Some(0)), 1);
-        assert_eq!(clamp_profiler_limit(Some(-1)), 1);
-    }
+    crate::clamp_query_limit(input, PROFILER_LIMIT_DEFAULT, PROFILER_LIMIT_MAX)
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

@@ -10,7 +10,7 @@ mod validation;
 // stable path. Keeps `mod error` private; callers see `crate::redact_error`.
 pub(crate) use error::redact_error;
 pub(crate) use validation::{
-    validate_collection_name, validate_database_name, validate_object_id,
+    clamp_query_limit, validate_collection_name, validate_database_name, validate_object_id,
 };
 
 use state::ConnectionPool;

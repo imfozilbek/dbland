@@ -14,34 +14,7 @@ const HISTORY_LIMIT_MAX: i64 = 1000;
 const HISTORY_LIMIT_DEFAULT: i64 = 100;
 
 fn clamp_history_limit(input: Option<i64>) -> i64 {
-    let raw = input.unwrap_or(HISTORY_LIMIT_DEFAULT);
-    raw.clamp(1, HISTORY_LIMIT_MAX)
-}
-
-#[cfg(test)]
-mod limit_clamp {
-    use super::*;
-
-    #[test]
-    fn unset_falls_back_to_default() {
-        assert_eq!(clamp_history_limit(None), HISTORY_LIMIT_DEFAULT);
-    }
-
-    #[test]
-    fn within_range_passes_through() {
-        assert_eq!(clamp_history_limit(Some(50)), 50);
-    }
-
-    #[test]
-    fn over_max_is_clamped() {
-        assert_eq!(clamp_history_limit(Some(i64::MAX)), HISTORY_LIMIT_MAX);
-    }
-
-    #[test]
-    fn zero_or_negative_is_clamped_to_one() {
-        assert_eq!(clamp_history_limit(Some(0)), 1);
-        assert_eq!(clamp_history_limit(Some(-42)), 1);
-    }
+    crate::clamp_query_limit(input, HISTORY_LIMIT_DEFAULT, HISTORY_LIMIT_MAX)
 }
 
 /// Query execution result for frontend

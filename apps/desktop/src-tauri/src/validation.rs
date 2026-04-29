@@ -1,5 +1,11 @@
 //! Input-validation helpers shared across IPC command handlers.
 //!
+//! In addition to the string validators below, this module exposes
+//! `clamp_query_limit` — a single primitive every command that takes
+//! a frontend-supplied row count uses, so the "hard ceiling on what we
+//! pull across IPC in one shot" rule lives in one place rather than
+//! being copy-pasted (or, worse, forgotten) across handlers.
+//!
 //! Every command that interpolates user-supplied identifiers
 //! (database name, collection name, ObjectId) into a MongoDB-shell
 //! query string passes those identifiers through one of these
@@ -15,6 +21,53 @@
 //!
 //! cannot be turned into a `db.x.dropDatabase()` injection by a hostile
 //! frontend or a malformed call from a debug tool.
+
+/// Clamp a frontend-supplied row count into `1..=max`, falling back to
+/// `default` when the value is missing.
+///
+/// Every command that interpolates a `limit` into a query string or
+/// passes it through to a driver call routes it through this. Three
+/// reasons to centralise:
+///
+///   * Defence — a buggy or malicious frontend passing `i64::MAX`
+///     would otherwise pull the whole table across IPC in one shot.
+///   * Floor — `0` and negatives have surprising vendor-specific
+///     meanings (Mongo treats `-N` as "limit and close cursor", which
+///     is rarely what the user wanted); coercing to `1` keeps the
+///     behaviour predictable.
+///   * One place to change — the previous shape duplicated this
+///     three-line `unwrap_or(...).clamp(1, MAX)` body across query and
+///     profiler handlers, with fresh copy-paste mistakes waiting to
+///     happen for every new handler.
+pub fn clamp_query_limit(input: Option<i64>, default: i64, max: i64) -> i64 {
+    input.unwrap_or(default).clamp(1, max)
+}
+
+#[cfg(test)]
+mod clamp_query_limit_tests {
+    use super::clamp_query_limit;
+
+    #[test]
+    fn unset_falls_back_to_default() {
+        assert_eq!(clamp_query_limit(None, 100, 1000), 100);
+    }
+
+    #[test]
+    fn within_range_passes_through() {
+        assert_eq!(clamp_query_limit(Some(500), 100, 1000), 500);
+    }
+
+    #[test]
+    fn over_max_is_clamped() {
+        assert_eq!(clamp_query_limit(Some(i64::MAX), 100, 1000), 1000);
+    }
+
+    #[test]
+    fn zero_or_negative_is_clamped_to_one() {
+        assert_eq!(clamp_query_limit(Some(0), 100, 1000), 1);
+        assert_eq!(clamp_query_limit(Some(-42), 100, 1000), 1);
+    }
+}
 
 /// Reject anything that doesn't look like a 24-hex MongoDB ObjectId.
 ///
