@@ -1,6 +1,6 @@
 import { Braces, Copy } from "lucide-react"
 import { extractErrorMessage } from "@dbland/core"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "../ui/button"
 import { EmptyState } from "../ui/empty-state"
@@ -12,12 +12,33 @@ export interface ResultsJsonProps {
 }
 
 /**
+ * How long the "Copied" badge stays on the button after a successful
+ * copy. Long enough to be noticed, short enough not to feel sticky.
+ */
+const COPIED_FEEDBACK_MS = 1500
+
+/**
  * JSON view for query results.
  * Displays prettified JSON with syntax highlighting.
  */
 export function ResultsJson({ documents }: ResultsJsonProps): JSX.Element {
     const jsonString = JSON.stringify(documents, null, 4)
     const [justCopied, setJustCopied] = useState(false)
+    // Tracks the in-flight "Copied" timer so quick repeated clicks
+    // cancel the previous timer before scheduling a new one — without
+    // this, two clicks within 1.5s scheduled two setState calls and
+    // the second one collapsed the badge sooner than the user expected.
+    // Also lets the unmount cleanup cancel a pending setState that
+    // would otherwise fire against a torn-down component.
+    const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    useEffect(() => {
+        return () => {
+            if (copiedTimerRef.current !== null) {
+                clearTimeout(copiedTimerRef.current)
+            }
+        }
+    }, [])
 
     const handleCopy = (): void => {
         navigator.clipboard
@@ -29,9 +50,13 @@ export function ResultsJson({ documents }: ResultsJsonProps): JSX.Element {
                         documents.length === 1 ? "document" : "documents"
                     } as JSON`,
                 })
-                setTimeout(() => {
+                if (copiedTimerRef.current !== null) {
+                    clearTimeout(copiedTimerRef.current)
+                }
+                copiedTimerRef.current = setTimeout(() => {
                     setJustCopied(false)
-                }, 1500)
+                    copiedTimerRef.current = null
+                }, COPIED_FEEDBACK_MS)
             })
             .catch((err: unknown) => {
                 console.error("Failed to copy JSON:", err)
