@@ -51,7 +51,13 @@ export interface SavedQuery extends Query {
 }
 
 /**
- * Get query language for database type
+ * Get query language for database type.
+ *
+ * Exhaustive on `DatabaseType`: adding a new variant must come with
+ * its own query-language case here, or this function won't typecheck.
+ * The previous `default → QueryLanguage.MongoDB` fallback was a real
+ * bug — a Cassandra connection would have silently routed CQL through
+ * the MongoDB parser, with the obvious vendor-error fallout.
  */
 export function getQueryLanguage(type: DatabaseType): QueryLanguage {
     switch (type) {
@@ -60,8 +66,12 @@ export function getQueryLanguage(type: DatabaseType): QueryLanguage {
         case DatabaseType.Redis:
             return QueryLanguage.RedisCLI
         default:
-            return QueryLanguage.MongoDB
+            return assertNever(type, `Unsupported database type: ${String(type)}`)
     }
+}
+
+function assertNever(_value: never, message: string): never {
+    throw new Error(message)
 }
 
 /**
