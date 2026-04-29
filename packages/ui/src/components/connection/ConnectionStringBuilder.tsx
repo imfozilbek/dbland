@@ -4,6 +4,7 @@ import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { ArrowLeftRight, Eye, EyeOff } from "lucide-react"
 import { useT } from "../../i18n"
+import { DatabaseType, DEFAULT_PORTS } from "@dbland/core"
 
 interface ConnectionStringBuilderProps {
     databaseType: "mongodb" | "redis"
@@ -23,9 +24,12 @@ interface ConnectionStringBuilderProps {
     }) => void
 }
 
+// Stringified for use as fallback in the URI builder (where port lives
+// inside a string template). Source of truth for the numeric values is
+// DEFAULT_PORTS in @dbland/core, shared with the Rust side.
 const DEFAULT_PORT_BY_TYPE: Record<"mongodb" | "redis", string> = {
-    mongodb: "27017",
-    redis: "6379",
+    mongodb: String(DEFAULT_PORTS[DatabaseType.MongoDB]),
+    redis: String(DEFAULT_PORTS[DatabaseType.Redis]),
 }
 
 export function ConnectionStringBuilder({
